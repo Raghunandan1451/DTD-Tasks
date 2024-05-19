@@ -23,7 +23,8 @@ const fields = [
 
 const addStyle = {flexGrow: '0.6'}
 
-const ShoppingList = () => {
+// eslint-disable-next-line react/prop-types
+const ShoppingList = ({handleDownload}) => {
 	const [items, setItems] = useState([]);
 	const [idCounter, setIdCounter] = useState(0);
   
@@ -43,7 +44,15 @@ const ShoppingList = () => {
 
 	return (
 		<div className="p-4 border rounded shadow">
-			<h2 className="text-xl font-bold mb-4">Shopping List</h2>
+			<div className={`flex justify-between p-2`}>
+				<h2 className="text-xl font-bold mb-4">Shopping List</h2>
+				<button
+					onClick={() => handleDownload(items)}
+					className="bg-green-500 text-white p-2 rounded"
+				>
+					Download
+				</button>
+			</div>
 			<InputForm onAddItem={handleAddItem} placeholders={fields} addStyle={addStyle} />
 			<ul className="space-y-2">
 				{items.map((item) => (

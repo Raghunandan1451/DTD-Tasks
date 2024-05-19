@@ -43,6 +43,7 @@ const InputForm = (props) => {
 						value={inputs[placeholder.name] || ''}
 						onChange={handleInputChange}
 						placeholder={placeholder.placeholder}
+						min={0}
 						className="border border-gray-300 rounded p-2 flex-grow"
 					/>
 				);

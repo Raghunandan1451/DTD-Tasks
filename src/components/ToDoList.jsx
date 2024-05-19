@@ -6,7 +6,8 @@ import ListItem from './ListItem';
 const addStyle = {flexGrow: '0.13'}
 const listStyle = {textAlign: 'left'}
 
-const TodoList = () => {
+// eslint-disable-next-line react/prop-types
+const TodoList = ({handleDownload}) => {
 	const [items, setItems] = useState([]);
 	const [idCounter, setIdCounter] = useState(0);
   
@@ -26,7 +27,15 @@ const TodoList = () => {
 
   return (
     <div className="p-4 border rounded shadow">
-		<h2 className="text-xl font-bold mb-4">To-Do List</h2>
+		<div className={`flex justify-between`}>
+			<h2 className="text-xl font-bold mb-4">To-Do List</h2>
+			<button
+				onClick={() => handleDownload(items)}
+				className="bg-green-500 text-white p-2 rounded"
+			>
+				Download
+			</button>
+		</div>
 		<InputForm
 			onAddItem={handleAddItem}
 			placeholders={[{ name: 'name', placeholder: 'Enter task' }]}
