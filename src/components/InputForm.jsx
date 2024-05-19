@@ -2,7 +2,7 @@
 import { useState } from 'react';
 
 const InputForm = (props) => {
-	const { onAddItem, placeholders } = props
+	const { onAddItem, placeholders, addStyle } = props
 	const [inputs, setInputs] = useState({});
 
 	const handleInputChange = (event) => {
@@ -16,15 +16,20 @@ const InputForm = (props) => {
 	};
 
 	return (
-		<div>
+		<div className="mb-4 flex gap-2">
 			{placeholders.map((placeholder, index) => {
 				if (placeholder.type === 'select') {
 					return (
-						<select key={index} name={placeholder.name} value={inputs[placeholder.name] || ''} onChange={handleInputChange}>
+						<select 
+							key={index} 
+							name={placeholder.name} 
+							value={inputs[placeholder.name] || ''} 
+							onChange={handleInputChange}
+							className="border border-gray-300 rounded p-2">
 						<option value="">{placeholder.placeholder}</option>
 						{placeholder.options.map((option, optionIndex) => (
 							<option key={optionIndex} value={option.value}>
-							{option.label}
+								{option.label}
 							</option>
 						))}
 						</select>
@@ -38,10 +43,11 @@ const InputForm = (props) => {
 						value={inputs[placeholder.name] || ''}
 						onChange={handleInputChange}
 						placeholder={placeholder.placeholder}
+						className="border border-gray-300 rounded p-2 flex-grow"
 					/>
 				);
 			})}
-			<button onClick={handleSubmit}>Add</button>
+			<button onClick={handleSubmit} className="bg-blue-500 text-white p-2 rounded" style={addStyle}>Add</button>
 		</div>
 	);
 }

@@ -20,10 +20,10 @@ const ToList = () => {
 	};
 
 	return (
-		<div>
-			<div>
+		<div className="flex flex-col w-full mx-auto p-4">
+			<div className="grid grid-cols-2 gap-4">
 				{listNames.map(({id, name}, index) => (
-					<button key={index} onClick={() => handleButtonClick(id)}>
+					<button className="min-w-1/2" key={index} onClick={() => handleButtonClick(id)}>
 						{name}
 					</button>
 				))}

@@ -17,6 +17,10 @@
   -moz-osx-font-smoothing: grayscale;
 }
 
+#root {
+	width: 50%;
+}
+
 a {
   font-weight: 500;
   color: #646cff;
@@ -30,7 +34,6 @@ body {
   margin: 2rem 0 0;
   display: flex;
   justify-content: center;
-  min-width: 320px;
   min-height: 100vh;
   overflow-y: hidden;
 }

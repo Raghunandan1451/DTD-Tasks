@@ -3,6 +3,9 @@ import { addTodo, deleteItem, updateTodo} from '../utils/ADU'
 import InputForm from './InputForm';
 import ListItem from './ListItem';
 
+const addStyle = {flexGrow: '0.13'}
+const listStyle = {textAlign: 'left'}
+
 const TodoList = () => {
 	const [items, setItems] = useState([]);
 	const [idCounter, setIdCounter] = useState(0);
@@ -22,13 +25,14 @@ const TodoList = () => {
 	};
 
   return (
-    <div>
-		<h2 className='text-2xl font-bold'>To-Do List</h2>
+    <div className="p-4 border rounded shadow">
+		<h2 className="text-xl font-bold mb-4">To-Do List</h2>
 		<InputForm
 			onAddItem={handleAddItem}
 			placeholders={[{ name: 'name', placeholder: 'Enter task' }]}
+			addStyle={addStyle}
 		/>
-		<ul>
+		<ul className="space-y-2">
 			{items.map((item) => (
 			<ListItem
 				key={item.id}
@@ -36,6 +40,7 @@ const TodoList = () => {
 				item={item}
 				onUpdateItem={handleUpdateItem}
 				onDeleteItem={handleDeleteItem}
+				addStyle={listStyle}
 			/>
 			))}
 		</ul>
