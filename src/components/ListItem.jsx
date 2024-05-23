@@ -35,7 +35,7 @@ const ListItem = (props) => {
 	};
 
 	return (
-		<li className={`flex items-center justify-between py-2 ${item.done ? 'line-through' : ''}`} onClick={handleToggleDone}>
+		<li className={`flex items-center justify-between py-2`}>
 			{isEditing ? (
 				<>
 				{fields.map((field, index) => {
@@ -85,7 +85,14 @@ const ListItem = (props) => {
 			) : (
 				<>
 					{fields.map((field, index) => (
-						<span className={`flex-1 text-center p-2`} key={index} style={addStyle}>{item[field.name]} </span>
+						<span 
+							className={`flex-1 text-center p-2 ${item.done ? 'line-through' : ''}`}
+							onClick={handleToggleDone} 
+							key={index} 
+							style={addStyle}
+						>
+							{item[field.name]}
+						</span>
 					))}
 					<div className="flex gap-2">
 						<button 

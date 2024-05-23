@@ -5,6 +5,12 @@ import { downloadShoppingList, downloadTodoList } from "../utils/downloadList";
 
 const ToList = () => {
 	const [activeList, setActiveList] = useState('todo');
+
+	const [todoList, setTodoList] = useState([])
+	const [shoppingList, setShoppingList] = useState([])
+	const [todoCounter, setTodoCounter] = useState(0)
+	const [shoppingCounter, setShoppingCounter] = useState(0)
+
 	const listNames = [
 		{
 			id: 'todo',
@@ -37,8 +43,22 @@ const ToList = () => {
 					</button>
 				))}
 			</div>
-			{activeList === 'todo' && <TodoList handleDownload={handleDownloadClick} />}
-			{activeList === 'shopping' && <ShoppingList handleDownload={handleDownloadClick} />}
+			{activeList === 'todo' && (
+				<TodoList 
+					handleDownload={handleDownloadClick} 
+					items={todoList} 
+					setItems={setTodoList}
+					idCounter={todoCounter} 
+					setIdCounter={setTodoCounter}
+				/>)}
+			{activeList === 'shopping' && (
+				<ShoppingList 
+					handleDownload={handleDownloadClick} 
+					items={shoppingList} 
+					setItems={setShoppingList}
+					idCounter={shoppingCounter} 
+					setIdCounter={setShoppingCounter}
+				/>)}
 		</div>
 	)
 }

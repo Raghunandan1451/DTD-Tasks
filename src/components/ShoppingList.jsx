@@ -1,4 +1,4 @@
-import { useState } from 'react';
+/* eslint-disable react/prop-types */
 import InputForm from './InputForm';
 import ListItem from './ListItem';
 import { addShoppingItem, deleteItem, updateShoppingItem } from '../utils/ADU';
@@ -23,10 +23,8 @@ const fields = [
 
 const addStyle = {flexGrow: '0.6'}
 
-// eslint-disable-next-line react/prop-types
-const ShoppingList = ({handleDownload}) => {
-	const [items, setItems] = useState([]);
-	const [idCounter, setIdCounter] = useState(0);
+const ShoppingList = (props) => {
+	const { handleDownload, items, setItems, idCounter, setIdCounter } = props
   
 	const handleAddItem = (newItem) => {
 		const itemWithId = { ...newItem, id: idCounter };
@@ -44,14 +42,16 @@ const ShoppingList = ({handleDownload}) => {
 
 	return (
 		<div className="p-4 border rounded shadow">
-			<div className={`flex justify-between p-2`}>
+			<div className={`flex justify-between p-3`}>
 				<h2 className="text-xl font-bold mb-4">Shopping List</h2>
-				<button
-					onClick={() => handleDownload(items)}
-					className="bg-green-500 text-white p-2 rounded"
-				>
-					Download
-				</button>
+				<span>
+					<button
+						onClick={() => handleDownload(items)}
+						className="bg-green-500 text-white p-2 rounded"
+					>
+						Download
+					</button>
+				</span>
 			</div>
 			<InputForm onAddItem={handleAddItem} placeholders={fields} addStyle={addStyle} />
 			<ul className="space-y-2">

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+/* eslint-disable react/prop-types */
 import { addTodo, deleteItem, updateTodo} from '../utils/ADU'
 import InputForm from './InputForm';
 import ListItem from './ListItem';
@@ -6,10 +6,8 @@ import ListItem from './ListItem';
 const addStyle = {flexGrow: '0.13'}
 const listStyle = {textAlign: 'left'}
 
-// eslint-disable-next-line react/prop-types
-const TodoList = ({handleDownload}) => {
-	const [items, setItems] = useState([]);
-	const [idCounter, setIdCounter] = useState(0);
+const TodoList = (props) => {
+	const { handleDownload, items, setItems, idCounter, setIdCounter } = props
   
 	const handleAddItem = (newItem) => {
 		const itemWithId = { ...newItem, id: idCounter };
@@ -27,7 +25,7 @@ const TodoList = ({handleDownload}) => {
 
   return (
     <div className="p-4 border rounded shadow">
-		<div className={`flex justify-between`}>
+		<div className={`flex p-3 justify-between`}>
 			<h2 className="text-xl font-bold mb-4">To-Do List</h2>
 			<button
 				onClick={() => handleDownload(items)}
