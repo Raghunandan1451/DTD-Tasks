@@ -16,7 +16,7 @@ const InputForm = (props) => {
 	};
 
 	return (
-		<div className="mb-4 flex gap-2">
+		<div className="mb-4 flex flex-wrap gap-2">
 			{placeholders.map((placeholder, index) => {
 				if (placeholder.type === 'select') {
 					return (
@@ -25,7 +25,7 @@ const InputForm = (props) => {
 							name={placeholder.name} 
 							value={inputs[placeholder.name] || ''} 
 							onChange={handleInputChange}
-							className="border border-gray-300 rounded p-2">
+							className="border border-gray-300 rounded p-2 flex-grow">
 						<option value="">{placeholder.placeholder}</option>
 						{placeholder.options.map((option, optionIndex) => (
 							<option key={optionIndex} value={option.value}>
