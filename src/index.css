@@ -18,7 +18,7 @@
 }
 
 #root {
-	width: 50%;
+	width: 100%;
 }
 
 a {
@@ -72,5 +72,11 @@ button:focus-visible {
   }
   button {
     background-color: #f9f9f9;
+  }
+}
+
+@media screen and (width >= 767px) {
+  #root {
+    width: 50%;
   }
 }
