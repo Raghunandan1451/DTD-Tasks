@@ -4,6 +4,23 @@ import TableRow from './TableRow';
 import TableHeader from './TableHeader';
 import { TableProvider } from './TableContext';
 
+const columns = [
+	{ key: 'task', type: 'text', header: 'Task', className: 'w-1/2' },
+	{
+		key: 'target',
+		type: 'date',
+		header: 'Target Date',
+		className: 'w-1/5',
+	},
+	{
+		key: 'status',
+		type: 'dropdown',
+		header: 'Status',
+		className: 'w-1/5',
+		options: ['Not Started', 'In Progress', 'Completed'],
+	},
+];
+
 const EditableTable = () => {
 	const [data, setData] = useState([{ task: '', target: '', status: '' }]);
 	const [activeCell, setActiveCell] = useState({ row: 0, col: 0 });
@@ -28,23 +45,6 @@ const EditableTable = () => {
 		};
 	}, []);
 
-	const columns = [
-		{ key: 'task', type: 'text', header: 'Task', className: 'w-1/2' },
-		{
-			key: 'target',
-			type: 'date',
-			header: 'Target Date',
-			className: 'w-1/5',
-		},
-		{
-			key: 'status',
-			type: 'dropdown',
-			header: 'Status',
-			className: 'w-1/5',
-			options: ['Not Started', 'In Progress', 'Completed'],
-		},
-	];
-
 	const handleCellDataChange = (rowIndex, columnKey, newValue) => {
 		setData((prevData) =>
 			prevData.map((row, i) =>
@@ -64,24 +64,18 @@ const EditableTable = () => {
 	useEffect(() => {
 		let currentInput =
 			inputRefs.current[`${activeCell.row}-${activeCell.col}`];
+		// console.log(currentInput);
 		if (currentInput) {
 			currentInput.focus();
 		}
 	}, [activeCell]);
 
-	const rowsToRender =
-		data.length >= minRows
-			? data
-			: [
-					...data,
-					...Array.from({ length: minRows - data.length }).map(
-						(_, index) => ({
-							task: '',
-							target: '',
-							status: '',
-						})
-					),
-			  ];
+	const rowsToRender = [
+		...data,
+		...Array.from({ length: Math.max(minRows - data.length, 0) }).map(
+			() => ({})
+		), // Render empty rows till minRows < data.length
+	];
 
 	const contextValue = {
 		handleCellDataChange,
@@ -98,9 +92,8 @@ const EditableTable = () => {
 				ref={containerRef}
 				onKeyDown={handleCellChange}>
 				<table className="min-w-full table-auto">
-					{/* Table Header */}
 					<TableHeader columns={columns} />
-					{/* Table Body */}
+
 					<tbody ref={cellRef}>
 						{rowsToRender.map((row, rowIndex) => (
 							<TableRow

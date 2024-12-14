@@ -1,93 +1,21 @@
-import { useTableContext } from './TableContext';
+import DatePicker from './Fields/DatePicker';
+import Dropdown from './Fields/Dropdown';
+import TextInput from './Fields/TextInput';
 
 const CellType = (props) => {
-	const { columnType, column, row, rowIndex, colIndex } = props;
+	const { columnType } = props;
 
-	const { handleCellDataChange, setActiveCell, inputRefs } =
-		useTableContext();
+	switch (columnType) {
+		case 'text':
+			return <TextInput {...props} />;
+		case 'date':
+			return <DatePicker {...props} />;
+		case 'dropdown':
+			return <Dropdown {...props} />;
 
-	let CellContent = null;
-	if (columnType === 'text') {
-		CellContent = (
-			<input
-				type="text"
-				value={row[column.key]}
-				onChange={(e) =>
-					handleCellDataChange(rowIndex, column.key, e.target.value)
-				}
-				ref={(el) =>
-					(inputRefs.current[`${rowIndex}-${colIndex}`] = el)
-				}
-				className="w-full bg-transparent outline-none"
-				onFocus={() =>
-					setActiveCell({
-						row: rowIndex,
-						col: colIndex,
-					})
-				}
-			/>
-		);
-	} else if (columnType === 'date') {
-		CellContent = (
-			<input
-				type="date"
-				value={row[column.key]}
-				onChange={(e) =>
-					handleCellDataChange(rowIndex, column.key, e.target.value)
-				}
-				className="w-full bg-transparent outline-none"
-				onFocus={() =>
-					setActiveCell({
-						row: rowIndex,
-						col: colIndex,
-					})
-				}
-			/>
-		);
-	} else if (column.type === 'dropdown') {
-		CellContent = (
-			<select
-				value={row[column.key]}
-				onChange={(e) =>
-					handleCellDataChange(rowIndex, column.key, e.target.value)
-				}
-				className="w-full bg-transparent outline-none"
-				onFocus={() =>
-					setActiveCell({
-						row: rowIndex,
-						col: colIndex,
-					})
-				}>
-				{column.options.map((option) => (
-					<option key={option} value={option}>
-						{option}
-					</option>
-				))}
-			</select>
-		);
-	} else {
-		CellContent = (
-			<input
-				type="text"
-				value={row[column.key]}
-				onChange={(e) =>
-					handleCellDataChange(rowIndex, column.key, e.target.value)
-				}
-				ref={(el) =>
-					(inputRefs.current[`${rowIndex}-${colIndex}`] = el)
-				}
-				className="w-full bg-transparent outline-none"
-				onFocus={() =>
-					setActiveCell({
-						row: rowIndex,
-						col: colIndex,
-					})
-				}
-			/>
-		);
+		default:
+			return <TextInput {...props} />;
 	}
-
-	return <>{CellContent}</>;
 };
 
 export default CellType;

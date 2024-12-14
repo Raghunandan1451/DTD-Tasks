@@ -2,8 +2,8 @@ import { useCallback } from 'react';
 
 export const createNewRow = (setData) => {
 	const newRow = {
-		text: '',
-		date: '',
+		task: '',
+		target: '',
 		status: '',
 	};
 	setData((prevData) => [...prevData, newRow]);
