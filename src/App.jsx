@@ -1,6 +1,5 @@
 import ShoppingList from './components/ShoppingList';
 import TodoList from './components/ToDoList';
-import Notes from './components/Notes';
 import Home from './pages/Home';
 
 import Layout from './layout/Layout';
@@ -14,7 +13,6 @@ const router = createBrowserRouter([
 			{ path: '/', element: <Home /> },
 			{ path: '/todo', element: <TodoList /> },
 			{ path: '/shopping', element: <ShoppingList /> },
-			{ path: '/notes', element: <Notes /> },
 		],
 	},
 ]);
