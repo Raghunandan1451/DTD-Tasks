@@ -12,9 +12,8 @@ const CellType = (props) => {
 			return <DatePicker {...props} />;
 		case 'dropdown':
 			return <Dropdown {...props} />;
-
 		default:
-			return <TextInput {...props} />;
+			return <span></span>;
 	}
 };
 

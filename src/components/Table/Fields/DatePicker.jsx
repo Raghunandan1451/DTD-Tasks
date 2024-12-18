@@ -35,14 +35,26 @@ const DatePicker = (props) => {
 		}
 	};
 
+	const handleDateChange = (e) => {
+		// Convert string to Date object
+		const date = new Date(e.target.value);
+		// Ensure the date is valid
+		if (isNaN(date)) {
+			console.error('Invalid date:', e.target.value);
+			return; // Prevent further processing if the date is invalid
+		}
+		// Format the date as 'yyyy-MM-dd'
+		const formattedDate = date.toISOString().split('T')[0]; // Extract only 'yyyy-MM-dd'
+		// Pass the formatted date to the handler
+		handleCellDataChange(row.uid, column.key, formattedDate);
+	};
+
 	return (
 		<input
 			type="date"
 			ref={(el) => (inputRefs.current[`${rowIndex}-${colIndex}`] = el)}
 			value={row[column.key] || ''}
-			onChange={(e) =>
-				handleCellDataChange(rowIndex, column.key, e.target.value)
-			}
+			onChange={(e) => handleDateChange(e)}
 			onKeyDown={validateDate}
 			onFocus={() => setActiveCell({ row: rowIndex, col: colIndex })}
 			className={`w-full bg-transparent outline-none ${

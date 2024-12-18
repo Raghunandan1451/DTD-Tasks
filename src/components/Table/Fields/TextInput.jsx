@@ -10,7 +10,7 @@ const TextInput = (props) => {
 			type="text"
 			value={row[column.key]}
 			onChange={(e) =>
-				handleCellDataChange(rowIndex, column.key, e.target.value)
+				handleCellDataChange(row.uid, column.key, e.target.value)
 			}
 			ref={(el) => (inputRefs.current[`${rowIndex}-${colIndex}`] = el)}
 			className="w-full bg-transparent outline-none"

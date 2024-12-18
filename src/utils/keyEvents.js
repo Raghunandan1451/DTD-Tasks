@@ -1,20 +1,12 @@
 import { useCallback } from 'react';
 
-export const createNewRow = (setData) => {
-	const newRow = {
-		task: '',
-		target: '',
-		status: '',
-	};
-	setData((prevData) => [...prevData, newRow]);
-};
-
 export const handleKeyDown = (
 	activeCell,
 	setActiveCell,
 	columns,
 	data,
-	setData
+	addRow,
+	deleteRow
 ) =>
 	useCallback(
 		(e) => {
@@ -33,7 +25,7 @@ export const handleKeyDown = (
 							(column) => data[row][column.key]?.trim() !== ''
 						);
 						if (isRowComplete) {
-							createNewRow(setData);
+							addRow();
 							setActiveCell({ row: row + 1, col: 0 });
 						}
 					} else {
@@ -41,6 +33,17 @@ export const handleKeyDown = (
 							row: nextRow > lastRow ? lastRow : nextRow,
 							col: nextCol > lastCol ? 0 : nextCol,
 						});
+					}
+					break;
+				case 'Delete':
+					console.log('Delete: ', data[row]);
+					if (
+						data[row] &&
+						window.confirm(
+							'Are you sure you want to delete this row?'
+						)
+					) {
+						deleteRow(data[row].uid);
 					}
 					break;
 

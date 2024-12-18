@@ -29,7 +29,7 @@ const Dropdown = ({ column, row, rowIndex, colIndex }) => {
 	};
 
 	const handleSelect = (value) => {
-		handleCellDataChange(rowIndex, column.key, value);
+		handleCellDataChange(row.uid, column.key, value);
 		closeDropdown();
 	};
 

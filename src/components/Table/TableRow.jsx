@@ -7,7 +7,7 @@ const TableRow = ({ row, rowIndex, columns }) => {
 	const isDataRow = Object.keys(row).length > 0; // Check if row contains data
 
 	return (
-		<tr key={rowIndex} className="hover:bg-grey-400 transition-colors">
+		<tr className="hover:bg-gray-700 transition-colors">
 			<td className={`py-1 px-2 border`}>{rowIndex + 1}</td>
 			{columns.map((column, colIndex) => {
 				if (isDataRow) {
@@ -19,7 +19,7 @@ const TableRow = ({ row, rowIndex, columns }) => {
 						<td
 							key={column.key}
 							className={`py-1 px-2 border ${
-								isActive ? 'bg-blue-400' : ''
+								isActive ? 'bg-zinc-700' : ''
 							} ${column.className}`}>
 							<CellType
 								columnType={column.type}
@@ -34,7 +34,7 @@ const TableRow = ({ row, rowIndex, columns }) => {
 					return (
 						<td
 							key={column.key}
-							className={`py-1 px-2 border ${column.className}`}></td>
+							className={`py-1 px-2 border h-10 ${column.className}`}></td>
 					);
 				}
 			})}

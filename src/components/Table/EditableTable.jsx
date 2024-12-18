@@ -4,25 +4,7 @@ import TableRow from './TableRow';
 import TableHeader from './TableHeader';
 import { TableProvider } from './TableContext';
 
-const columns = [
-	{ key: 'task', type: 'text', header: 'Task', className: 'w-1/2' },
-	{
-		key: 'target',
-		type: 'date',
-		header: 'Target Date',
-		className: 'w-1/5',
-	},
-	{
-		key: 'status',
-		type: 'dropdown',
-		header: 'Status',
-		className: 'w-1/5',
-		options: ['Not Started', 'In Progress', 'Completed'],
-	},
-];
-
-const EditableTable = () => {
-	const [data, setData] = useState([{ task: '', target: '', status: '' }]);
+const EditableTable = ({ columns, data, onAddRow, onUpdate, onDeleteRow }) => {
 	const [activeCell, setActiveCell] = useState({ row: 0, col: 0 });
 	const [minRows, setMinRows] = useState(0);
 
@@ -32,7 +14,8 @@ const EditableTable = () => {
 
 	useEffect(() => {
 		const calculateMinRows = () => {
-			const displayHeight = containerRef.current.clientHeight;
+			const displayHeight =
+				containerRef.current.getBoundingClientRect().height;
 			const rowHeight = cellRef.current.clientHeight;
 			const calcMin = Math.floor(displayHeight / rowHeight) - 1;
 			setMinRows(calcMin);
@@ -45,12 +28,8 @@ const EditableTable = () => {
 		};
 	}, []);
 
-	const handleCellDataChange = (rowIndex, columnKey, newValue) => {
-		setData((prevData) =>
-			prevData.map((row, i) =>
-				i === rowIndex ? { ...row, [columnKey]: newValue } : row
-			)
-		);
+	const handleCellDataChange = (uniqueId, columnKey, newValue) => {
+		onUpdate(uniqueId, columnKey, newValue);
 	};
 
 	const handleCellChange = handleKeyDown(
@@ -58,13 +37,13 @@ const EditableTable = () => {
 		setActiveCell,
 		columns,
 		data,
-		setData
+		onAddRow,
+		onDeleteRow
 	);
 
 	useEffect(() => {
 		let currentInput =
 			inputRefs.current[`${activeCell.row}-${activeCell.col}`];
-		// console.log(currentInput);
 		if (currentInput) {
 			currentInput.focus();
 		}
@@ -82,6 +61,7 @@ const EditableTable = () => {
 		activeCell,
 		setActiveCell,
 		inputRefs,
+		cellRef,
 	};
 
 	return (
@@ -94,10 +74,10 @@ const EditableTable = () => {
 				<table className="min-w-full table-auto">
 					<TableHeader columns={columns} />
 
-					<tbody ref={cellRef}>
+					<tbody>
 						{rowsToRender.map((row, rowIndex) => (
 							<TableRow
-								key={rowIndex}
+								key={row.id || rowIndex}
 								rowIndex={rowIndex}
 								row={row}
 								columns={columns}
