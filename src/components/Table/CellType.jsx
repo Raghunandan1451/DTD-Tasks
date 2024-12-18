@@ -1,6 +1,6 @@
-import DatePicker from './Fields/DatePicker';
-import Dropdown from './Fields/Dropdown';
-import TextInput from './Fields/TextInput';
+import DatePicker from '@components/Table/Fields/DatePicker';
+import Dropdown from '@components/Table/Fields/Dropdown';
+import TextInput from '@components/Table/Fields/TextInput';
 
 const CellType = (props) => {
 	const { columnType } = props;

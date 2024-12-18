@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useTableContext } from '../TableContext';
+import { useTableContext } from '@components/Table/TableContext';
 
 const DatePicker = (props) => {
 	const { column, row, rowIndex, colIndex } = props;

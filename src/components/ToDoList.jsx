@@ -1,7 +1,7 @@
 /* eslint-disable react/prop-types */
-import EditableTable from './Table/EditableTable';
+import EditableTable from '@components/Table/EditableTable';
 import { useDispatch, useSelector } from 'react-redux';
-import { addTodo, deleteTodo, updateTodo } from '../store/todoSlice';
+import { addTodo, deleteTodo, updateTodo } from '@store/todoSlice';
 
 const columns = [
 	{ key: 'task', type: 'text', header: 'Task', className: 'w-1/2' },

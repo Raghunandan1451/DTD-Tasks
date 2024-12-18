@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useTableContext } from '../TableContext';
+import { useTableContext } from '@components/Table/TableContext';
 
 const Dropdown = ({ column, row, rowIndex, colIndex }) => {
 	const { handleCellDataChange, setActiveCell, inputRefs } =

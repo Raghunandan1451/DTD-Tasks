@@ -1,5 +1,5 @@
-import CellType from './CellType';
-import { useTableContext } from './TableContext';
+import CellType from '@components/Table/CellType';
+import { useTableContext } from '@components/Table/TableContext';
 
 const TableRow = ({ row, rowIndex, columns }) => {
 	const { activeCell } = useTableContext();

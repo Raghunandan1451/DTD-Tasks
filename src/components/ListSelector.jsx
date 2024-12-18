@@ -12,10 +12,6 @@ const listNames = [
 		id: 'shopping',
 		name: 'Shopping List',
 	},
-	{
-		id: 'notes',
-		name: 'Notes',
-	},
 ];
 
 const ListSelector = () => {
@@ -33,9 +29,9 @@ const ListSelector = () => {
 					to={`/${id}`}
 					className={`${
 						isActive(location, `/${id}`)
-							? 'bg-fuchsia-700 text-white hover:text-white'
+							? 'bg-teal-400 text-white hover:text-white'
 							: ''
-					} px-2 py-1 rounded-md text-white hover:text-white hover:bg-blue-700`}>
+					} px-2 py-1 rounded-md text-white hover:text-white hover:bg-teal-500`}>
 					{name}
 				</Link>
 			))}

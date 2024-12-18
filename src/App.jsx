@@ -1,8 +1,8 @@
-import ShoppingList from './components/ShoppingList';
-import TodoList from './components/ToDoList';
-import Home from './pages/Home';
+import ShoppingList from '@components/ShoppingList';
+import TodoList from '@components/ToDoList';
+import Home from '@src/pages/Home';
 
-import Layout from './layout/Layout';
+import Layout from '@layout/Layout';
 import { RouterProvider, createBrowserRouter } from 'react-router-dom';
 
 const router = createBrowserRouter([

@@ -1,5 +1,5 @@
 import { Outlet } from 'react-router-dom';
-import ListSelector from '../components/ListSelector';
+import ListSelector from '@components/ListSelector';
 
 const Layout = () => {
 	return (

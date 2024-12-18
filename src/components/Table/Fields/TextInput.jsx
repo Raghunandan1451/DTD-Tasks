@@ -1,4 +1,4 @@
-import { useTableContext } from '../TableContext';
+import { useTableContext } from '@components/Table/TableContext';
 
 const TextInput = (props) => {
 	const { column, row, rowIndex, colIndex } = props;

@@ -1,8 +1,8 @@
 import { useState, useRef, useEffect } from 'react';
-import { handleKeyDown } from '../../utils/keyEvents';
-import TableRow from './TableRow';
-import TableHeader from './TableHeader';
-import { TableProvider } from './TableContext';
+import { handleKeyDown } from '@utils/keyEvents';
+import TableRow from '@components/Table/TableRow';
+import TableHeader from '@components/Table/TableHeader';
+import { TableProvider } from '@components/Table/TableContext';
 
 const EditableTable = ({ columns, data, onAddRow, onUpdate, onDeleteRow }) => {
 	const [activeCell, setActiveCell] = useState({ row: 0, col: 0 });
