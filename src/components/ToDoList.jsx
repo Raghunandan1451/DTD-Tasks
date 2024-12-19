@@ -2,6 +2,8 @@
 import EditableTable from '@components/Table/EditableTable';
 import { useDispatch, useSelector } from 'react-redux';
 import { addTodo, deleteTodo, updateTodo } from '@store/todoSlice';
+import HeaderWithButton from '@components/HeaderWithButton';
+import { handleDownloadPDF } from '@utils/downloadList';
 
 const columns = [
 	{ key: 'task', type: 'text', header: 'Task', className: 'w-1/2' },
@@ -34,11 +36,17 @@ const TodoList = () => {
 	const handleDeleteRow = (id) => {
 		dispatch(deleteTodo(id)); // Dispatch Redux action
 	};
+
+	const handleDownload = (heading) => {
+		handleDownloadPDF(todoList, columns, heading);
+	};
+
 	return (
 		<>
-			<h1 className="text-4xl text-center flex-shrink-0 font-bold mb-3">
-				To-Do List
-			</h1>
+			<HeaderWithButton
+				heading="To-Do List"
+				onDownload={handleDownload}
+			/>
 			<EditableTable
 				columns={columns}
 				data={todoList}
