@@ -36,7 +36,6 @@ export const handleKeyDown = (
 					}
 					break;
 				case 'Delete':
-					console.log('Delete: ', data[row]);
 					if (
 						data[row] &&
 						window.confirm(

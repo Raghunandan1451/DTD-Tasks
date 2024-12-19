@@ -1,82 +1,65 @@
 /* eslint-disable react/prop-types */
-import InputForm from './InputForm';
-import ListItem from './ListItem';
-import { addShoppingItem, deleteItem, updateShoppingItem } from '../utils/ADU';
+import EditableTable from '@components/Table/EditableTable';
+import { useDispatch, useSelector } from 'react-redux';
+import { addItem, deleteItem, updateItem } from '@store/shoppingSlice';
+import HeaderWithButton from '@components/HeaderWithButton';
+import { handleDownloadPDF } from '@utils/downloadList';
 
-const fields = [
-	{ name: 'name', placeholder: 'Enter item' },
-	{ name: 'quantity', placeholder: 'Quantity', type: 'number' },
+const columns = [
 	{
-		name: 'measure',
-		placeholder: 'Measure',
-		type: 'select',
-		options: [
-			{ value: 'pkt', label: 'PKT(S)' },
-			{ value: 'kg', label: 'KG' },
-			{ value: 'g', label: 'G' },
-			{ value: 'pc', label: 'PC(S)' },
-			{ value: 'l', label: 'L' },
-			{ value: 'ml', label: 'ML' },
-		],
+		key: 'productName',
+		type: 'text',
+		header: 'Product Name',
+		className: 'w-1/2',
+	},
+	{
+		key: 'quantity',
+		type: 'number',
+		header: 'Quantity',
+		className: 'w-1/5',
+	},
+	{
+		key: 'unit',
+		type: 'dropdown',
+		header: 'Unit',
+		options: ['PKT(s)', 'PC(s)', 'KG', 'G', 'L', 'ML'],
+		className: 'w-1/5',
 	},
 ];
 
-const addStyle = { flexGrow: '0.6' };
+const ShoppingList = () => {
+	const shoppingList = useSelector((state) => state.shopping);
+	const dispatch = useDispatch();
 
-const ShoppingList = (props) => {
-	const {
-		// handleDownload,
-		items,
-		setItems,
-		idCounter,
-		setIdCounter,
-	} = props;
-
-	const handleAddItem = (newItem) => {
-		const itemWithId = { ...newItem, id: idCounter };
-		addShoppingItem(items, itemWithId, setItems);
-		setIdCounter((prev) => prev + 1);
+	const handleUpdate = (id, key, value) => {
+		dispatch(updateItem({ id, key, value })); // Dispatch Redux action
 	};
 
-	const handleUpdateItem = (updatedItem) => {
-		updateShoppingItem(items, updatedItem, setItems);
+	const handleAddRow = () => {
+		dispatch(addItem({ productName: '', quantity: '', unit: '' })); // Dispatch Redux action
 	};
 
-	const handleDeleteItem = (id) => {
-		deleteItem(items, id, setItems);
+	const handleDeleteRow = (id) => {
+		dispatch(deleteItem(id)); // Dispatch Redux action
 	};
 
+	const handleDownload = (heading) => {
+		handleDownloadPDF(shoppingList, columns, heading);
+	};
 	return (
-		<div className="p-4 border rounded shadow">
-			<div className={`flex justify-between p-3`}>
-				<h2 className="text-xl font-bold mb-4">Shopping List</h2>
-				<span>
-					<button
-						// onClick={() => handleDownload(items)}
-						className="bg-green-500 text-white p-2 rounded">
-						Download
-					</button>
-				</span>
-			</div>
-			<InputForm
-				onAddItem={handleAddItem}
-				placeholders={fields}
-				addStyle={addStyle}
+		<>
+			<HeaderWithButton
+				heading="Shopping List"
+				onDownload={handleDownload}
 			/>
-			<ul className="space-y-2">
-				{items
-					? items.map((item) => (
-							<ListItem
-								key={item.id}
-								item={item}
-								onUpdateItem={handleUpdateItem}
-								onDeleteItem={handleDeleteItem}
-								fields={fields}
-							/>
-					  ))
-					: null}
-			</ul>
-		</div>
+			<EditableTable
+				columns={columns}
+				data={shoppingList}
+				onUpdate={handleUpdate}
+				onAddRow={handleAddRow}
+				onDeleteRow={handleDeleteRow}
+			/>
+		</>
 	);
 };
 

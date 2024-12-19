@@ -14,8 +14,7 @@ const EditableTable = ({ columns, data, onAddRow, onUpdate, onDeleteRow }) => {
 
 	useEffect(() => {
 		const calculateMinRows = () => {
-			const displayHeight =
-				containerRef.current.getBoundingClientRect().height;
+			const displayHeight = containerRef.current.clientHeight;
 			const rowHeight = cellRef.current.clientHeight;
 			const calcMin = Math.floor(displayHeight / rowHeight) - 1;
 			setMinRows(calcMin);

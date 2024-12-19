@@ -34,7 +34,7 @@ const TableRow = ({ row, rowIndex, columns }) => {
 					return (
 						<td
 							key={column.key}
-							className={`py-1 px-2 border h-10 ${column.className}`}></td>
+							className={`py-1 px-2 border ${column.className}`}></td>
 					);
 				}
 			})}
