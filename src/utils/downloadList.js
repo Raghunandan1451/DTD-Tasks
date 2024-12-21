@@ -15,7 +15,6 @@ export const handleDownloadPDF = (data, columns, title) => {
 	);
 
 	if (filteredData.length === 0) {
-		console.warn('No non-empty rows available for PDF generation.');
 		alert('No non-empty rows available to download.');
 		return;
 	}
