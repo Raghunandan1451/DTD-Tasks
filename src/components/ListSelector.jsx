@@ -12,6 +12,10 @@ const listNames = [
 		id: 'shopping',
 		name: 'Shopping List',
 	},
+	{
+		id: 'qrgen',
+		name: 'QR Code Generator',
+	},
 ];
 
 const ListSelector = () => {
