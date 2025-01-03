@@ -2,14 +2,13 @@ import React, { useState } from 'react';
 import { QRCodeCanvas } from 'qrcode.react';
 import HeaderWithButton from '@components/HeaderWithButton';
 import QRCodeSettings from '@components/QRCode/QRCodeSettings';
-import { useQRCodeSettings } from '@src/hooks/useQRCodeSettings';
+import { useSelector } from 'react-redux';
 
 const QRCodeGenerator = () => {
 	// const qrSize = 200;
 	const [input, setInput] = useState('');
 	const [qrData, setQrData] = useState('');
-
-	const { settings, handleSettingsChange } = useQRCodeSettings();
+	const settings = useSelector((state) => state.qrSetting);
 
 	console.log(settings);
 	const handleInputChange = (e) => {
@@ -60,7 +59,7 @@ const QRCodeGenerator = () => {
 					</button>
 				</div>
 
-				<QRCodeSettings onInputChange={handleSettingsChange} />
+				<QRCodeSettings />
 
 				<div className="rounded-lg">
 					{qrData && (
