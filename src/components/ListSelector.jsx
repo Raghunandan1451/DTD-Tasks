@@ -16,6 +16,10 @@ const listNames = [
 		id: 'qrgen',
 		name: 'QR Code Generator',
 	},
+	{
+		id: 'markdown',
+		name: 'Markdown Editor',
+	},
 ];
 
 const ListSelector = () => {
