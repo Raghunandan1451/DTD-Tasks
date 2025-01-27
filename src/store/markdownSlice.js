@@ -1,4 +1,5 @@
 import { createSlice } from '@reduxjs/toolkit';
+import { findFileByPath } from '@utils/treeUtils';
 
 const initialState = {
 	files: [], // Initially empty
@@ -34,91 +35,122 @@ const markdownSlice = createSlice({
 			current.push({ path: filename, type: 'file', content });
 		},
 		renameFile: (state, action) => {
-			const { oldPath, newPath } = action.payload;
-			const oldParts = oldPath.split('/');
-			const newParts = newPath.split('/');
-			const oldFilename = oldParts.pop(); // Extract the old filename
-			const newFilename = newParts.pop(); // Extract the new filename
+			const { oldPath, newName } = action.payload;
 
-			let current = state.files;
+			// Find the file/folder and rename it
+			const parts = oldPath.split('/').filter(Boolean);
+			const targetName = parts.pop();
 
-			// Traverse through folders to find the target file or folder
-			oldParts.forEach((folderName) => {
-				const folder = current.find(
-					(item) => item.type === 'folder' && item.path === folderName
+			let currentLevel = state.files;
+
+			// Traverse to the parent folder
+			for (const part of parts) {
+				const folder = currentLevel.find(
+					(item) => item.type === 'folder' && item.path === part
 				);
-				if (folder) {
-					current = folder.children;
-				}
-			});
+				if (!folder) return; // Folder not found
+				currentLevel = folder.children;
+			}
 
-			// Find the item and rename it
-			const item = current.find(
-				(item) => item.path === oldFilename // Matching by file/folder name
+			// Find the target file/folder
+			const item = currentLevel.find(
+				(item) => item.type && item.path === targetName
 			);
-
 			if (item) {
-				item.path = newFilename; // Rename the file/folder
+				item.path = newName;
 			}
 		},
 		deleteFile: (state, action) => {
 			const { path } = action.payload;
-			const parts = path.split('/');
-			const filename = parts.pop(); // Extract the file name
-			let current = state.files;
 
-			// Traverse through folders to find the target folder and its children
-			parts.forEach((folderName) => {
-				const folder = current.find(
-					(item) => item.type === 'folder' && item.path === folderName
+			// Split path into parts and filter out empty strings
+			const pathParts = path.split('/').filter(Boolean);
+			if (pathParts.length === 0) return;
+
+			// The last part is the target file/folder name
+			const targetName = pathParts.pop();
+
+			// Start from the root files
+			let currentLevel = state.files;
+			let parentCollection = state.files;
+
+			// Iterate through each path part to find the parent folder
+			for (const part of pathParts) {
+				const folder = currentLevel.find(
+					(item) => item.type === 'folder' && item.path.endsWith(part)
 				);
-				if (folder) {
-					current = folder.children; // Update the current reference to the folder's children
-				}
-			});
 
-			// Now, delete the file only from the current folder's children
-			const fileIndex = current.findIndex(
-				(item) => item.type === 'file' && item.path === filename
+				if (!folder || !folder.children) return; // Path not found
+
+				parentCollection = folder.children;
+				currentLevel = folder.children;
+			}
+
+			// Find the index in the parent collection
+			const deleteIndex = parentCollection.findIndex((item) =>
+				item.path.endsWith(targetName)
 			);
 
-			// If the file is found, remove it
-			if (fileIndex !== -1) {
-				current.splice(fileIndex, 1); // Remove the file from the array at fileIndex
+			if (deleteIndex !== -1) {
+				parentCollection.splice(deleteIndex, 1);
+
+				// Clear selection if deleted file was selected
+				if (state.selectedFile?.path === path) {
+					state.selectedFile = null;
+				}
 			}
 		},
 		updateFileContent: (state, action) => {
 			const { path, content } = action.payload;
 			const parts = path.split('/');
-			const filename = parts.pop(); // Extract the file name
+			const filename = parts.pop();
+
 			let current = state.files;
 
-			// Traverse through folders to find the file
+			// Traverse folders
 			parts.forEach((folderName) => {
-				const folder = current.find(
+				let folder = current.find(
 					(item) => item.type === 'folder' && item.path === folderName
 				);
-
-				if (folder) {
-					current = folder.children;
+				if (!folder) {
+					folder = { path: folderName, type: 'folder', children: [] };
+					current.push(folder); // Create folder if it doesn't exist
 				}
+				current = folder.children;
 			});
 
-			// Update the file content
-			const file = current.find(
+			// Find the file or create it
+			let file = current.find(
 				(item) => item.type === 'file' && item.path === filename
 			);
-			if (file) {
-				file.content = content;
+			if (!file) {
+				file = { path: filename, type: 'file', content: '' };
+				current.push(file);
 			}
+
+			// Update content
+			file.content = content;
 		},
+
 		selectFile: (state, action) => {
-			state.selectedFile = action.payload;
-			state.content = action.payload.content || ''; // Default to empty string if no content
+			const { path } = action.payload;
+
+			// Find the file using the full path (handle both file and folder structures)
+			const file = findFileByPath(state.files, path);
+
+			if (file) {
+				state.selectedFile = file; // Store the entire file object
+				state.content = file.content || ''; // Default to empty string if no content
+			}
 		},
 	},
 });
 
-export const { addFile, updateFileContent, selectFile, deleteFile } =
-	markdownSlice.actions;
+export const {
+	addFile,
+	updateFileContent,
+	selectFile,
+	deleteFile,
+	renameFile,
+} = markdownSlice.actions;
 export default markdownSlice.reducer;
