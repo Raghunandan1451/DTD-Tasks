@@ -104,32 +104,25 @@ const markdownSlice = createSlice({
 			const { path, content } = action.payload;
 			const parts = path.split('/');
 			const filename = parts.pop();
-
 			let current = state.files;
 
-			// Traverse folders
+			// Traverse through folders to find the file
 			parts.forEach((folderName) => {
-				let folder = current.find(
+				const folder = current.find(
 					(item) => item.type === 'folder' && item.path === folderName
 				);
-				if (!folder) {
-					folder = { path: folderName, type: 'folder', children: [] };
-					current.push(folder); // Create folder if it doesn't exist
+				if (folder) {
+					current = folder.children;
 				}
-				current = folder.children;
 			});
 
-			// Find the file or create it
-			let file = current.find(
+			// Update the file content
+			const file = current.find(
 				(item) => item.type === 'file' && item.path === filename
 			);
-			if (!file) {
-				file = { path: filename, type: 'file', content: '' };
-				current.push(file);
+			if (file) {
+				file.content = content;
 			}
-
-			// Update content
-			file.content = content;
 		},
 
 		selectFile: (state, action) => {

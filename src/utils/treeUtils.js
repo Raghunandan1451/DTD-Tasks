@@ -104,3 +104,19 @@ export const findFileByPath = (files, fullPath) => {
 
 	return null;
 };
+
+export const sortFilesAlphabetically = (items) => {
+	return items
+		.slice() // Create a shallow copy to avoid mutating the original array
+		.sort((a, b) => b.path.localeCompare(a.path)) // Sort in ascending order (ABC...)
+		.map((item) => {
+			// If it's a folder, sort its children recursively
+			if (item.type === 'folder' && item.children) {
+				return {
+					...item,
+					children: sortFilesAlphabetically(item.children),
+				};
+			}
+			return item;
+		});
+};

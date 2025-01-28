@@ -14,6 +14,7 @@ import {
 	handleDeleteFile,
 	handleFileSelect,
 	handleRenameFile,
+	sortFilesAlphabetically,
 	toggleFolder,
 } from '@utils/treeUtils';
 
@@ -26,6 +27,8 @@ const FileTree = () => {
 	const [newFilePath, setNewFilePath] = useState('');
 	const [renameTarget, setRenameTarget] = useState(null); // Track the file/folder to rename
 	const [renameValue, setRenameValue] = useState(''); // Value for the new name
+
+	const sortedFiles = sortFilesAlphabetically(files);
 
 	const renderTree = (files, parentPath = '') => {
 		const stack = [...files];
@@ -40,7 +43,7 @@ const FileTree = () => {
 
 			if (item.type === 'folder') {
 				result.push(
-					<div key={item.path} className="pl-2">
+					<div key={item.path}>
 						<div
 							onClick={() =>
 								toggleFolder(
@@ -49,42 +52,49 @@ const FileTree = () => {
 									item.path
 								)
 							}
-							className="flex items-center cursor-pointer relative group p-1">
+							className="flex items-center cursor-pointer group p-1 rounded-md">
+							{/* Expand/Collapse Icon */}
 							{isExpanded ? (
 								<ChevronDown size={16} />
 							) : (
 								<ChevronRight size={16} />
 							)}
-							<Folder size={16} />
-							<strong>{item.path}</strong>
-
-							{/* Rename Button */}
-							<button
-								onClick={(e) => {
-									e.stopPropagation(); // Prevent triggering folder toggle
-									setRenameTarget({
-										path: fullPath,
-										type: item.type,
-									});
-									setRenameValue(item.path); // Initialize rename value with the current name
-									setShowRenameInput(true);
-								}}
-								className="absolute right-12 opacity-0 group-hover:opacity-100 transition-opacity duration-300 text-gray-400 group-hover:text-yellow-500 p-1 rounded-full">
-								<Edit size={16} />
-							</button>
-
-							{/* Delete Button */}
-							<button
-								onClick={(e) => {
-									e.stopPropagation(); // Prevent triggering folder toggle
-									handleDeleteFile(dispatch, fullPath); // Pass full path
-								}}
-								className="absolute right-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300 text-gray-400 group-hover:text-red-500 p-1 rounded-full">
-								<Trash2 size={16} />
-							</button>
+							{/* Folder Icon */}
+							<Folder size={16} className="text-blue-500" />
+							{/* Folder Name */}
+							<strong className="ml-2 flex-1">{item.path}</strong>
+							{/* Action Buttons */}
+							<div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+								{/* Rename Button */}
+								<button
+									onClick={(e) => {
+										e.stopPropagation(); // Prevent triggering file selection
+										setRenameTarget({
+											path: fullPath,
+											type: item.type,
+										});
+										setRenameValue(item.path); // Initialize rename value with the current name
+										setShowRenameInput(true);
+									}}
+									className="p-1 text-gray-400 hover:text-yellow-500 rounded-full focus:outline-none focus:ring focus:ring-yellow-300">
+									<Edit size={16} />
+								</button>
+								{/* Delete Button */}
+								<button
+									onClick={(e) => {
+										e.stopPropagation(); // Prevent triggering file selection
+										handleDeleteFile(dispatch, fullPath); // Pass full path
+									}}
+									className="p-1 text-gray-400 hover:text-red-500 rounded-full focus:outline-none focus:ring focus:ring-red-300">
+									<Trash2 size={16} />
+								</button>
+							</div>
 						</div>
+						{/* Render Children */}
 						{isExpanded && item.children && (
-							<div>{renderTree(item.children, item.path)}</div>
+							<div className="pl-4">
+								{renderTree(item.children, item.path)}
+							</div>
 						)}
 					</div>
 				);
@@ -95,36 +105,44 @@ const FileTree = () => {
 						onClick={() =>
 							handleFileSelect(dispatch, item, parentPath)
 						}
-						className={`flex items-center pl-6 cursor-pointer relative group p-1 ${
-							selectedFile?.path === fullPath ? 'bg-gray-600' : ''
+						className={`flex items-center pl-2 cursor-pointer relative group p-1 rounded-md ${
+							selectedFile?.path === fullPath
+								? 'bg-gray-600 text-white'
+								: 'hover:bg-gray-700'
 						}`}>
-						<File size={16} />
-						<span className="ml-1 flex-grow">{item.path}</span>
+						{/* File Icon */}
+						<File size={16} className="text-blue-500" />
+						{/* File Name */}
+						<span className="ml-2 flex-grow truncate">
+							{item.path}
+						</span>
+						{/* Action Buttons */}
+						<div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+							{/* Rename Button */}
+							<button
+								onClick={(e) => {
+									e.stopPropagation(); // Prevent triggering file selection
+									setRenameTarget({
+										path: fullPath,
+										type: item.type,
+									});
+									setRenameValue(item.path); // Initialize rename value with the current name
+									setShowRenameInput(true);
+								}}
+								className="p-1 text-gray-400 hover:text-yellow-500 rounded-full focus:outline-none focus:ring focus:ring-yellow-300">
+								<Edit size={16} />
+							</button>
 
-						{/* Rename Button */}
-						<button
-							onClick={(e) => {
-								e.stopPropagation(); // Prevent triggering file selection
-								setRenameTarget({
-									path: fullPath,
-									type: item.type,
-								});
-								setRenameValue(item.path); // Initialize rename value with the current name
-								setShowRenameInput(true);
-							}}
-							className="absolute right-12 opacity-0 group-hover:opacity-100 transition-opacity duration-300 text-gray-400 group-hover:text-yellow-500 p-1 rounded-full">
-							<Edit size={16} />
-						</button>
-
-						{/* Delete Button */}
-						<button
-							onClick={(e) => {
-								e.stopPropagation(); // Prevent triggering file selection
-								handleDeleteFile(dispatch, fullPath); // Pass full path
-							}}
-							className="absolute right-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300 text-gray-400 group-hover:text-red-500 p-1 rounded-full">
-							<Trash2 size={16} />
-						</button>
+							{/* Delete Button */}
+							<button
+								onClick={(e) => {
+									e.stopPropagation(); // Prevent triggering file selection
+									handleDeleteFile(dispatch, fullPath); // Pass full path
+								}}
+								className="p-1 text-gray-400 hover:text-red-500 rounded-full focus:outline-none focus:ring focus:ring-red-300">
+								<Trash2 size={16} />
+							</button>
+						</div>
 					</div>
 				);
 			}
@@ -134,7 +152,7 @@ const FileTree = () => {
 	};
 
 	return (
-		<div className="w-64 border-r bg-gray-800">
+		<div className="w-60 border-r bg-gray-800">
 			<div className="p-4 border-b flex justify-around">
 				<button
 					onClick={() => setShowInput(true)}
@@ -213,7 +231,7 @@ const FileTree = () => {
 				</div>
 			)}
 
-			<div>{renderTree(files)}</div>
+			<div>{renderTree(sortedFiles)}</div>
 		</div>
 	);
 };
