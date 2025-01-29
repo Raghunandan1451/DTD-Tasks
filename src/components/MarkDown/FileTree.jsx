@@ -37,13 +37,17 @@ const FileTree = () => {
 		while (stack.length > 0) {
 			const item = stack.pop();
 			const isExpanded = expandedFolders.has(item.path);
+
+			// CORRECTED: Build full path using parentPath
 			const fullPath = parentPath
 				? `${parentPath}/${item.path}`
 				: item.path;
 
 			if (item.type === 'folder') {
 				result.push(
-					<div key={item.path}>
+					<div key={fullPath}>
+						{' '}
+						{/* Use fullPath as key */}
 						<div
 							onClick={() =>
 								toggleFolder(
@@ -93,7 +97,8 @@ const FileTree = () => {
 						{/* Render Children */}
 						{isExpanded && item.children && (
 							<div className="pl-4">
-								{renderTree(item.children, item.path)}
+								{/* FIX: Pass fullPath instead of item.path */}
+								{renderTree(item.children, fullPath)}
 							</div>
 						)}
 					</div>
@@ -101,14 +106,13 @@ const FileTree = () => {
 			} else if (item.type === 'file') {
 				result.push(
 					<div
-						key={item.path}
+						key={fullPath}
 						onClick={() =>
 							handleFileSelect(dispatch, item, parentPath)
 						}
 						className={`flex items-center pl-2 cursor-pointer relative group p-1 rounded-md ${
-							selectedFile?.path === fullPath
-								? 'bg-gray-600 text-white'
-								: 'hover:bg-gray-700'
+							selectedFile === fullPath ? 'bg-gray-600' : ''
+						}
 						}`}>
 						{/* File Icon */}
 						<File size={16} className="text-blue-500" />

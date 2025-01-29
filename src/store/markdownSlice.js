@@ -102,38 +102,91 @@ const markdownSlice = createSlice({
 		},
 		updateFileContent: (state, action) => {
 			const { path, content } = action.payload;
-			const parts = path.split('/');
-			const filename = parts.pop();
-			let current = state.files;
+			const segments = path.split('/').filter(Boolean);
 
-			// Traverse through folders to find the file
-			parts.forEach((folderName) => {
-				const folder = current.find(
-					(item) => item.type === 'folder' && item.path === folderName
+			// ========================
+			// 1. Handle Root Files
+			// ========================
+			if (segments.length === 1) {
+				state.files = state.files.map((file) =>
+					file.path === segments[0] && file.type === 'file'
+						? { ...file, content }
+						: file
 				);
-				if (folder) {
-					current = folder.children;
-				}
-			});
 
-			// Update the file content
-			const file = current.find(
-				(item) => item.type === 'file' && item.path === filename
+				// Update content if it's the selected file
+				if (state.selectedFile === path) {
+					state.content = content;
+				}
+				return;
+			}
+
+			// ========================
+			// 2. Handle Nested Files
+			// ========================
+			const fileName = segments.pop();
+			let currentFiles = [...state.files];
+			const newFiles = [...state.files]; // Clone root array
+			let parentArray = newFiles;
+
+			// Traverse folder structure
+			for (const segment of segments) {
+				const folderIndex = parentArray.findIndex(
+					(item) => item.path === segment && item.type === 'folder'
+				);
+
+				if (folderIndex === -1) return; // Path invalid
+
+				// Clone folder and its children
+				const folder = {
+					...parentArray[folderIndex],
+					children: [...parentArray[folderIndex].children],
+				};
+
+				// Update parent reference
+				parentArray[folderIndex] = folder;
+				parentArray = folder.children;
+			}
+
+			// Update target file
+			const fileIndex = parentArray.findIndex(
+				(item) => item.path === fileName && item.type === 'file'
 			);
-			if (file) {
-				file.content = content;
+
+			if (fileIndex !== -1) {
+				parentArray[fileIndex] = {
+					...parentArray[fileIndex],
+					content,
+				};
+
+				// Update state with cloned structure
+				state.files = newFiles;
+
+				// Sync content if selected
+				if (state.selectedFile === path) {
+					state.content = content;
+				}
 			}
 		},
-
 		selectFile: (state, action) => {
-			const { path } = action.payload;
+			const path = action.payload;
+			// Reset state first
+			state.selectedFile = null;
+			state.content = '';
 
-			// Find the file using the full path (handle both file and folder structures)
+			if (!path || typeof path !== 'string') {
+				console.error('Invalid path in selectFile:', path);
+				return;
+			}
+
 			const file = findFileByPath(state.files, path);
 
-			if (file) {
-				state.selectedFile = file; // Store the entire file object
-				state.content = file.content || ''; // Default to empty string if no content
+			if (file?.type === 'file') {
+				state.selectedFile = path;
+				state.content = file.content;
+			} else {
+				state.selectedFile = null;
+				state.content = '';
 			}
 		},
 	},
