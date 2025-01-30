@@ -133,169 +133,142 @@ export const sortFilesAlphabetically = (items) => {
 };
 
 // utils/markdownParser.js
-import React from 'react';
-
 export const parseMarkdown = (markdown) => {
 	const lines = markdown.split('\n');
 	const elements = [];
 	let inCodeBlock = false;
 	let codeBlockContent = [];
+	let codeBlockId = 0;
 
-	const parseInline = (text) => {
-		// Processing order matters (more specific first)
+	// Element creation helper
+	const createElement = (type, props, ...children) => ({
+		type,
+		props: props || {},
+		children: children.flat(),
+	});
+
+	// Inline formatting rules
+	const parseInline = (text, lineIndex) => {
 		const rules = [
 			{
-				// Code - highest priority
-				pattern: /`([^`]+)`/g,
-				component: (content) =>
-					React.createElement(
+				// Bold: **text**
+				pattern: /\*\*(\S(?:.*?\S)?)\*\*/g,
+				element: (content, key) =>
+					createElement('strong', { key }, content),
+			},
+			{
+				// Underline: __text__
+				pattern: /__(\S(?:.*?\S)?)__/g,
+				element: (content, key) => createElement('u', { key }, content),
+			},
+			{
+				// Italic: *text*
+				pattern: /\*(\S(?:.*?\S)?)\*/g,
+				element: (content, key) =>
+					createElement('em', { key }, content),
+			},
+			{
+				// Strikethrough: ~~text~~
+				pattern: /~~(\S(?:.*?\S)?)~~/g,
+				element: (content, key) => createElement('s', { key }, content),
+			},
+			{
+				// Code: `text`
+				pattern: /`(\S(?:.*?\S)?)`/g,
+				element: (content, key) =>
+					createElement(
 						'code',
-						{ className: 'bg-gray-700 px-1 rounded' },
+						{
+							key,
+							className: 'bg-gray-700 px-1 rounded',
+						},
 						content
 					),
 			},
-			{
-				// Bold - no spaces allowed
-				pattern: /\*\*([^\s*][^*]*[^\s*])\*\*/g,
-				component: (content) =>
-					React.createElement('strong', null, content),
-			},
-			{
-				// Italic
-				pattern: /\*([^\s*][^*]*[^\s*])\*/g,
-				component: (content) =>
-					React.createElement('em', null, content),
-			},
-			{
-				// Strikethrough
-				pattern: /~~([^\s~][^~]*[^\s~])~~/g,
-				component: (content) => React.createElement('s', null, content),
-			},
 		];
 
-		let elements = [text];
+		return rules.reduce(
+			(elements, rule, ruleIndex) => {
+				return elements.flatMap((element) => {
+					if (typeof element !== 'string') return [element];
 
-		rules.forEach(({ pattern, component }) => {
-			elements = elements.flatMap((element) => {
-				if (typeof element !== 'string') return element;
+					const parts = [];
+					let lastIndex = 0;
+					let matchCount = 0;
+					let match; // Properly declared here
 
-				const parts = [];
-				let lastIndex = 0;
-				let match;
+					rule.pattern.lastIndex = 0; // Reset regex state
 
-				while ((match = pattern.exec(element)) !== null) {
-					// Add preceding text
-					if (match.index > lastIndex) {
-						parts.push(element.slice(lastIndex, match.index));
+					while ((match = rule.pattern.exec(element)) !== null) {
+						if (match.index > lastIndex) {
+							parts.push(element.slice(lastIndex, match.index));
+						}
+
+						const key = `${lineIndex}-${ruleIndex}-${matchCount++}`;
+						parts.push(rule.element(match[1], key));
+						lastIndex = rule.pattern.lastIndex;
 					}
 
-					// Add formatted element
-					parts.push(component(match[1].trim()));
-					lastIndex = match.index + match[0].length;
-				}
+					if (lastIndex < element.length) {
+						parts.push(element.slice(lastIndex));
+					}
 
-				// Add remaining text
-				if (lastIndex < element.length) {
-					parts.push(element.slice(lastIndex));
-				}
-
-				return parts;
-			});
-		});
-
-		return elements;
+					return parts;
+				});
+			},
+			[text]
+		);
 	};
 
-	lines.forEach((line, index) => {
-		const key = `line-${index}`;
+	// Process each line
+	lines.forEach((line, lineIndex) => {
+		const lineKey = `line-${lineIndex}-${line.replace(/\W/g, '')}`;
+		let content = line;
+		let elementType = 'p'; // Default to paragraph
 
-		// Handle code blocks
-		if (line.startsWith('```')) {
-			if (inCodeBlock) {
-				elements.push(
-					React.createElement(
-						'pre',
-						{
-							key: `code-${elements.length}`,
-							className:
-								'bg-gray-700 p-4 rounded my-2 font-mono overflow-x-auto',
-						},
-						React.createElement(
-							'code',
-							null,
-							codeBlockContent.join('\n')
-						)
-					)
-				);
-				codeBlockContent = [];
-				inCodeBlock = false;
-				return;
-			}
-			inCodeBlock = true;
-			return;
-		}
-
-		if (inCodeBlock) {
-			codeBlockContent.push(line);
-			return;
-		}
-
-		// Block elements
+		// Handle block elements and strip Markdown syntax
 		if (line.startsWith('# ')) {
-			elements.push(
-				React.createElement(
-					'h1',
-					{ key, className: 'text-2xl font-bold mb-2' },
-					parseInline(line.slice(2))
-				)
-			);
+			elementType = 'h1';
+			content = line.slice(2); // Remove '# '
 		} else if (line.startsWith('## ')) {
-			elements.push(
-				React.createElement(
-					'h2',
-					{ key, className: 'text-xl font-semibold mb-2' },
-					parseInline(line.slice(3))
-				)
-			);
+			elementType = 'h2';
+			content = line.slice(3); // Remove '## '
 		} else if (line.startsWith('### ')) {
-			elements.push(
-				React.createElement(
-					'h3',
-					{ key, className: 'text-lg font-medium mb-2' },
-					parseInline(line.slice(4))
-				)
-			);
+			elementType = 'h3';
+			content = line.slice(4); // Remove '### '
 		} else if (line.startsWith('- ')) {
-			elements.push(
-				React.createElement(
-					'li',
-					{ key, className: 'ml-4 list-disc mb-1' },
-					parseInline(line.slice(2))
-				)
-			);
+			elementType = 'li';
+			content = line.slice(2); // Remove '- '
 		} else if (line.startsWith('> ')) {
-			elements.push(
-				React.createElement(
-					'blockquote',
-					{
-						key,
-						className:
-							'border-l-4 border-gray-500 pl-4 my-2 italic text-gray-300',
-					},
-					parseInline(line.slice(2))
-				)
-			);
+			elementType = 'blockquote';
+			content = line.slice(2); // Remove '> '
 		} else if (line.trim() === '') {
-			elements.push(React.createElement('br', { key }));
-		} else {
-			elements.push(
-				React.createElement(
-					'p',
-					{ key, className: 'text-base mb-2' },
-					parseInline(line)
-				)
-			);
+			elementType = 'br';
+			content = '';
 		}
+
+		// Parse inline formatting for non-break elements
+		const processedContent =
+			elementType === 'br' ? [] : parseInline(content, lineIndex);
+
+		elements.push(
+			createElement(
+				elementType,
+				{
+					key: lineKey,
+					className: {
+						h1: 'text-2xl font-bold mb-2',
+						h2: 'text-xl font-semibold mb-2',
+						h3: 'text-lg font-medium mb-2',
+						li: 'ml-4 list-disc mb-1',
+						blockquote:
+							'border-l-4 border-gray-500 pl-4 my-2 italic text-gray-300',
+						p: 'text-base mb-2',
+					}[elementType],
+				},
+				...processedContent
+			)
+		);
 	});
 
 	return elements;

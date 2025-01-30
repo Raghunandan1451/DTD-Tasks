@@ -1,6 +1,6 @@
 import { useSelector, useDispatch } from 'react-redux';
 import { updateFileContent } from '@store/markdownSlice';
-import { parseMarkdown } from '@utils/treeUtils';
+import MarkdownPreview from '@components/MarkDown/MarkdownPreview';
 
 const Editor = () => {
 	const dispatch = useDispatch();
@@ -34,9 +34,7 @@ const Editor = () => {
 			</h2>
 
 			{/* Improved: Remove unnecessary <ul> wrapper */}
-			<div className="flex-1 overflow-y-auto p-2 bg-gray-700 rounded mb-4">
-				{parseMarkdown(content)}
-			</div>
+			<MarkdownPreview />
 
 			{/* Improved: Better textarea sizing */}
 			<textarea
