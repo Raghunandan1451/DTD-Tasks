@@ -3,47 +3,37 @@ import { QRCodeCanvas } from 'qrcode.react';
 import HeaderWithButton from '@components/HeaderWithButton';
 import QRCodeSettings from '@components/QRCode/QRCodeSettings';
 import { useSelector } from 'react-redux';
+import NotificationCenter from '@components/NotificationCeter';
+import useNotifications from '@src/hooks/useNotifications';
+import { handleDownloadImage } from '@src/utils/downloadList';
 
 const QRCodeGenerator = () => {
 	// const qrSize = 200;
 	const [input, setInput] = useState('');
 	const [qrData, setQrData] = useState('');
+	const { notifications, showNotification } = useNotifications();
 	const settings = useSelector((state) => state.qrSetting);
 
-	console.log(settings);
 	const handleInputChange = (e) => {
 		setInput(e.target.value);
 	};
 
 	const handleGenerate = () => {
 		if (input.trim() === '') {
-			alert('Input cannot be empty!');
+			showNotification('Input cannot be empty!', 'error');
 			return;
 		}
 		setQrData(input); // Set the input value for QR code generation
-	};
-
-	const handleDownload = () => {
-		if (!qrData) {
-			alert('Please generate a QR code before downloading!');
-			return;
-		}
-		const canvas = document.querySelector('canvas'); // Select the QR code canvas
-
-		const url = canvas.toDataURL('image/png');
-		const link = document.createElement('a');
-		link.href = url;
-		link.download = 'qr-code.png';
-		link.click();
 	};
 
 	return (
 		<div className="flex flex-col">
 			<HeaderWithButton
 				heading="To-Do List"
-				onDownload={handleDownload}
+				onDownload={() => handleDownloadImage(qrData, showNotification)}
+				buttonText="Download Image"
 			/>
-			<div className="flex flex-col items-center mt-6 space-y-4">
+			<div className="flex flex-col items-center mt-6 space-y-12">
 				<div className="flex items-center space-x-4">
 					<input
 						type="text"
@@ -59,27 +49,35 @@ const QRCodeGenerator = () => {
 					</button>
 				</div>
 
-				<QRCodeSettings />
+				<div className="flex w-full items-start justify-center relative mt-2">
+					{/* QR Code Centered */}
+					<div className="flex justify-center items-center">
+						{qrData && (
+							<QRCodeCanvas
+								value={qrData}
+								size={300}
+								marginSize={1}
+								bgColor={settings.bgColor}
+								fgColor={settings.fgColor}
+								imageSettings={{
+									src: settings.selectedIcon,
+									x: null,
+									y: null,
+									height: 40,
+									width: 40,
+									excavate: true,
+								}}
+							/>
+						)}
+					</div>
 
-				<div className="rounded-lg">
-					{qrData && (
-						<QRCodeCanvas
-							value={qrData}
-							size={300}
-							marginSize={1}
-							bgColor={settings.bgColor}
-							fgColor={settings.fgColor}
-							imageSettings={{
-								src: settings.selectedIcon, // Replace with your icon URL
-								x: null,
-								y: null,
-								height: 40,
-								width: 40,
-								excavate: true,
-							}}
-						/>
-					)}
+					{/* Settings Panel Sticks to Right */}
+					<div className="absolute right-5">
+						<QRCodeSettings />
+					</div>
 				</div>
+
+				<NotificationCenter notifications={notifications} />
 			</div>
 		</div>
 	);

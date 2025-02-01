@@ -1,5 +1,5 @@
 const HeaderWithButton = (props) => {
-	const { heading, onDownload } = props;
+	const { heading, onDownload, buttonText } = props;
 	return (
 		<div className="flex place-content-between place-items-center p-2">
 			<h1 className="text-4xl font-bold">{heading}</h1>
@@ -7,7 +7,7 @@ const HeaderWithButton = (props) => {
 				type="button"
 				className="bg-blue-500 hover:bg-blue-600 text-white p-2 rounded"
 				onClick={() => onDownload(heading)}>
-				Download PDF
+				{buttonText}
 			</button>
 		</div>
 	);

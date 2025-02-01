@@ -16,7 +16,7 @@ import FolderItem from '@components/MarkDown/FileView/FolderItem';
 
 import CreateBox from '@components/MarkDown/actions/CreateBox';
 import RenameBox from '@components/MarkDown/actions/RenameBox';
-import NotificationCenter from '@components/MarkDown/actions/NotificationCeter';
+import NotificationCenter from '@components/NotificationCeter';
 
 const TreeView = ({ showInput, setShowInput }) => {
 	const dispatch = useDispatch();

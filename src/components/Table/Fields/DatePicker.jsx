@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useTableContext } from '@components/Table/TableContext';
 
 const DatePicker = (props) => {
-	const { column, row, rowIndex, colIndex } = props;
+	const { column, row, rowIndex, colIndex, showNotification } = props;
 	const { handleCellDataChange, setActiveCell, inputRefs } =
 		useTableContext();
 	const [isError, setIsError] = useState(false);
@@ -19,8 +19,9 @@ const DatePicker = (props) => {
 			const inputDate = new Date(e.target.value);
 			// Validate against min and max dates
 			if (inputDate < today || inputDate > oneMonthFromToday) {
-				alert(
-					'Date cannot be earlier than today OR later than one month from today.'
+				showNotification(
+					'Date cannot be earlier than today OR later than one month from today.',
+					'error'
 				);
 				setIsError(true);
 				e.preventDefault(); // Block default behavior

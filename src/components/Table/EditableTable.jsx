@@ -4,7 +4,14 @@ import TableRow from '@components/Table/TableRow';
 import TableHeader from '@components/Table/TableHeader';
 import { TableProvider } from '@components/Table/TableContext';
 
-const EditableTable = ({ columns, data, onAddRow, onUpdate, onDeleteRow }) => {
+const EditableTable = ({
+	columns,
+	data,
+	onAddRow,
+	onUpdate,
+	onDeleteRow,
+	showNotifications,
+}) => {
 	const [activeCell, setActiveCell] = useState({ row: 0, col: 0 });
 	const [minRows, setMinRows] = useState(0);
 
@@ -80,6 +87,7 @@ const EditableTable = ({ columns, data, onAddRow, onUpdate, onDeleteRow }) => {
 								rowIndex={rowIndex}
 								row={row}
 								columns={columns}
+								showNotifications={showNotifications}
 							/>
 						))}
 					</tbody>

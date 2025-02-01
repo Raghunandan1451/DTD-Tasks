@@ -4,6 +4,8 @@ import { useDispatch, useSelector } from 'react-redux';
 import { addItem, deleteItem, updateItem } from '@store/shoppingSlice';
 import HeaderWithButton from '@components/HeaderWithButton';
 import { handleDownloadPDF } from '@utils/downloadList';
+import NotificationCenter from '@components/NotificationCeter';
+import useNotifications from '@src/hooks/useNotifications';
 
 const columns = [
 	{
@@ -30,6 +32,7 @@ const columns = [
 const ShoppingList = () => {
 	const shoppingList = useSelector((state) => state.shopping);
 	const dispatch = useDispatch();
+	const { notifications, showNotification } = useNotifications();
 
 	const handleUpdate = (id, key, value) => {
 		dispatch(updateItem({ id, key, value })); // Dispatch Redux action
@@ -44,13 +47,14 @@ const ShoppingList = () => {
 	};
 
 	const handleDownload = (heading) => {
-		handleDownloadPDF(shoppingList, columns, heading);
+		handleDownloadPDF(shoppingList, columns, heading, showNotification);
 	};
 	return (
 		<>
 			<HeaderWithButton
 				heading="Shopping List"
 				onDownload={handleDownload}
+				buttonText="Download PDF"
 			/>
 			<EditableTable
 				columns={columns}
@@ -58,7 +62,9 @@ const ShoppingList = () => {
 				onUpdate={handleUpdate}
 				onAddRow={handleAddRow}
 				onDeleteRow={handleDeleteRow}
+				showNotification={showNotification}
 			/>
+			<NotificationCenter notifications={notifications} />
 		</>
 	);
 };

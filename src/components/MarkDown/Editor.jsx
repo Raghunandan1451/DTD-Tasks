@@ -38,10 +38,12 @@ const Editor = () => {
 
 			{/* Improved: Better textarea sizing */}
 			<textarea
-				className="w-full min-h-[150px] bg-gray-700 text-white border-none outline-none rounded p-2 resize-y"
+				className="w-full bg-gray-700 text-white border-none outline-none rounded p-2 scrollbar-hide resize-none"
 				value={content}
 				onChange={handleContentChange}
 				placeholder="Start writing Markdown..."
+				rows={3}
+				autoFocus
 			/>
 		</div>
 	);

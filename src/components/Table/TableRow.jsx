@@ -1,7 +1,7 @@
 import CellType from '@components/Table/CellType';
 import { useTableContext } from '@components/Table/TableContext';
 
-const TableRow = ({ row, rowIndex, columns }) => {
+const TableRow = ({ row, rowIndex, columns, showNotifications }) => {
 	const { activeCell } = useTableContext();
 
 	const isDataRow = Object.keys(row).length > 0; // Check if row contains data
@@ -27,6 +27,7 @@ const TableRow = ({ row, rowIndex, columns }) => {
 								colIndex={colIndex}
 								column={column}
 								row={row}
+								showNotifications={showNotifications}
 							/>
 						</td>
 					);

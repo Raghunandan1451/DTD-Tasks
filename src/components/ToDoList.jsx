@@ -4,6 +4,8 @@ import { useDispatch, useSelector } from 'react-redux';
 import { addTodo, deleteTodo, updateTodo } from '@store/todoSlice';
 import HeaderWithButton from '@components/HeaderWithButton';
 import { handleDownloadPDF } from '@utils/downloadList';
+import NotificationCenter from '@components/NotificationCeter';
+import useNotifications from '@src/hooks/useNotifications';
 
 const columns = [
 	{ key: 'task', type: 'text', header: 'Task', className: 'w-1/2' },
@@ -24,6 +26,7 @@ const columns = [
 const TodoList = () => {
 	const todoList = useSelector((state) => state.todos);
 	const dispatch = useDispatch();
+	const { notifications, showNotification } = useNotifications();
 
 	const handleUpdate = (id, key, value) => {
 		dispatch(updateTodo({ id, key, value })); // Dispatch Redux action
@@ -38,7 +41,7 @@ const TodoList = () => {
 	};
 
 	const handleDownload = (heading) => {
-		handleDownloadPDF(todoList, columns, heading);
+		handleDownloadPDF(todoList, columns, heading, showNotification);
 	};
 
 	return (
@@ -46,6 +49,7 @@ const TodoList = () => {
 			<HeaderWithButton
 				heading="To-Do List"
 				onDownload={handleDownload}
+				buttonText="Download PDF"
 			/>
 			<EditableTable
 				columns={columns}
@@ -53,7 +57,9 @@ const TodoList = () => {
 				onUpdate={handleUpdate}
 				onAddRow={handleAddRow}
 				onDeleteRow={handleDeleteRow}
+				showNotification={showNotification}
 			/>
+			<NotificationCenter notifications={notifications} />
 		</>
 	);
 };

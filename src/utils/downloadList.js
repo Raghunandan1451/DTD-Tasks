@@ -1,4 +1,6 @@
 import jsPDF from 'jspdf';
+import JSZip from 'jszip';
+import { saveAs } from 'file-saver';
 
 // Constants
 const TITLE_SIZE = 18;
@@ -8,14 +10,14 @@ const COLUMN_WIDTH = 50;
 const HEADER_FONT_SIZE = 12;
 const ROW_FONT_SIZE = 10;
 
-export const handleDownloadPDF = (data, columns, title) => {
+export const handleDownloadPDF = (data, columns, title, showNotification) => {
 	// Filter out rows where all fields are empty
 	const filteredData = data.filter((row) =>
 		columns.some((col) => row[col.key]?.trim() !== '')
 	);
 
 	if (filteredData.length === 0) {
-		alert('No non-empty rows available to download.');
+		showNotification('No non-empty rows available to download.', 'error');
 		return;
 	}
 
@@ -67,4 +69,59 @@ export const handleDownloadPDF = (data, columns, title) => {
 
 	// Save the PDF
 	doc.save(`${title}.pdf`);
+};
+
+export const handleDownloadImage = (qrData, showNotification) => {
+	if (!qrData) {
+		showNotification(
+			'Please generate a QR code before downloading!',
+			'error'
+		);
+		return;
+	}
+	const canvas = document.querySelector('canvas'); // Select the QR code canvas
+
+	const url = canvas.toDataURL('image/png');
+	const link = document.createElement('a');
+	link.href = url;
+	link.download = 'qr-code.png';
+	link.click();
+};
+
+export const handleZIPExport = async (
+	files,
+	showNotification,
+	filename = 'archive.zip'
+) => {
+	if (!files.length) {
+		showNotification('No Files created', 'error');
+		return;
+	}
+	const zip = new JSZip();
+
+	const processFileTree = (items, currentPath = '') => {
+		items.forEach((item) => {
+			const fullPath = currentPath
+				? `${currentPath}/${item.path}`
+				: item.path;
+
+			if (item.type === 'folder') {
+				const folder = zip.folder(fullPath);
+				processFileTree(item.children, fullPath);
+			} else {
+				zip.file(fullPath, item.content);
+			}
+		});
+	};
+
+	try {
+		processFileTree(files);
+
+		const content = await zip.generateAsync({ type: 'blob' });
+		saveAs(content, filename);
+		return true;
+	} catch (error) {
+		console.error('Error generating ZIP:', error);
+		return false;
+	}
 };
