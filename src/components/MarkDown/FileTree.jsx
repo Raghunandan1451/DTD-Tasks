@@ -8,7 +8,7 @@ const FileTree = () => {
 	// const sortedFiles = sortFilesAlphabetically(files);
 
 	return (
-		<div className="w-60 border-r bg-gray-800">
+		<div className="w-65 border-r bg-gray-800 flex flex-col max-h-[calc(100vh-4rem)]">
 			<div className="p-4 border-b flex justify-around">
 				<button
 					onClick={() => setShowInput(true)}

@@ -11,13 +11,13 @@ const MarkdownEditor = () => {
 
 	const { notifications, showNotification } = useNotifications();
 	return (
-		<div className="h-screen bg-gray-900 text-white flex flex-col">
+		<div className="h-full bg-gray-900 text-white flex flex-col">
 			<HeaderWithButton
 				heading="Markdown Editor"
 				buttonText="Export as ZIP"
 				onDownload={() => handleZIPExport(files, showNotification)}
 			/>
-			<div className="flex flex-1">
+			<div className="flex flex-1 min-h-0">
 				<FileTree />
 				<Editor />
 			</div>

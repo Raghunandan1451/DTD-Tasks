@@ -47,72 +47,70 @@ const TreeView = ({ showInput, setShowInput }) => {
 	}, [files, expandedFolders]);
 
 	return (
-		<div>
+		<div className="overflow-y-auto flex-1 min-h-0 scrollbar-hide w-60">
 			{/* File Tree */}
-			<div className="overflow-y-auto flex-1">
-				{flattenedItems.map((item) => {
-					return (
-						<div
-							key={item.fullPath}
-							style={{ paddingLeft: `${item.depth * 1.5}rem` }}>
-							{item.type === 'folder' ? (
-								<FolderItem
-									folder={item}
-									isExpanded={expandedFolders.has(
+			{/* <div> */}
+			{flattenedItems.map((item) => {
+				return (
+					<div
+						key={item.fullPath}
+						style={{ paddingLeft: `${item.depth * 1.5}rem` }}>
+						{item.type === 'folder' ? (
+							<FolderItem
+								folder={item}
+								isExpanded={expandedFolders.has(item.fullPath)}
+								onToggle={() =>
+									handleToggleFolder(
+										expandedFolders,
+										setExpandedFolders,
 										item.fullPath
-									)}
-									onToggle={() =>
-										handleToggleFolder(
-											expandedFolders,
-											setExpandedFolders,
-											item.fullPath
-										)
-									}
-									onDelete={() =>
-										handleDeleteFile(
-											dispatch,
-											item.fullPath,
-											showNotification
-										)
-									}
-									onRename={() => {
-										setRenameTarget(item);
-										setRenameValue(item.path);
-										setShowRenameInput(true);
-									}}
-								/>
-							) : (
-								<FileItem
-									file={item}
-									isSelected={selectedFile === item.fullPath}
-									onSelect={() =>
-										handleFileSelect(
-											dispatch,
-											item,
-											item.fullPath
-												.split('/')
-												.slice(0, -1)
-												.join('/')
-										)
-									}
-									onDelete={() =>
-										handleDeleteFile(
-											dispatch,
-											item.fullPath,
-											showNotification
-										)
-									}
-									onRename={() => {
-										setRenameTarget(item);
-										setRenameValue(item.path);
-										setShowRenameInput(true);
-									}}
-								/>
-							)}
-						</div>
-					);
-				})}
-			</div>
+									)
+								}
+								onDelete={() =>
+									handleDeleteFile(
+										dispatch,
+										item.fullPath,
+										showNotification
+									)
+								}
+								onRename={() => {
+									setRenameTarget(item);
+									setRenameValue(item.path);
+									setShowRenameInput(true);
+								}}
+							/>
+						) : (
+							<FileItem
+								file={item}
+								isSelected={selectedFile === item.fullPath}
+								onSelect={() =>
+									handleFileSelect(
+										dispatch,
+										item,
+										item.fullPath
+											.split('/')
+											.slice(0, -1)
+											.join('/')
+									)
+								}
+								onDelete={() =>
+									handleDeleteFile(
+										dispatch,
+										item.fullPath,
+										showNotification
+									)
+								}
+								onRename={() => {
+									setRenameTarget(item);
+									setRenameValue(item.path);
+									setShowRenameInput(true);
+								}}
+							/>
+						)}
+					</div>
+				);
+			})}
+			{/* </div> */}
 			{showInput && (
 				<CreateBox
 					setShowInput={setShowInput}

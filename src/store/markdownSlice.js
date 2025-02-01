@@ -11,28 +11,41 @@ const markdownSlice = createSlice({
 	name: 'fileManager',
 	initialState,
 	reducers: {
-		addFile: (state, action) => {
-			const { path, content = '' } = action.payload;
-			const parts = path.split('/');
-			const filename = parts.pop(); // Extract the file name
+		addFolder: (state, action) => {
+			const { parentPath, folder } = action.payload;
+			const parts = parentPath.split('/').filter(Boolean);
+
 			let current = state.files;
-
-			const stack = [...parts]; // Stack to traverse parts
-			while (stack.length > 0) {
-				const folderName = stack.shift();
-				let folder = current.find(
-					(item) => item.type === 'folder' && item.path === folderName
+			for (const part of parts) {
+				const existing = current.find(
+					(item) => item.type === 'folder' && item.path === part
 				);
-
-				if (!folder) {
-					folder = { path: folderName, type: 'folder', children: [] };
-					current.push(folder);
-				}
-				current = folder.children;
+				current = existing.children;
 			}
 
-			// Add the file
-			current.push({ path: filename, type: 'file', content });
+			if (!current.some((item) => item.path === folder.path)) {
+				current.push(folder);
+			}
+		},
+		addFile: (state, action) => {
+			const { path, content, parentPath } = action.payload;
+			const parts = parentPath.split('/').filter(Boolean);
+
+			let current = state.files;
+			for (const part of parts) {
+				const existing = current.find(
+					(item) => item.type === 'folder' && item.path === part
+				);
+				current = existing.children;
+			}
+
+			if (!current.some((item) => item.path === path)) {
+				current.push({
+					path,
+					type: 'file',
+					content,
+				});
+			}
 		},
 		renameFile: (state, action) => {
 			const { oldPath, newName } = action.payload;
@@ -193,6 +206,7 @@ const markdownSlice = createSlice({
 });
 
 export const {
+	addFolder,
 	addFile,
 	updateFileContent,
 	selectFile,

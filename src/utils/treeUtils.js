@@ -1,4 +1,5 @@
 import {
+	addFolder,
 	addFile,
 	selectFile,
 	deleteFile,
@@ -32,41 +33,77 @@ export const handleCreateFile = (
 		return;
 	}
 
-	const parts = newFilePath.split('/');
-	const filename = parts.pop();
-	let current = files;
-
-	parts.forEach((folderName) => {
-		const folder = current.find(
-			(item) => item.type === 'folder' && item.path === folderName
-		);
-
-		if (folder) {
-			current = folder.children;
-		}
-	});
-
-	const isFileExist = current.some(
-		(item) => item.type === 'file' && item.path === filename
-	);
-
-	if (isFileExist) {
-		showNotification('File already exists in this directory!', 'error');
-		return;
-	}
-
-	const filePath = newFilePath.trim().endsWith('.md')
+	const fullPath = newFilePath.trim().endsWith('.md')
 		? newFilePath.trim()
 		: `${newFilePath.trim()}.md`;
 
-	dispatch(addFile({ path: filePath, content: '' }));
-	showNotification('File created successfully!', 'success');
+	const pathParts = fullPath.split('/');
+	const fileName = pathParts.pop();
+	const folderPath = pathParts;
+
+	// Traverse through existing folders only (don't modify files array directly)
+	let currentLevel = files;
+	let parentPath = [];
+
+	try {
+		for (const folderName of folderPath) {
+			const folder = currentLevel.find(
+				(item) => item.type === 'folder' && item.path === folderName
+			);
+
+			if (!folder) {
+				// Create missing folder structure
+				const newFolder = {
+					path: folderName,
+					type: 'folder',
+					children: [],
+				};
+
+				dispatch(
+					addFolder({
+						parentPath: parentPath.join('/'),
+						folder: newFolder,
+					})
+				);
+
+				currentLevel = newFolder.children;
+			} else {
+				currentLevel = folder.children;
+			}
+
+			parentPath.push(folderName);
+		}
+
+		// Check for existing file only in the target directory
+		const fileExists = currentLevel.some(
+			(item) => item.type === 'file' && item.path === fileName
+		);
+
+		if (fileExists) {
+			showNotification('File already exists in this directory!', 'error');
+			return;
+		}
+
+		// Add the new file to the correct directory
+		dispatch(
+			addFile({
+				path: fileName,
+				content: '',
+				parentPath: parentPath.join('/'),
+			})
+		);
+
+		showNotification('File created successfully!', 'success');
+	} catch (error) {
+		showNotification('Error creating file structure', 'error');
+		console.error('File creation error:', error);
+	}
 };
 
 export const handleDeleteFile = (dispatch, fullPath, showNotification) => {
 	if (fullPath) {
 		dispatch(deleteFile({ path: fullPath }));
-		showNotification('File deleted successfully', 'success');
+		showNotification('File/Folder deleted successfully', 'success');
 	}
 };
 
