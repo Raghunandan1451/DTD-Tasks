@@ -1,38 +1,45 @@
 {
-  "name": "aio-lists",
-  "private": true,
-  "version": "0.0.0",
-  "type": "module",
-  "scripts": {
-    "dev": "vite",
-    "build": "vite build",
-    "lint": "eslint . --ext js,jsx --report-unused-disable-directives --max-warnings 0",
-    "preview": "vite preview"
-  },
-  "dependencies": {
-    "@reduxjs/toolkit": "^2.5.0",
-    "file-saver": "^2.0.5",
-    "jspdf": "^2.5.2",
-    "jszip": "^3.10.1",
-    "lucide-react": "^0.474.0",
-    "qrcode.react": "^4.2.0",
-    "react": "^18.3.1",
-    "react-dom": "^18.3.1",
-    "react-redux": "^9.2.0",
-    "react-router-dom": "^7.0.1"
-  },
-  "devDependencies": {
-    "@types/react": "^18.3.12",
-    "@types/react-dom": "^18.3.1",
-    "@vitejs/plugin-react": "^4.3.3",
-    "autoprefixer": "^10.4.20",
-    "eslint": "^9.15.0",
-    "eslint-plugin-react": "^7.37.2",
-    "eslint-plugin-react-hooks": "^5.0.0",
-    "eslint-plugin-react-refresh": "^0.4.14",
-    "postcss": "^8.4.49",
-    "tailwindcss": "^3.4.15",
-    "vite": "^5.4.11",
-    "yarn-upgrade-all": "^0.7.4"
-  }
+	"name": "aio-lists",
+	"private": true,
+	"version": "0.0.0",
+	"type": "module",
+	"scripts": {
+		"dev": "vite",
+		"build": "vite build",
+		"lint": "eslint . --ext js,jsx --report-unused-disable-directives --max-warnings 0",
+		"preview": "vite preview",
+		"test": "vitest",
+		"test:ui": "vitest --ui"
+	},
+	"dependencies": {
+		"@reduxjs/toolkit": "^2.5.0",
+		"file-saver": "^2.0.5",
+		"jspdf": "^2.5.2",
+		"jszip": "^3.10.1",
+		"lucide-react": "^0.474.0",
+		"qrcode.react": "^4.2.0",
+		"react": "^18.3.1",
+		"react-dom": "^18.3.1",
+		"react-redux": "^9.2.0",
+		"react-router-dom": "^7.0.1"
+	},
+	"devDependencies": {
+		"@testing-library/jest-dom": "^6.6.3",
+		"@testing-library/react": "14.2.0",
+		"@types/react": "^18.3.12",
+		"@types/react-dom": "^18.3.1",
+		"@vitejs/plugin-react": "^4.3.3",
+		"@vitest/ui": "3.0.6",
+		"autoprefixer": "^10.4.20",
+		"eslint": "^9.15.0",
+		"eslint-plugin-react": "^7.37.2",
+		"eslint-plugin-react-hooks": "^5.0.0",
+		"eslint-plugin-react-refresh": "^0.4.14",
+		"jsdom": "24.0.0",
+		"postcss": "^8.4.49",
+		"tailwindcss": "^3.4.15",
+		"vite": "^5.4.11",
+		"vitest": "^3.0.6",
+		"yarn-upgrade-all": "^0.7.4"
+	}
 }
