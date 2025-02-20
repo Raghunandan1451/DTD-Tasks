@@ -10,7 +10,7 @@ const EditableTable = ({
 	onAddRow,
 	onUpdate,
 	onDeleteRow,
-	showNotifications,
+	showNotification,
 }) => {
 	const [activeCell, setActiveCell] = useState({ row: 0, col: 0 });
 	const [minRows, setMinRows] = useState(0);
@@ -68,6 +68,7 @@ const EditableTable = ({
 		setActiveCell,
 		inputRefs,
 		cellRef,
+		showNotification,
 	};
 
 	return (
@@ -87,7 +88,6 @@ const EditableTable = ({
 								rowIndex={rowIndex}
 								row={row}
 								columns={columns}
-								showNotifications={showNotifications}
 							/>
 						))}
 					</tbody>
