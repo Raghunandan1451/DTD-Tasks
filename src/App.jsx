@@ -1,6 +1,6 @@
-import ShoppingList from '@components/ShoppingList';
-import TodoList from '@components/ToDoList';
 import Home from '@src/pages/Home';
+import ShoppingList from '@components/Shopping/ShoppingList';
+import TodoList from '@components/ToDo/ToDoList';
 import QRCodeGenerator from '@components/QRCode/QRCodeGenerator';
 import MarkdownEditor from '@components/MarkDown/MarkdownEditor';
 

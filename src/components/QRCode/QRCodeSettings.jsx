@@ -4,7 +4,7 @@ import { updateSettings } from '@store/qrSettingSlice';
 
 const QRCodeSettings = () => {
 	// const { settings } = useQRCodeSettings(); // Use custom hook
-	const settings = useSelector((state) => state.qrSetting);
+	const settings = useSelector((state) => state.qr);
 	const dispatch = useDispatch();
 
 	const handleSettingChange = (e) => {

@@ -1,18 +1,19 @@
-import React, { useState } from 'react';
+import React, { useRef, useState } from 'react';
 import { QRCodeCanvas } from 'qrcode.react';
 import HeaderWithButton from '@components/HeaderWithButton';
 import QRCodeSettings from '@components/QRCode/QRCodeSettings';
-import { useSelector } from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
 import NotificationCenter from '@components/NotificationCeter';
 import useNotifications from '@src/hooks/useNotifications';
 import { handleDownloadImage } from '@src/utils/downloadList';
+import { updateSettings } from '@store/qrSettingSlice';
 
 const QRCodeGenerator = () => {
-	// const qrSize = 200;
+	const qrRef = useRef();
+	const dispatch = useDispatch();
 	const [input, setInput] = useState('');
-	const [qrData, setQrData] = useState('');
 	const { notifications, showNotification } = useNotifications();
-	const settings = useSelector((state) => state.qrSetting);
+	const settings = useSelector((state) => state.qr);
 
 	const handleInputChange = (e) => {
 		setInput(e.target.value);
@@ -23,14 +24,20 @@ const QRCodeGenerator = () => {
 			showNotification('Input cannot be empty!', 'error');
 			return;
 		}
-		setQrData(input); // Set the input value for QR code generation
+		dispatch(updateSettings({ qrData: input }));
 	};
 
 	return (
 		<div className="flex flex-col">
 			<HeaderWithButton
 				heading="To-Do List"
-				onDownload={() => handleDownloadImage(qrData, showNotification)}
+				onDownload={() =>
+					handleDownloadImage(
+						settings.qrData,
+						qrRef.current,
+						showNotification
+					)
+				}
 				buttonText="Download Image"
 			/>
 			<div className="flex flex-col items-center mt-6 space-y-12">
@@ -52,9 +59,10 @@ const QRCodeGenerator = () => {
 				<div className="flex w-full items-start justify-center relative mt-2">
 					{/* QR Code Centered */}
 					<div className="flex justify-center items-center">
-						{qrData && (
+						{settings.qrData && (
 							<QRCodeCanvas
-								value={qrData}
+								ref={qrRef}
+								value={settings.qrData}
 								size={300}
 								marginSize={1}
 								bgColor={settings.bgColor}

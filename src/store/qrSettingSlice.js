@@ -1,6 +1,7 @@
 import { createSlice } from '@reduxjs/toolkit';
 
 const initialState = {
+	qrData: '',
 	selectedIcon: '',
 	bgColor: '#ffffff',
 	fgColor: '#000000',

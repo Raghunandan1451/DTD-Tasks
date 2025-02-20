@@ -1,6 +1,7 @@
 /* eslint-disable react/prop-types */
-import EditableTable from '@components/Table/EditableTable';
 import { useDispatch, useSelector } from 'react-redux';
+
+import EditableTable from '@components/Table/EditableTable';
 import { addTodo, deleteTodo, updateTodo } from '@store/todoSlice';
 import HeaderWithButton from '@components/HeaderWithButton';
 import { handleDownloadPDF } from '@utils/downloadList';

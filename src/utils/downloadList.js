@@ -71,7 +71,11 @@ export const handleDownloadPDF = (data, columns, title, showNotification) => {
 	doc.save(`${title}.pdf`);
 };
 
-export const handleDownloadImage = (qrData, showNotification) => {
+export const handleDownloadImage = (
+	qrData,
+	canvasElement,
+	showNotification
+) => {
 	if (!qrData) {
 		showNotification(
 			'Please generate a QR code before downloading!',
@@ -79,9 +83,8 @@ export const handleDownloadImage = (qrData, showNotification) => {
 		);
 		return;
 	}
-	const canvas = document.querySelector('canvas'); // Select the QR code canvas
 
-	const url = canvas.toDataURL('image/png');
+	const url = canvasElement.toDataURL('image/png');
 	const link = document.createElement('a');
 	link.href = url;
 	link.download = 'qr-code.png';

@@ -8,7 +8,7 @@ const store = configureStore({
 	reducer: {
 		todos: todoReducer,
 		shopping: shoppingReducer,
-		qrSetting: qrSettingReducer,
+		qr: qrSettingReducer,
 		fileManager: markdownReducer,
 	},
 });
