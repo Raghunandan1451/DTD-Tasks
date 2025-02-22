@@ -12,7 +12,7 @@ const EditDeletePair = () => {
 					setRenameValue(item.path); // Initialize rename value with the current name
 					setShowRenameInput(true);
 				}}
-				className="p-1 text-gray-400 hover:text-yellow-500 rounded-full focus:outline-none focus:ring focus:ring-yellow-300">
+				className="p-1 text-gray-400 hover:text-yellow-500 rounded-full focus:outline-hidden focus:ring-3 focus:ring-yellow-300">
 				<Edit size={16} />
 			</button>
 
@@ -22,7 +22,7 @@ const EditDeletePair = () => {
 					e.stopPropagation(); // Prevent triggering file selection
 					onDelete(dispatch, fullPath); // Pass full path
 				}}
-				className="p-1 text-gray-400 hover:text-red-500 rounded-full focus:outline-none focus:ring focus:ring-red-300">
+				className="p-1 text-gray-400 hover:text-red-500 rounded-full focus:outline-hidden focus:ring-3 focus:ring-red-300">
 				<Trash2 size={16} />
 			</button>
 		</div>

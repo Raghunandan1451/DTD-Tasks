@@ -12,13 +12,13 @@ const CreateBox = ({ setShowInput, newFilePath, setNewFilePath, onCreate }) => {
 					type="text"
 					value={newFilePath}
 					onChange={(e) => setNewFilePath(e.target.value)}
-					className="w-full bg-gray-700 text-white p-2 rounded"
+					className="w-full bg-gray-700 text-white p-2 rounded-sm"
 					placeholder="Enter file path"
 					autoFocus
 				/>
 				<button
 					onClick={onCreate}
-					className="mt-2 bg-green-500 hover:bg-green-600 text-white px-3 py-1 rounded">
+					className="mt-2 bg-green-500 hover:bg-green-600 text-white px-3 py-1 rounded-sm">
 					Create
 				</button>
 			</div>

@@ -12,7 +12,7 @@ const FileTree = () => {
 			<div className="p-4 border-b flex justify-around">
 				<button
 					onClick={() => setShowInput(true)}
-					className="bg-blue-500 hover:bg-blue-600 text-white px-3 py-1 rounded flex items-center gap-2">
+					className="bg-blue-500 hover:bg-blue-600 text-white px-3 py-1 rounded-sm flex items-center gap-2">
 					<Plus size={16} /> Add File
 				</button>
 			</div>

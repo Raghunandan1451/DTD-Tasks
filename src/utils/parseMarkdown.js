@@ -78,7 +78,7 @@ const MARKDOWN_RULES = Object.freeze([
 		component: (content, key) =>
 			createElement(
 				'code',
-				{ key, className: 'bg-gray-700 px-1 rounded' },
+				{ key, className: 'bg-gray-700 px-1 rounded-sm' },
 				content
 			),
 	},

@@ -5,7 +5,7 @@ const HeaderWithButton = (props) => {
 			<h1 className="text-4xl font-bold">{heading}</h1>
 			<button
 				type="button"
-				className="bg-blue-500 hover:bg-blue-600 text-white p-2 rounded"
+				className="bg-blue-500 hover:bg-blue-600 text-white p-2 rounded-sm"
 				onClick={() => onDownload(heading)}>
 				{buttonText}
 			</button>

@@ -29,7 +29,7 @@ const QRCodeSettings = () => {
 					name="selectedIcon" // Use 'name' to target the key in the settings object
 					value={settings.selectedIcon}
 					onChange={handleSettingChange}
-					className="border border-pink-600 rounded-md px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500">
+					className="border border-pink-600 rounded-md px-4 py-2 focus:outline-hidden focus:ring-2 focus:ring-blue-500">
 					<option value="">Select Icon</option>
 					{getIconList().map((icon, index) => (
 						<option key={index} value={icon.src}>
@@ -51,7 +51,7 @@ const QRCodeSettings = () => {
 					name="bgColor" // Name to target bgColor in settings object
 					value={settings.bgColor}
 					onChange={handleSettingChange}
-					className="w-16 h-10 p-0 border border-pink-600 rounded-md focus:outline-none"
+					className="w-16 h-10 p-0 border border-pink-600 rounded-md focus:outline-hidden"
 				/>
 			</div>
 			<div>
@@ -66,7 +66,7 @@ const QRCodeSettings = () => {
 					name="fgColor" // Name to target fgColor in settings object
 					value={settings.fgColor}
 					onChange={handleSettingChange}
-					className="w-16 h-10 p-0 border border-pink-600 rounded-md focus:outline-none"
+					className="w-16 h-10 p-0 border border-pink-600 rounded-md focus:outline-hidden"
 				/>
 			</div>
 		</fieldset>

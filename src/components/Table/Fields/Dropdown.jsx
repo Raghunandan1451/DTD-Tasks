@@ -41,7 +41,7 @@ const Dropdown = ({ column, row, rowIndex, colIndex }) => {
 				setEnterCount(0); // Reset when dropdown gains focus
 			}}
 			ref={(el) => (inputRefs.current[`${rowIndex}-${colIndex}`] = el)}
-			className="w-full bg-transparent outline-none">
+			className="w-full bg-transparent outline-hidden">
 			<option
 				value=""
 				className="dark:text-white dark:bg-gray-800"

@@ -64,7 +64,7 @@ const DatePicker = (props) => {
 				}
 			}}
 			onFocus={() => setActiveCell({ row: rowIndex, col: colIndex })}
-			className={`w-full bg-transparent outline-none ${
+			className={`w-full bg-transparent outline-hidden ${
 				isError ? 'text-red-500' : ''
 			}`}
 			min={formatDateToISO(today)}

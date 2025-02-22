@@ -25,7 +25,7 @@ const NumericInput = (props) => {
 			value={row[column.key]}
 			onChange={(e) => handleNumberChange(e)}
 			ref={(el) => (inputRefs.current[`${rowIndex}-${colIndex}`] = el)}
-			className="w-full bg-transparent outline-none"
+			className="w-full bg-transparent outline-hidden"
 			onFocus={() =>
 				setActiveCell({
 					row: rowIndex,

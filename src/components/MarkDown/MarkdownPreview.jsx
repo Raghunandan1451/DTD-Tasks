@@ -17,7 +17,7 @@ const MarkdownPreview = () => {
 	return (
 		<div
 			ref={containerRef}
-			className="flex-1 overflow-y-auto p-2 bg-gray-700 rounded mb-4 scrollbar-hide">
+			className="flex-1 overflow-y-auto p-2 bg-gray-700 rounded-sm mb-4 scrollbar-hide">
 			{parseMarkdown(content)}
 		</div>
 	);

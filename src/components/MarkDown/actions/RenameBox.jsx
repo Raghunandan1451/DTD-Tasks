@@ -11,14 +11,14 @@ const RenameBox = ({
 					type="text"
 					value={renameValue}
 					onChange={(e) => setRenameValue(e.target.value)}
-					className="w-full bg-gray-700 text-white p-2 rounded"
+					className="w-full bg-gray-700 text-white p-2 rounded-sm"
 					placeholder="Enter new name"
 					autoFocus
 				/>
 				<div className="flex justify-center mt-3 gap-2">
 					<button
 						onClick={onRename}
-						className="bg-green-500 hover:bg-green-600 text-white px-3 py-1 rounded">
+						className="bg-green-500 hover:bg-green-600 text-white px-3 py-1 rounded-sm">
 						Rename
 					</button>
 					<button
@@ -26,7 +26,7 @@ const RenameBox = ({
 							setShowRenameInput(false);
 							setRenameValue(''); // Clear input
 						}}
-						className="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded">
+						className="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded-sm">
 						Cancel
 					</button>
 				</div>

@@ -8,7 +8,7 @@ const ActionButtons = ({ onRename, onDelete, iconSize = 16 }) => {
 					e.stopPropagation();
 					onRename();
 				}}
-				className="p-1 text-gray-400 hover:text-yellow-500 rounded-full focus:outline-none focus:ring focus:ring-yellow-300">
+				className="p-1 text-gray-400 hover:text-yellow-500 rounded-full focus:outline-hidden focus:ring-3 focus:ring-yellow-300">
 				<Edit size={iconSize} />
 			</button>
 
@@ -17,7 +17,7 @@ const ActionButtons = ({ onRename, onDelete, iconSize = 16 }) => {
 					e.stopPropagation();
 					onDelete();
 				}}
-				className="p-1 text-gray-400 hover:text-red-500 rounded-full focus:outline-none focus:ring focus:ring-red-300">
+				className="p-1 text-gray-400 hover:text-red-500 rounded-full focus:outline-hidden focus:ring-3 focus:ring-red-300">
 				<Trash2 size={iconSize} />
 			</button>
 		</div>

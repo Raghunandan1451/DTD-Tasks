@@ -29,7 +29,7 @@ const Editor = () => {
 			</h2>
 			<MarkdownPreview />
 			<textarea
-				className="w-full bg-gray-700 text-white border-none outline-none rounded p-2 scrollbar-hide resize-none"
+				className="w-full bg-gray-700 text-white border-none outline-hidden rounded-sm p-2 scrollbar-hide resize-none"
 				value={content}
 				onChange={handleContentChange}
 				placeholder="Start writing Markdown..."
