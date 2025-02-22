@@ -11,7 +11,7 @@ const useNotifications = () => {
 
 		setTimeout(() => {
 			setNotifications((prev) => prev.filter((n) => n.id !== id));
-		}, 3000);
+		}, 5000);
 	};
 
 	return { notifications, showNotification };
