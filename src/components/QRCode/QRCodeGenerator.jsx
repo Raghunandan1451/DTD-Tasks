@@ -30,7 +30,7 @@ const QRCodeGenerator = () => {
 	return (
 		<div className="flex flex-col">
 			<HeaderWithButton
-				heading="To-Do List"
+				heading="QR Code Generator"
 				onDownload={() =>
 					handleDownloadImage(
 						settings.qrData,
