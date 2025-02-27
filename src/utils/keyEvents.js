@@ -42,7 +42,10 @@ export const handleKeyDown = (
 							'Are you sure you want to delete this row?'
 						)
 					) {
-						deleteRow(data[row].uid);
+						let newFocusRow = row - 1 >= 0 ? row - 1 : 0;
+						deleteRow({ uid: data[row].uid, length: data.length });
+						setActiveCell({ row: newFocusRow, col: 0 });
+						console.log(newFocusRow);
 					}
 					break;
 

@@ -20,6 +20,14 @@ const DatePicker = (props) => {
 	const validateDate = (e, showNotification) => {
 		const inputDate = new Date(e.target.value);
 		inputDate.setHours(0, 0, 0, 0);
+
+		if (isNaN(inputDate.getTime())) {
+			showNotification('Please enter a valid date', 'error');
+			setIsError(true);
+			e.preventDefault(); // Block default behavior
+			e.stopPropagation(); // Stop further handling
+			return false;
+		}
 		// Validate against min and max dates
 		if (inputDate < today || inputDate > oneMonthFromToday) {
 			showNotification(

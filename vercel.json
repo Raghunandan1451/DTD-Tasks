@@ -1,0 +1,24 @@
+{
+	"routes": [
+		{
+			"src": "/",
+			"dest": "/"
+		},
+		{
+			"src": "/todo",
+			"dest": "/"
+		},
+		{
+			"src": "/shopping",
+			"dest": "/"
+		},
+		{
+			"src": "/qrgen",
+			"dest": "/"
+		},
+		{
+			"src": "/markdown",
+			"dest": "/"
+		}
+	]
+}

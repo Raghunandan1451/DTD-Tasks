@@ -26,7 +26,20 @@ const shoppingSlice = createSlice({
 			}
 		},
 		deleteItem: (state, action) => {
-			return state.filter((row) => row.uid !== action.payload);
+			if (action.payload.length === 1) {
+				// Clear data for the first row without removing it
+				return state.map((row) =>
+					row.uid === action.payload.uid
+						? {
+								uid: row.uid,
+								productName: '',
+								quantity: '',
+								unit: '',
+						  }
+						: row
+				);
+			}
+			return state.filter((row) => row.uid !== action.payload.uid);
 		},
 	},
 });
