@@ -6,6 +6,7 @@ import MarkdownEditor from '@components/MarkDown/MarkdownEditor';
 
 import Layout from '@layout/Layout';
 import { RouterProvider, createBrowserRouter } from 'react-router-dom';
+import { FC } from 'react';
 
 const router = createBrowserRouter([
 	{
@@ -21,8 +22,8 @@ const router = createBrowserRouter([
 	},
 ]);
 
-function App() {
+const App: FC = () => {
 	return <RouterProvider router={router} />;
-}
+};
 
 export default App;
