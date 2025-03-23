@@ -1,0 +1,40 @@
+import React from 'react';
+import { useTableContext } from '@components/Table/TableContext';
+import Input from '@src/components/atoms/Input/Input';
+import { BaseCellProps } from '@components/shared/table';
+
+const NumericInputCell: React.FC<BaseCellProps> = (props) => {
+	const { column, row, rowIndex, colIndex } = props;
+	const { handleCellDataChange, setActiveCell, inputRefs, showNotification } =
+		useTableContext();
+
+	const handleNumberChange = (
+		e: React.ChangeEvent<HTMLInputElement>
+	): void => {
+		const value = parseFloat(e.target.value);
+
+		if (value <= 0 && showNotification) {
+			showNotification(
+				'Negative numbers and zero are not allowed',
+				'error'
+			);
+			return;
+		}
+
+		handleCellDataChange(row.uid, column.key, e.target.value);
+	};
+
+	return (
+		<Input
+			type="number"
+			value={(row[column.key] || '') as string}
+			onChange={handleNumberChange}
+			onFocus={() => setActiveCell({ row: rowIndex, col: colIndex })}
+			inputRef={(el) =>
+				(inputRefs.current[`${rowIndex}-${colIndex}`] = el)
+			}
+		/>
+	);
+};
+
+export default NumericInputCell;
