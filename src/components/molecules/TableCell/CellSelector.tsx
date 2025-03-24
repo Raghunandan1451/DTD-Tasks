@@ -12,7 +12,6 @@ interface CellTypesProps extends BaseCellProps {
 const CellSelector: React.FC<CellTypesProps> = (props) => {
 	const { columnType, ...rest } = props;
 
-	console.log(rest);
 	switch (columnType) {
 		case 'text':
 			return <TextInputCell {...rest} />;

@@ -1,6 +1,13 @@
 import { createSlice, nanoid } from '@reduxjs/toolkit';
 
-const initialState = [
+interface Todo {
+	uid: string;
+	task: string;
+	target: string;
+	status: string;
+}
+
+const initialState: Todo[] = [
 	{
 		uid: nanoid(),
 		task: '',
@@ -12,20 +19,23 @@ const todoSlice = createSlice({
 	name: 'todos',
 	initialState,
 	reducers: {
-		addTodo: (state, action) => {
+		addTodo: (state: Todo[], action: { payload: Omit<Todo, 'uid'> }) => {
 			state.push({
 				uid: nanoid(),
 				...action.payload,
 			});
 		},
-		updateTodo: (state, action) => {
+		updateTodo: (
+			state: Todo[],
+			action: { payload: { id: string; key: keyof Todo; value: string } }
+		) => {
 			const { id, key, value } = action.payload;
 			const row = state.find((row) => row.uid === id);
 			if (row) {
 				row[key] = value;
 			}
 		},
-		deleteTodo: (state, action) => {
+		deleteTodo: (state: Todo[], action) => {
 			if (action.payload.length === 1) {
 				// Clear data for the first row without removing it
 				return state.map((row) =>

@@ -17,7 +17,7 @@ export interface BaseCellProps {
 		options?: string[];
 	};
 	row: {
-		id: string;
+		uid: string;
 		[key: string]: string | number | Date | undefined;
 	};
 	rowIndex: number;
@@ -33,6 +33,6 @@ export interface Column {
 }
 
 export interface RowData {
-	id: string;
+	uid: string;
 	[key: string]: string | number | Date | undefined;
 }

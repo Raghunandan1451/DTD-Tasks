@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
-import TableRow from '@src/components/molecules/TableRow/TableRow';
-import TableHeader from '@src/components/molecules/TableHeader/TableHeader';
-import { TableProvider } from '@src/components/Table/TableContext';
-import { Column, RowData } from '@src/components/shared/table';
+import TableRow from '@components/molecules/TableRow/TableRow';
+import TableHeader from '@components/molecules/TableHeader/TableHeader';
+import { TableProvider } from '@src/context/TableContext';
+import { Column, RowData } from '@components/shared/table';
 import { handleKeyDown } from '@src/utils/keyEvents';
 
 interface TableProps {
@@ -22,11 +22,14 @@ const CustomTable: React.FC<TableProps> = ({
 	onDeleteRow,
 	showNotification,
 }) => {
-	const [activeCell, setActiveCell] = useState({ row: 0, col: 0 });
+	const [activeCell, setActiveCell] = useState<{
+		row: number;
+		col: number;
+	}>({ row: 0, col: 0 });
 	const [minRows, setMinRows] = useState(0);
 
 	const containerRef = useRef<HTMLDivElement>(null);
-	const cellRef = useRef<HTMLDivElement>(null);
+	const cellRef = useRef<HTMLTableSectionElement | null>(null);
 	const inputRefs = useRef<{ [key: string]: HTMLDivElement | null }>({});
 
 	useEffect(() => {
@@ -71,7 +74,7 @@ const CustomTable: React.FC<TableProps> = ({
 	const rowsToRender: RowData[] = [
 		...data,
 		...Array.from({ length: Math.max(minRows - data.length, 0) }).map(
-			(_, index) => ({ id: `empty-${index}` })
+			() => ({} as RowData)
 		),
 	];
 
@@ -97,7 +100,7 @@ const CustomTable: React.FC<TableProps> = ({
 					<tbody>
 						{rowsToRender.map((row, rowIndex) => (
 							<TableRow
-								key={row.id}
+								key={row.uid || rowIndex}
 								rowIndex={rowIndex}
 								row={row}
 								columns={columns}

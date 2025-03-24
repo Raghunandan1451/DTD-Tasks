@@ -1,6 +1,6 @@
 import React from 'react';
 
-import { useTableContext } from '@src/components/Table/TableContext';
+import { useTableContext } from '@src/hooks/useTableContext';
 import CellSelector from '@components/molecules/TableCell/CellSelector';
 import { Column, RowData } from '@components/shared/table';
 

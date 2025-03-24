@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useTableContext } from '@components/Table/TableContext';
+import { useTableContext } from '@src/hooks/useTableContext';
 import Input from '@src/components/atoms/Input/Input';
 import { BaseCellProps } from '@components/shared/table';
 
