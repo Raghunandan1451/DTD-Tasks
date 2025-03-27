@@ -1,7 +1,24 @@
-import { createSlice } from '@reduxjs/toolkit';
+import { createSlice, PayloadAction } from '@reduxjs/toolkit';
 import { findFileByPath } from '@utils/treeUtils';
 
-const initialState = {
+interface File {
+	path: string;
+	type: 'file';
+	content: string;
+}
+
+interface Folder {
+	path: string;
+	type: 'folder';
+	children: (File | Folder)[];
+}
+interface FileState {
+	files: (File | Folder)[];
+	selectedFile: string | null;
+	content: string;
+}
+
+const initialState: FileState = {
 	files: [], // Initially empty
 	selectedFile: null,
 	content: '',
@@ -11,15 +28,19 @@ const markdownSlice = createSlice({
 	name: 'fileManager',
 	initialState,
 	reducers: {
-		addFolder: (state, action) => {
+		addFolder: (
+			state,
+			action: PayloadAction<{ parentPath: string; folder: Folder }>
+		) => {
 			const { parentPath, folder } = action.payload;
 			const parts = parentPath.split('/').filter(Boolean);
 
-			let current = state.files;
+			let current: (File | Folder)[] = state.files;
 			for (const part of parts) {
 				const existing = current.find(
 					(item) => item.type === 'folder' && item.path === part
-				);
+				) as Folder | undefined;
+				if (!existing) return;
 				current = existing.children;
 			}
 
@@ -27,15 +48,23 @@ const markdownSlice = createSlice({
 				current.push(folder);
 			}
 		},
-		addFile: (state, action) => {
+		addFile: (
+			state,
+			action: PayloadAction<{
+				path: string;
+				content: string;
+				parentPath: string;
+			}>
+		) => {
 			const { path, content, parentPath } = action.payload;
 			const parts = parentPath.split('/').filter(Boolean);
 
-			let current = state.files;
+			let current: (File | Folder)[] = state.files;
 			for (const part of parts) {
 				const existing = current.find(
 					(item) => item.type === 'folder' && item.path === part
-				);
+				) as Folder | undefined;
+				if (!existing) return;
 				current = existing.children;
 			}
 
@@ -47,20 +76,23 @@ const markdownSlice = createSlice({
 				});
 			}
 		},
-		renameFile: (state, action) => {
+		renameFile: (
+			state,
+			action: PayloadAction<{ oldPath: string; newName: string }>
+		) => {
 			const { oldPath, newName } = action.payload;
 
 			// Find the file/folder and rename it
 			const parts = oldPath.split('/').filter(Boolean);
 			const targetName = parts.pop();
 
-			let currentLevel = state.files;
+			let currentLevel: (File | Folder)[] = state.files;
 
 			// Traverse to the parent folder
 			for (const part of parts) {
 				const folder = currentLevel.find(
 					(item) => item.type === 'folder' && item.path === part
-				);
+				) as Folder | undefined;
 				if (!folder) return; // Folder not found
 				currentLevel = folder.children;
 			}
@@ -73,7 +105,7 @@ const markdownSlice = createSlice({
 				item.path = newName;
 			}
 		},
-		deleteFile: (state, action) => {
+		deleteFile: (state, action: PayloadAction<{ path: string }>) => {
 			const { path } = action.payload;
 
 			// Split path into parts and filter out empty strings
@@ -82,16 +114,17 @@ const markdownSlice = createSlice({
 
 			// The last part is the target file/folder name
 			const targetName = pathParts.pop();
+			if (!targetName) return;
 
 			// Start from the root files
-			let currentLevel = state.files;
-			let parentCollection = state.files;
+			let currentLevel: (File | Folder)[] = state.files;
+			let parentCollection: (File | Folder)[] = state.files;
 
 			// Iterate through each path part to find the parent folder
 			for (const part of pathParts) {
 				const folder = currentLevel.find(
 					(item) => item.type === 'folder' && item.path.endsWith(part)
-				);
+				) as Folder | undefined;
 
 				if (!folder || !folder.children) return; // Path not found
 
@@ -108,12 +141,15 @@ const markdownSlice = createSlice({
 				parentCollection.splice(deleteIndex, 1);
 
 				// Clear selection if deleted file was selected
-				if (state.selectedFile?.path === path) {
+				if (state.selectedFile === path) {
 					state.selectedFile = null;
 				}
 			}
 		},
-		updateFileContent: (state, action) => {
+		updateFileContent: (
+			state,
+			action: PayloadAction<{ path: string; content: string }>
+		) => {
 			const { path, content } = action.payload;
 			const segments = path.split('/').filter(Boolean);
 
@@ -138,7 +174,6 @@ const markdownSlice = createSlice({
 			// 2. Handle Nested Files
 			// ========================
 			const fileName = segments.pop();
-			let currentFiles = [...state.files];
 			const newFiles = [...state.files]; // Clone root array
 			let parentArray = newFiles;
 
@@ -151,14 +186,17 @@ const markdownSlice = createSlice({
 				if (folderIndex === -1) return; // Path invalid
 
 				// Clone folder and its children
-				const folder = {
-					...parentArray[folderIndex],
-					children: [...parentArray[folderIndex].children],
+				const folder = parentArray[folderIndex] as Folder;
+
+				// Clone folder and its children
+				const updatedFolder: Folder = {
+					...folder,
+					children: [...folder.children],
 				};
 
 				// Update parent reference
-				parentArray[folderIndex] = folder;
-				parentArray = folder.children;
+				parentArray[folderIndex] = updatedFolder;
+				parentArray = updatedFolder.children;
 			}
 
 			// Update target file
@@ -167,8 +205,9 @@ const markdownSlice = createSlice({
 			);
 
 			if (fileIndex !== -1) {
+				const file = parentArray[fileIndex] as File;
 				parentArray[fileIndex] = {
-					...parentArray[fileIndex],
+					...file,
 					content,
 				};
 

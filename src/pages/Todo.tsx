@@ -3,13 +3,13 @@ import { useDispatch, useSelector } from 'react-redux';
 import CustomTable from '@components/organisms/Table/CustomTable';
 import { addTodo, deleteTodo, updateTodo } from '@store/todoSlice';
 import TitleWithButton from '@components/molecules/Header/TitleWithButton';
-import { handleDownloadPDF } from '@utils/downloadList';
-import NotificationCenter from '@components/NotificationCeter';
+import { handleDownloadPDF } from '@src/utils/downloadHandler';
+import NotificationCenter from '@src/components/organisms/Notifications/NotificationCeter';
 import useNotifications from '@src/hooks/useNotifications';
 import { RootState } from '@store/store';
-import { Column, RowData } from '@src/components/shared/table';
+import { Column, DeleteParams, RowData } from '@src/components/shared/table';
 
-interface Todo {
+interface TodoProp {
 	uid: string;
 	task: string;
 	target: string;
@@ -33,28 +33,28 @@ const columns: Column[] = [
 	},
 ];
 const TodoPage = () => {
-	const todoList: Todo[] = useSelector((state: RootState) => state.todos);
+	const todoList: TodoProp[] = useSelector((state: RootState) => state.todos);
 	const dispatch = useDispatch();
 	const { notifications, showNotification } = useNotifications();
 
+	const formattedData: RowData[] = todoList.map((todo) => ({ ...todo }));
+
 	const handleUpdate = (id: string, key: string, value: string) => {
 		if (!['uid', 'task', 'target', 'status'].includes(key)) return;
-		dispatch(updateTodo({ id, key: key as keyof Todo, value })); // Dispatch Redux action
+		dispatch(updateTodo({ id, key: key as keyof TodoProp, value })); // Dispatch Redux action
 	};
 
 	const handleAddRow = () => {
 		dispatch(addTodo({ task: '', target: '', status: '' })); // Dispatch Redux action
 	};
 
-	const handleDeleteRow = (id: string) => {
-		dispatch(deleteTodo(id)); // Dispatch Redux action
+	const handleDeleteRow = (parans: DeleteParams) => {
+		dispatch(deleteTodo(parans)); // Dispatch Redux action
 	};
 
 	const handleDownload = (heading: string) => {
-		handleDownloadPDF(todoList, columns, heading, showNotification);
+		handleDownloadPDF(formattedData, columns, heading, showNotification);
 	};
-
-	const formattedData: RowData[] = todoList.map((todo) => ({ ...todo }));
 
 	return (
 		<>

@@ -1,17 +1,19 @@
 import React from 'react';
 
 interface BaseSelectProps {
+	id: string;
 	value: string;
 	onChange: (e: React.ChangeEvent<HTMLSelectElement>) => void;
 	onFocus?: () => void;
 	onKeyDown?: (e: React.KeyboardEvent<HTMLSelectElement>) => void;
-	selectRef: (el: HTMLSelectElement | null) => void;
+	selectRef?: (el: HTMLSelectElement | null) => void;
 	className?: string;
 	options: string[];
 	placeholder?: string;
 }
 
 const Select: React.FC<BaseSelectProps> = ({
+	id,
 	value,
 	onChange,
 	onFocus,
@@ -23,6 +25,7 @@ const Select: React.FC<BaseSelectProps> = ({
 }) => {
 	return (
 		<select
+			id={id}
 			value={value}
 			onChange={onChange}
 			onFocus={onFocus}

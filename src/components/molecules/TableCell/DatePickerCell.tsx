@@ -73,6 +73,7 @@ const DatePickerCell: React.FC<BaseCellProps> = (props) => {
 
 	return (
 		<Input
+			id={`item-${rowIndex}${colIndex}`}
 			type="date"
 			value={(row[column.key] || '') as string}
 			onChange={handleDateChange}

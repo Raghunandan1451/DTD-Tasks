@@ -4,7 +4,11 @@ import X from '@src/assets/x.svg';
 import Github from '@src/assets/github.svg';
 import Whatsapp from '@src/assets/whatsapp.svg';
 
-export const getIconList = () => {
+interface Icon {
+	name: string;
+	src: string;
+}
+export const getIconList = (): Icon[] => {
 	return [
 		{ name: 'Instagram', src: Instagram },
 		{ name: 'Facebook', src: Facebook },

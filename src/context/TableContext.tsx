@@ -21,7 +21,7 @@ export interface TableContextType {
 	cellRef: RefObject<HTMLTableSectionElement | null>;
 	showNotification: (
 		message: string,
-		type?: 'success' | 'error' | 'warning'
+		type: 'success' | 'error' | 'info'
 	) => void;
 }
 

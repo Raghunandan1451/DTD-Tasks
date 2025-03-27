@@ -39,6 +39,7 @@ const DropdownCell: React.FC<BaseCellProps> = (props) => {
 
 	return (
 		<Select
+			id={`dropdown-${rowIndex}${colIndex}`}
 			value={(row[column.key] || '') as string}
 			onChange={handleSelectChange}
 			onKeyDown={handleKeyDown}

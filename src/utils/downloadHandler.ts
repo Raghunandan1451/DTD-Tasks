@@ -1,6 +1,7 @@
 import jsPDF from 'jspdf';
 import JSZip from 'jszip';
 import { saveAs } from 'file-saver';
+import { Column, RowData } from '@src/components/shared/table';
 
 // Constants
 const TITLE_SIZE = 18;
@@ -10,12 +11,21 @@ const COLUMN_WIDTH = 50;
 const HEADER_FONT_SIZE = 12;
 const ROW_FONT_SIZE = 10;
 
-export const handleDownloadPDF = (data, columns, title, showNotification) => {
+export const handleDownloadPDF = (
+	data: RowData[],
+	columns: Column[],
+	title: string,
+	showNotification: (
+		message: string,
+		type: 'error' | 'success' | 'info'
+	) => void
+) => {
 	// Filter out rows where all fields are empty
 	const filteredData = data.filter((row) =>
 		columns.some((col) => row[col.key]?.trim() !== '')
 	);
 
+	console.log(columns);
 	if (filteredData.length === 0) {
 		showNotification('No non-empty rows available to download.', 'error');
 		return;
@@ -43,11 +53,7 @@ export const handleDownloadPDF = (data, columns, title, showNotification) => {
 	filteredData.forEach((row) => {
 		columns.forEach((col, index) => {
 			const xPos = 14 + index * COLUMN_WIDTH;
-			doc.text(
-				row[col.key] ? row[col.key].toString() : '',
-				xPos + 2,
-				yPos + 6
-			); // Add text inside the cell
+			doc.text(row[col.key]?.toString() ?? '', xPos + 2, yPos + 6); // Add text inside the cell
 			doc.rect(xPos, yPos, COLUMN_WIDTH, ROW_HEIGHT); // Draw border
 		});
 		yPos += ROW_HEIGHT;
@@ -59,8 +65,9 @@ export const handleDownloadPDF = (data, columns, title, showNotification) => {
 
 			// Redraw header row on new page
 			columns.forEach((col, index) => {
+				console.log(col);
 				const xPos = 14 + index * COLUMN_WIDTH;
-				doc.text(col.label || col.key, xPos + 2, yPos + 6);
+				doc.text(col.header || col.key, xPos + 2, yPos + 6);
 				doc.rect(xPos, yPos, COLUMN_WIDTH, ROW_HEIGHT);
 			});
 			yPos += ROW_HEIGHT;
@@ -72,9 +79,12 @@ export const handleDownloadPDF = (data, columns, title, showNotification) => {
 };
 
 export const handleDownloadImage = (
-	qrData,
-	canvasElement,
-	showNotification
+	qrData: string,
+	canvasElement: HTMLCanvasElement | null,
+	showNotification: (
+		message: string,
+		type: 'error' | 'success' | 'info'
+	) => void
 ) => {
 	if (!qrData) {
 		showNotification(
@@ -84,17 +94,26 @@ export const handleDownloadImage = (
 		return;
 	}
 
-	const url = canvasElement.toDataURL('image/png');
+	const url = canvasElement?.toDataURL('image/png');
 	const link = document.createElement('a');
-	link.href = url;
+	link.href = url ?? '';
 	link.download = 'qr-code.png';
 	link.click();
 };
+interface FileTree {
+	path: string;
+	type: 'file' | 'folder';
+	content?: string;
+	children?: FileTree[];
+}
 
 export const handleZIPExport = async (
-	files,
-	showNotification,
-	filename = 'archive.zip'
+	files: FileTree[],
+	showNotification: (
+		message: string,
+		type: 'error' | 'success' | 'info'
+	) => void,
+	filename: string = 'archive.zip'
 ) => {
 	if (!files.length) {
 		showNotification('No Files created', 'error');
@@ -102,17 +121,18 @@ export const handleZIPExport = async (
 	}
 	const zip = new JSZip();
 
-	const processFileTree = (items, currentPath = '') => {
+	const processFileTree = (items: FileTree[], currentPath = '') => {
 		items.forEach((item) => {
 			const fullPath = currentPath
 				? `${currentPath}/${item.path}`
 				: item.path;
 
 			if (item.type === 'folder') {
-				const folder = zip.folder(fullPath);
-				processFileTree(item.children, fullPath);
+				zip.folder(fullPath);
+				if (item.children) processFileTree(item.children, fullPath);
 			} else {
-				zip.file(fullPath, item.content);
+				if (item.content !== undefined)
+					zip.file(fullPath, item.content);
 			}
 		});
 	};

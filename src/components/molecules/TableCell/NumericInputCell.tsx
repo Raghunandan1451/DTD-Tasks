@@ -26,6 +26,7 @@ const NumericInputCell: React.FC<BaseCellProps> = (props) => {
 
 	return (
 		<Input
+			id={`numeric-${rowIndex}${colIndex}`}
 			type="number"
 			value={(row[column.key] || '') as string}
 			onChange={handleNumberChange}

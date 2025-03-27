@@ -1,6 +1,13 @@
 import { createSlice } from '@reduxjs/toolkit';
 
-const initialState = {
+interface QrSettings {
+	qrData: string;
+	selectedIcon: string;
+	bgColor: string;
+	fgColor: string;
+}
+
+const initialState: QrSettings = {
 	qrData: '',
 	selectedIcon: '',
 	bgColor: '#ffffff',
@@ -11,7 +18,10 @@ const qrSettingSlice = createSlice({
 	name: 'qrSettings',
 	initialState,
 	reducers: {
-		updateSettings: (state, action) => ({ ...state, ...action.payload }),
+		updateSettings: (state, action: { payload: Partial<QrSettings> }) => ({
+			...state,
+			...action.payload,
+		}),
 	},
 });
 

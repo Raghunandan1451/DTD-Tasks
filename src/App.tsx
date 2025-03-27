@@ -1,12 +1,12 @@
 import Home from '@src/pages/Home';
-import ShoppingList from '@components/Shopping/ShoppingList';
-import QRCodeGenerator from '@components/QRCode/QRCodeGenerator';
+import TodoPage from '@src/pages/Todo';
+import ShoppingPage from '@src/pages/Shopping';
+import QRGenerator from '@src/pages/QRGenerator';
 import MarkdownEditor from '@components/MarkDown/MarkdownEditor';
 
 import Layout from '@layout/Layout';
 import { RouterProvider, createBrowserRouter } from 'react-router-dom';
 import { FC } from 'react';
-import TodoPage from '@src/pages/TodoPage';
 
 const router = createBrowserRouter([
 	{
@@ -15,8 +15,8 @@ const router = createBrowserRouter([
 		children: [
 			{ path: '/', element: <Home /> },
 			{ path: '/todo', element: <TodoPage /> },
-			{ path: '/shopping', element: <ShoppingList /> },
-			{ path: '/qrgen', element: <QRCodeGenerator /> },
+			{ path: '/shopping', element: <ShoppingPage /> },
+			{ path: '/qrgen', element: <QRGenerator /> },
 			{ path: '/markdown', element: <MarkdownEditor /> },
 		],
 	},

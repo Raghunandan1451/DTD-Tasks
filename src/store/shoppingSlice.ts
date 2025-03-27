@@ -1,6 +1,13 @@
 import { createSlice, nanoid } from '@reduxjs/toolkit';
 
-const initialState = [
+interface Shopping {
+	uid: string;
+	productName: string;
+	quantity: string;
+	unit: string;
+}
+
+const initialState: Shopping[] = [
 	{
 		uid: nanoid(),
 		productName: '',
@@ -12,13 +19,21 @@ const shoppingSlice = createSlice({
 	name: 'shopping',
 	initialState,
 	reducers: {
-		addItem: (state, action) => {
+		addItem: (
+			state: Shopping[],
+			action: { payload: Omit<Shopping, 'uid'> }
+		) => {
 			state.push({
 				uid: nanoid(),
 				...action.payload,
 			});
 		},
-		updateItem: (state, action) => {
+		updateItem: (
+			state: Shopping[],
+			action: {
+				payload: { id: string; key: keyof Shopping; value: string };
+			}
+		) => {
 			const { id, key, value } = action.payload;
 			const row = state.find((row) => row.uid === id);
 			if (row) {

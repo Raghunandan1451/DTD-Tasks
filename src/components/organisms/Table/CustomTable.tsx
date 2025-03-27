@@ -2,16 +2,19 @@ import React, { useState, useEffect, useRef } from 'react';
 import TableRow from '@components/molecules/TableRow/TableRow';
 import TableHeader from '@components/molecules/TableHeader/TableHeader';
 import { TableProvider } from '@src/context/TableContext';
-import { Column, RowData } from '@components/shared/table';
-import { handleKeyDown } from '@src/utils/keyEvents';
+import { Column, DeleteParams, RowData } from '@components/shared/table';
+import { useHandleTableKeyEvent } from '@src/hooks/useHandleTableKeyEvent';
 
 interface TableProps {
 	columns: Column[];
 	data: RowData[];
-	onAddRow: (newRow: RowData) => void;
+	onAddRow: () => void;
 	onUpdate: (uniqueId: string, columnKey: string, newValue: string) => void;
-	onDeleteRow: (uniqueId: string) => void;
-	showNotification: (message: string) => void;
+	onDeleteRow: (params: DeleteParams) => void;
+	showNotification: (
+		message: string,
+		type: 'error' | 'success' | 'info'
+	) => void;
 }
 
 const CustomTable: React.FC<TableProps> = ({
@@ -54,7 +57,7 @@ const CustomTable: React.FC<TableProps> = ({
 		onUpdate(uniqueId, columnKey, newValue);
 	};
 
-	const handleCellChange = handleKeyDown(
+	const handleCellChange = useHandleTableKeyEvent(
 		activeCell,
 		setActiveCell,
 		columns,

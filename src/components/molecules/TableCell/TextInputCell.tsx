@@ -10,6 +10,7 @@ const TextInputCell: React.FC<BaseCellProps> = (props) => {
 
 	return (
 		<Input
+			id={`text-${rowIndex}${colIndex}`}
 			type="text"
 			value={(row[column.key] || '') as string}
 			onChange={(e) =>

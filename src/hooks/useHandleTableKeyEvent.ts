@@ -1,24 +1,31 @@
-import { useCallback } from 'react';
+import {
+	CellPosition,
+	Column,
+	DeleteParams,
+	RowData,
+} from '@src/components/shared/table';
+import React, { useCallback } from 'react';
 
-export const handleKeyDown = (
-	activeCell,
-	setActiveCell,
-	columns,
-	data,
-	addRow,
-	deleteRow
-) =>
-	useCallback(
-		(e) => {
+export const useHandleTableKeyEvent = (
+	activeCell: CellPosition,
+	setActiveCell: React.Dispatch<React.SetStateAction<CellPosition>>,
+	columns: Column[],
+	data: RowData[],
+	addRow: () => void,
+	deleteRow: (params: DeleteParams) => void
+) => {
+	const handleTableKeyDown = useCallback(
+		(e: React.KeyboardEvent<HTMLElement>) => {
 			const { row, col } = activeCell;
 			const lastRow = data.length - 1;
 			const lastCol = columns.length - 1;
 
+			const nextCol = col + 1;
+			const nextRow = nextCol > lastCol ? row + 1 : row;
+
 			switch (e.key) {
 				case 'Enter':
 					e.preventDefault();
-					const nextCol = col + 1;
-					const nextRow = nextCol > lastCol ? row + 1 : row;
 
 					if (row === lastRow && col === lastCol) {
 						const isRowComplete = columns.every(
@@ -42,10 +49,9 @@ export const handleKeyDown = (
 							'Are you sure you want to delete this row?'
 						)
 					) {
-						let newFocusRow = row - 1 >= 0 ? row - 1 : 0;
+						const newFocusRow = row - 1 >= 0 ? row - 1 : 0;
 						deleteRow({ uid: data[row].uid, length: data.length });
 						setActiveCell({ row: newFocusRow, col: 0 });
-						console.log(newFocusRow);
 					}
 					break;
 
@@ -85,5 +91,8 @@ export const handleKeyDown = (
 					break;
 			}
 		},
-		[activeCell, data, columns]
+		[activeCell, data, columns, setActiveCell, addRow, deleteRow]
 	);
+
+	return handleTableKeyDown;
+};

@@ -34,5 +34,10 @@ export interface Column {
 
 export interface RowData {
 	uid: string;
-	[key: string]: string | number | Date | undefined;
+	[key: string]: string | undefined;
+}
+
+export interface DeleteParams {
+	uid: string;
+	length: number;
 }

@@ -1,9 +1,9 @@
 import HeaderWithButton from '@components/HeaderWithButton';
 import FileTree from '@components/MarkDown/FileTree';
 import Editor from '@components/MarkDown/Editor';
-import { handleZIPExport } from '@utils/downloadList';
+import { handleZIPExport } from '@src/utils/downloadHandler';
 import { useSelector } from 'react-redux';
-import NotificationCenter from '@components/NotificationCeter';
+import NotificationCenter from '@src/components/organisms/Notifications/NotificationCeter';
 import useNotifications from '@src/hooks/useNotifications';
 
 const MarkdownEditor = () => {

@@ -1,27 +1,30 @@
 import React, { useRef, useState } from 'react';
 import { QRCodeCanvas } from 'qrcode.react';
-import HeaderWithButton from '@components/HeaderWithButton';
-import QRCodeSettings from '@components/QRCode/QRCodeSettings';
+import TitleWithButton from '@src/components/molecules/Header/TitleWithButton';
+import QRCodeSettings from '@src/components/organisms/QRCode/QRCodeSettings';
 import { useDispatch, useSelector } from 'react-redux';
-import NotificationCenter from '@components/NotificationCeter';
+import NotificationCenter from '@src/components/organisms/Notifications/NotificationCeter';
 import useNotifications from '@src/hooks/useNotifications';
-import { handleDownloadImage } from '@src/utils/downloadList';
-import { updateSettings } from '@store/qrSettingSlice';
+import { handleDownloadImage } from '@src/utils/downloadHandler';
+import { updateSettings } from '@src/store/qrSettingSlice';
+import { RootState } from '@src/store/store';
+import Button from '@src/components/atoms/Button/Button';
+import Input from '@src/components/atoms/Input/Input';
 
-const QRCodeGenerator = () => {
-	const qrRef = useRef();
+const QRGenerator: React.FC = () => {
+	const qrRef = useRef<HTMLCanvasElement | null>(null);
 	const dispatch = useDispatch();
-	const [input, setInput] = useState('');
+	const [input, setInput] = useState<string>('');
 	const { notifications, showNotification } = useNotifications();
-	const settings = useSelector((state) => state.qr);
+	const settings = useSelector((state: RootState) => state.qr);
 
-	const handleInputChange = (e) => {
+	const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
 		setInput(e.target.value);
 	};
 
 	const handleGenerate = () => {
 		if (input.trim() === '') {
-			showNotification('Input cannot be empty!', 'error');
+			showNotification('Please enter a valid input');
 			return;
 		}
 		dispatch(updateSettings({ qrData: input }));
@@ -29,7 +32,7 @@ const QRCodeGenerator = () => {
 
 	return (
 		<div className="flex flex-col">
-			<HeaderWithButton
+			<TitleWithButton
 				heading="QR Code Generator"
 				onDownload={() =>
 					handleDownloadImage(
@@ -42,18 +45,19 @@ const QRCodeGenerator = () => {
 			/>
 			<div className="flex flex-col items-center mt-6 space-y-12">
 				<div className="flex items-center space-x-4">
-					<input
+					<Input
+						id="qr-input"
 						type="text"
 						placeholder="Enter URL or Text"
 						value={input}
 						onChange={handleInputChange}
 						className="border border-gray-300 rounded-md px-4 py-2 w-72 focus:outline-hidden "
 					/>
-					<button
+					<Button
 						onClick={handleGenerate}
-						className="bg-green-500 text-white px-6 py-2 rounded-md hover:bg-green-600 focus:outline-hidden">
-						Generate
-					</button>
+						className="bg-green-500 py-2 rounded-md hover:bg-green-600 focus:outline-hidden"
+						text="Generate"
+					/>
 				</div>
 
 				<div className="flex w-full items-start justify-center relative mt-2">
@@ -69,8 +73,8 @@ const QRCodeGenerator = () => {
 								fgColor={settings.fgColor}
 								imageSettings={{
 									src: settings.selectedIcon,
-									x: null,
-									y: null,
+									x: undefined,
+									y: undefined,
 									height: 40,
 									width: 40,
 									excavate: true,
@@ -91,4 +95,4 @@ const QRCodeGenerator = () => {
 	);
 };
 
-export default QRCodeGenerator;
+export default QRGenerator;

@@ -1,5 +1,13 @@
+import React from 'react';
+import { Notification } from '@src/components/shared/notification';
+
+interface NotificationCenterProps {
+	notifications: Notification[];
+}
 // Notification component (add this to your root component)
-const NotificationCenter = ({ notifications }) => (
+const NotificationCenter: React.FC<NotificationCenterProps> = ({
+	notifications,
+}) => (
 	<div className="fixed bottom-4 right-4 space-y-2 z-50">
 		{notifications.map(({ id, message, type }) => (
 			<div
