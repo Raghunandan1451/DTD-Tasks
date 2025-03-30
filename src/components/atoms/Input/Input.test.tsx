@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { fireEvent, render, screen } from '@testing-library/react';
-import Input from '@components/atoms/Input/Input';
+import Input from '@src/components/atoms/Input/Input';
 import '@testing-library/jest-dom';
 
 describe('Input Component', () => {

@@ -1,12 +1,12 @@
 import { useDispatch, useSelector } from 'react-redux';
 
-import CustomTable from '@components/organisms/Table/CustomTable';
-import { addTodo, deleteTodo, updateTodo } from '@store/todoSlice';
-import TitleWithButton from '@components/molecules/Header/TitleWithButton';
+import CustomTable from '@src/components/organisms/Table/CustomTable';
+import { addTodo, deleteTodo, updateTodo } from '@src/store/todoSlice';
+import TitleWithButton from '@src/components/molecules/Header/TitleWithButton';
 import { handleDownloadPDF } from '@src/utils/downloadHandler';
 import NotificationCenter from '@src/components/organisms/Notifications/NotificationCeter';
 import useNotifications from '@src/hooks/useNotifications';
-import { RootState } from '@store/store';
+import { RootState } from '@src/store/store';
 import { Column, DeleteParams, RowData } from '@src/components/shared/table';
 
 interface TodoProp {

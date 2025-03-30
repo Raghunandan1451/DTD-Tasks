@@ -1,6 +1,6 @@
 import { useTableContext } from '@src/hooks/useTableContext';
 import React from 'react';
-import { Column } from '@components/shared/table';
+import { Column } from '@src/components/shared/table';
 
 interface TableHeaderProps {
 	columns: Column[];

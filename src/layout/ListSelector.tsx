@@ -1,5 +1,12 @@
+import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
-const listNames = [
+
+interface ListItem {
+	id: string;
+	name: string;
+}
+
+const listNames: ListItem[] = [
 	{
 		id: '',
 		name: 'Home',
@@ -22,16 +29,19 @@ const listNames = [
 	},
 ];
 
-const ListSelector = () => {
+const ListSelector: React.FC = () => {
 	const location = useLocation();
 
-	const isActive = (currentPath, targetPath) => {
+	const isActive = (
+		currentPath: { pathname: string },
+		targetPath: string
+	): boolean => {
 		return currentPath.pathname === targetPath;
 	};
 
 	return (
 		<nav className="flex flex-col gap-4 min-w-48 h-full px-1 py-2 overflow-y-auto scrollbar-hide">
-			{listNames.map(({ id, name }, index) => (
+			{listNames.map(({ id, name }) => (
 				<Link
 					key={id}
 					to={`/${id}`}

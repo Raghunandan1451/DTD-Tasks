@@ -12,7 +12,7 @@ interface BaseSelectProps {
 	placeholder?: string;
 }
 
-const Select: React.FC<BaseSelectProps> = ({
+const SimpleSelect: React.FC<BaseSelectProps> = ({
 	id,
 	value,
 	onChange,
@@ -26,16 +26,14 @@ const Select: React.FC<BaseSelectProps> = ({
 	return (
 		<select
 			id={id}
+			name={id}
 			value={value}
 			onChange={onChange}
 			onFocus={onFocus}
 			onKeyDown={onKeyDown}
 			ref={selectRef}
 			className={`w-full bg-transparent outline-hidden ${className}`}>
-			<option
-				value=""
-				className="dark:text-white dark:bg-gray-800"
-				disabled>
+			<option value="" className="dark:text-white dark:bg-gray-800">
 				{placeholder}
 			</option>
 			{options.map((option, index) => (
@@ -50,4 +48,4 @@ const Select: React.FC<BaseSelectProps> = ({
 	);
 };
 
-export default Select;
+export default SimpleSelect;

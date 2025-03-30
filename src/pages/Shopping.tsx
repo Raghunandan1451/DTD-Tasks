@@ -1,13 +1,13 @@
 import { useDispatch, useSelector } from 'react-redux';
 
-import CustomTable from '@components/organisms/Table/CustomTable';
-import TitleWithButton from '@components/molecules/Header/TitleWithButton';
+import CustomTable from '@src/components/organisms/Table/CustomTable';
+import TitleWithButton from '@src/components/molecules/Header/TitleWithButton';
 import { handleDownloadPDF } from '@src/utils/downloadHandler';
 import NotificationCenter from '@src/components/organisms/Notifications/NotificationCeter';
 import useNotifications from '@src/hooks/useNotifications';
-import { RootState } from '@store/store';
+import { RootState } from '@src/store/store';
 import { Column, DeleteParams, RowData } from '@src/components/shared/table';
-import { addItem, deleteItem, updateItem } from '@store/shoppingSlice';
+import { addItem, deleteItem, updateItem } from '@src/store/shoppingSlice';
 
 interface ShoppingProp {
 	uid: string;
@@ -44,6 +44,10 @@ const ShoppingPage = () => {
 	const dispatch = useDispatch();
 	const { notifications, showNotification } = useNotifications();
 
+	const formattedData: RowData[] = shoppingList.map((shopping) => ({
+		...shopping,
+	}));
+
 	const handleUpdate = (id: string, key: string, value: string) => {
 		if (!['uid', 'productName', 'quantity', 'unit'].includes(key)) return;
 		dispatch(updateItem({ id, key: key as keyof ShoppingProp, value })); // Dispatch Redux action
@@ -58,10 +62,8 @@ const ShoppingPage = () => {
 	};
 
 	const handleDownload = (heading: string) => {
-		handleDownloadPDF(shoppingList, columns, heading, showNotification);
+		handleDownloadPDF(formattedData, columns, heading, showNotification);
 	};
-
-	const formattedData: RowData[] = shoppingList.map((todo) => ({ ...todo }));
 
 	return (
 		<>

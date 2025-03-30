@@ -6,6 +6,7 @@ interface ButtonProps {
 	disabled?: boolean;
 	type?: 'button' | 'submit' | 'reset' | undefined;
 	text?: string;
+	children?: React.ReactNode;
 }
 
 const Button: React.FC<ButtonProps> = ({
@@ -13,15 +14,17 @@ const Button: React.FC<ButtonProps> = ({
 	className,
 	disabled = false,
 	type = 'button',
-	text = 'Download',
+	text,
+	children,
 }) => {
 	return (
 		<button
 			onClick={onClick}
-			className={`text-white py-1 px-2 rounded-sm ${className}`}
+			className={className}
 			disabled={disabled}
 			type={type}>
-			{text}
+			{children}
+			{text && <span>{text}</span>}
 		</button>
 	);
 };

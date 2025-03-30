@@ -7,10 +7,6 @@ export default defineConfig({
 		// Mirror the same aliases in test environment
 		alias: {
 			'@src': '/src',
-			'@components': '/src/components',
-			'@layout': '/src/layout',
-			'@store': '/src/store',
-			'@utils': '/src/utils',
 		},
 	},
 });

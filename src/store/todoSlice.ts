@@ -1,4 +1,5 @@
 import { createSlice, nanoid } from '@reduxjs/toolkit';
+import { getFromLocalStorage } from '@src/utils/persistMiddleware';
 
 interface Todo {
 	uid: string;
@@ -7,17 +8,13 @@ interface Todo {
 	status: string;
 }
 
-const initialState: Todo[] = [
-	{
-		uid: nanoid(),
-		task: '',
-		target: '',
-		status: '',
-	},
-];
+const getInitialState = (): Todo[] => {
+	const storedData = getFromLocalStorage<Todo[]>('redux_todo_data');
+	return storedData || [{ uid: nanoid(), task: '', target: '', status: '' }];
+};
 const todoSlice = createSlice({
 	name: 'todos',
-	initialState,
+	initialState: getInitialState(),
 	reducers: {
 		addTodo: (state: Todo[], action: { payload: Omit<Todo, 'uid'> }) => {
 			state.push({

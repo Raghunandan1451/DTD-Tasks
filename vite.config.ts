@@ -20,10 +20,6 @@ export default defineConfig({
 	resolve: {
 		alias: {
 			'@src': '/src',
-			'@components': '/src/components',
-			'@layout': '/src/layout',
-			'@store': '/src/store',
-			'@utils': '/src/utils',
 		},
 	},
 });

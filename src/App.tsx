@@ -2,9 +2,9 @@ import Home from '@src/pages/Home';
 import TodoPage from '@src/pages/Todo';
 import ShoppingPage from '@src/pages/Shopping';
 import QRGenerator from '@src/pages/QRGenerator';
-import MarkdownEditor from '@components/MarkDown/MarkdownEditor';
+import MarkdownEditor from '@src/pages/MarkdownEditor';
 
-import Layout from '@layout/Layout';
+import Layout from '@src/layout/Layout';
 import { RouterProvider, createBrowserRouter } from 'react-router-dom';
 import { FC } from 'react';
 

@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useTableContext } from '@src/hooks/useTableContext';
-import Select from '@src/components/atoms/Select/Select';
-import { BaseCellProps } from '@components/shared/table';
+import SimpleSelect from '@src/components/atoms/Select/SimpleSelect';
+import { BaseCellProps } from '@src/components/shared/table';
 
 const DropdownCell: React.FC<BaseCellProps> = (props) => {
 	const { column, row, rowIndex, colIndex } = props;
@@ -38,7 +38,7 @@ const DropdownCell: React.FC<BaseCellProps> = (props) => {
 	};
 
 	return (
-		<Select
+		<SimpleSelect
 			id={`dropdown-${rowIndex}${colIndex}`}
 			value={(row[column.key] || '') as string}
 			onChange={handleSelectChange}

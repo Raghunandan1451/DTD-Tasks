@@ -1,8 +1,13 @@
-import { createElement } from 'react';
+import { createElement, ReactElement, ReactNode } from 'react';
 
 const VOID_ELEMENTS = new Set(['br', 'hr', 'img', 'input', 'link', 'meta']);
 
-const MARKDOWN_RULES = Object.freeze([
+interface MarkdownRule {
+	pattern: RegExp;
+	component: (content: string, key: string) => ReactElement;
+}
+
+const MARKDOWN_RULES: Readonly<MarkdownRule[]> = Object.freeze([
 	{
 		pattern: /\*\*__(\S(?:.*?\S)?)__\*\*/g, // **__Bold + Underline__**
 		component: (content, key) =>
@@ -84,17 +89,33 @@ const MARKDOWN_RULES = Object.freeze([
 	},
 ]);
 
-export const parseMarkdown = (markdown) => {
-	const lines = markdown.split('\n');
-	const elements = [];
-	let inCodeBlock = false;
-	let codeBlockContent = [];
-	let codeBlockId = 0;
+type ElemenType = 'p' | 'h1' | 'h2' | 'h3' | 'li' | 'blockquote' | 'br';
 
+type ClassNameMapType = {
+	[key in ElemenType]: string | null;
+};
+
+export const parseMarkdown = (markdown: string): ReactElement[] => {
+	const lines = markdown.split('\n');
+	const elements: ReactElement[] = [];
+
+	const classNameMap: ClassNameMapType = {
+		h1: 'text-2xl font-bold mb-2',
+		h2: 'text-xl font-semibold mb-2',
+		h3: 'text-lg font-medium mb-2',
+		li: 'ml-4 list-disc mb-1',
+		blockquote: 'border-l-4 border-gray-500 pl-4 my-2 italic text-gray-300',
+		p: 'text-base mb-2',
+		br: null,
+	};
 	// Parse inline markdown formatting for a given text line.
-	const parseInline = (text, lineIndex) =>
-		MARKDOWN_RULES.reduce(
-			(inlineElements, rule, ruleIndex) => {
+	const parseInline = (text: string, lineIndex: number): ReactNode[] => {
+		return MARKDOWN_RULES.reduce(
+			(
+				inlineElements: ReactNode[],
+				rule: MarkdownRule,
+				ruleIndex: number
+			) => {
 				return inlineElements.flatMap((part) => {
 					if (typeof part !== 'string') return part;
 
@@ -121,46 +142,35 @@ export const parseMarkdown = (markdown) => {
 			},
 			[text]
 		);
-
+	};
 	lines.forEach((line, lineIndex) => {
 		const lineKey = `line-${lineIndex}-${line.replace(/\W/g, '')}`;
 
-		// Rest of the markdown parsing remains the same
-		let elementType = 'p';
-		let content = line;
-		const classNameMap = {
-			h1: 'text-2xl font-bold mb-2',
-			h2: 'text-xl font-semibold mb-2',
-			h3: 'text-lg font-medium mb-2',
-			li: 'ml-4 list-disc mb-1',
-			blockquote:
-				'border-l-4 border-gray-500 pl-4 my-2 italic text-gray-300',
-			p: 'text-base mb-2',
-			br: null,
-		};
+		// Define mappings for markdown syntax to HTML elements
+		const elementMapping: {
+			pattern: RegExp;
+			type: ElemenType;
+			slice: number;
+		}[] = [
+			{ pattern: /^#\s/, type: 'h1', slice: 2 },
+			{ pattern: /^##\s/, type: 'h2', slice: 3 },
+			{ pattern: /^###\s/, type: 'h3', slice: 4 },
+			{ pattern: /^-\s/, type: 'li', slice: 2 },
+			{ pattern: /^>\s/, type: 'blockquote', slice: 2 },
+			{ pattern: /^\s*$/, type: 'br', slice: 0 },
+		];
 
-		if (line.startsWith('# ')) {
-			elementType = 'h1';
-			content = line.slice(2);
-		} else if (line.startsWith('## ')) {
-			elementType = 'h2';
-			content = line.slice(3);
-		} else if (line.startsWith('### ')) {
-			elementType = 'h3';
-			content = line.slice(4);
-		} else if (line.startsWith('- ')) {
-			elementType = 'li';
-			content = line.slice(2);
-		} else if (line.startsWith('> ')) {
-			elementType = 'blockquote';
-			content = line.slice(2);
-		} else if (line.trim() === '') {
-			elementType = 'br';
-		}
+		// Determine the element type and extract content
+		const match = elementMapping.find(({ pattern }) => pattern.test(line));
+		const elementType: ElemenType = match ? match.type : 'p';
+		const content = match ? line.slice(match.slice) : line;
 
+		// Parse inline content unless it's a void element (like `<br>`)
 		const children = VOID_ELEMENTS.has(elementType)
 			? null
 			: parseInline(content, lineIndex);
+
+		// Create and add the React element
 		elements.push(
 			createElement(
 				elementType,

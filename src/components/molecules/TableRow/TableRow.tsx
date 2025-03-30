@@ -1,8 +1,8 @@
 import React from 'react';
 
 import { useTableContext } from '@src/hooks/useTableContext';
-import CellSelector from '@components/molecules/TableCell/CellSelector';
-import { Column, RowData } from '@components/shared/table';
+import CellSelector from '@src/components/molecules/TableCell/CellSelector';
+import { Column, RowData } from '@src/components/shared/table';
 
 interface TableCellProps {
 	rowIndex: number;

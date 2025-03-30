@@ -1,7 +1,7 @@
 import React from 'react';
 import { useTableContext } from '@src/hooks/useTableContext';
 import Input from '@src/components/atoms/Input/Input';
-import { BaseCellProps } from '@components/shared/table';
+import { BaseCellProps } from '@src/components/shared/table';
 
 const NumericInputCell: React.FC<BaseCellProps> = (props) => {
 	const { column, row, rowIndex, colIndex } = props;

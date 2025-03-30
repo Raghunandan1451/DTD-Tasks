@@ -24,7 +24,7 @@ const QRGenerator: React.FC = () => {
 
 	const handleGenerate = () => {
 		if (input.trim() === '') {
-			showNotification('Please enter a valid input');
+			showNotification('Please enter a valid input', 'error');
 			return;
 		}
 		dispatch(updateSettings({ qrData: input }));
@@ -51,11 +51,11 @@ const QRGenerator: React.FC = () => {
 						placeholder="Enter URL or Text"
 						value={input}
 						onChange={handleInputChange}
-						className="border border-gray-300 rounded-md px-4 py-2 w-72 focus:outline-hidden "
+						className="border border-gray-300 rounded-md px-4 py-2 w-72 focus:outline-hidden"
 					/>
 					<Button
 						onClick={handleGenerate}
-						className="bg-green-500 py-2 rounded-md hover:bg-green-600 focus:outline-hidden"
+						className="bg-green-500 text-white px-6 py-2 rounded-md hover:bg-green-600 focus:outline-hidden"
 						text="Generate"
 					/>
 				</div>
@@ -71,14 +71,18 @@ const QRGenerator: React.FC = () => {
 								marginSize={1}
 								bgColor={settings.bgColor}
 								fgColor={settings.fgColor}
-								imageSettings={{
-									src: settings.selectedIcon,
-									x: undefined,
-									y: undefined,
-									height: 40,
-									width: 40,
-									excavate: true,
-								}}
+								{...(settings.selectedIcon?.trim() !== ''
+									? {
+											imageSettings: {
+												src: settings.selectedIcon,
+												x: undefined,
+												y: undefined,
+												height: 40,
+												width: 40,
+												excavate: true,
+											},
+									  }
+									: {})}
 							/>
 						)}
 					</div>

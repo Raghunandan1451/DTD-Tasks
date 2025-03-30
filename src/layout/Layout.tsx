@@ -1,7 +1,8 @@
+import React from 'react';
 import { Outlet } from 'react-router-dom';
 import ListSelector from '@src/layout/ListSelector';
 
-const Layout = () => {
+const Layout: React.FC = () => {
 	return (
 		<main className="flex h-full gap-4">
 			<ListSelector />

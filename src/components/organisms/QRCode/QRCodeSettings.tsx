@@ -1,9 +1,9 @@
 import React, { ChangeEvent } from 'react';
-import { getIconList } from '@utils/svgUtils'; // Import utility
+import { getIconList } from '@src/utils/svgUtils'; // Import utility
 import { useSelector, useDispatch } from 'react-redux';
-import { updateSettings } from '@store/qrSettingSlice';
-import { RootState } from '@store/store';
-import Select from '@src/components/atoms/Select/Select';
+import { updateSettings } from '@src/store/qrSettingSlice';
+import { RootState } from '@src/store/store';
+import AdvancedSelect from '@src/components/atoms/Select/AdvancedSelect';
 import Input from '@src/components/atoms/Input/Input';
 
 const QRCodeSettings: React.FC = () => {
@@ -26,16 +26,21 @@ const QRCodeSettings: React.FC = () => {
 			<div>
 				<label
 					className="block text-sm font-medium text-pink-400 mb-2"
-					htmlFor="icon-select">
+					htmlFor="selectedIcon">
 					Select Icon
 				</label>
-				<Select
-					id="icon-select"
+				<AdvancedSelect
+					id="selectedIcon"
 					value={settings.selectedIcon}
 					onChange={handleSettingChange}
-					options={getIconList().map((icon) => icon.name)}
-					className="border border-pink-600 rounded-md px-4 py-2 focus:ring-2 focus:ring-blue-500"
+					options={getIconList()}
+					getOptionProps={(option) => ({
+						value: option.src,
+						label: option.name,
+					})}
+					className="border border-pink-600 rounded-md px-4 py-2 focus:outline-hidden focus:ring-2 focus:ring-blue-500"
 					placeholder="Select Icon"
+					isDisabled={false}
 				/>
 			</div>
 			{/* Color Pickers for Background and Foreground Colors */}
@@ -50,7 +55,7 @@ const QRCodeSettings: React.FC = () => {
 					type="color"
 					value={settings.bgColor}
 					onChange={handleSettingChange}
-					className={`border border-pink-600 focus:ring-2 focus:ring-blue-500 h-10 p-0 rounded-md focus:outline-hidden`}
+					className={`w-16 h-10 p-0 border border-pink-600 rounded-md focus:outline-hidden`}
 				/>
 			</div>
 			<div>
@@ -64,7 +69,7 @@ const QRCodeSettings: React.FC = () => {
 					type="color"
 					value={settings.fgColor}
 					onChange={handleSettingChange}
-					className={`border border-pink-600 focus:ring-2 focus:ring-blue-500 h-10 p-0 rounded-md focus:outline-hidden`}
+					className={`w-16 h-10 p-0 border border-pink-600 rounded-md focus:outline-hidden`}
 				/>
 			</div>
 		</fieldset>

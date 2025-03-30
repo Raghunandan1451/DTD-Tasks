@@ -14,7 +14,7 @@ const TitleWithButton: React.FC<TitleWithButtonProps> = (props) => {
 			<h1 className="text-4xl font-bold">{heading.toUpperCase()}</h1>
 			<Button
 				type="button"
-				className="bg-blue-500 hover:bg-blue-600"
+				className="bg-blue-500 hover:bg-blue-600 text-white p-2 rounded-sm"
 				onClick={() => onDownload(heading)}
 				text={buttonText}
 			/>

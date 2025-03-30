@@ -1,33 +1,49 @@
+import { Dispatch } from 'react';
+import { Action } from '@reduxjs/toolkit';
 import {
 	addFolder,
 	addFile,
 	selectFile,
 	deleteFile,
 	renameFile,
-} from '@store/markdownSlice';
+} from '@src/store/markdownSlice';
+
+import { File, Folder, BaseItem } from '@src/components/shared/markdown';
+
+type NotificationType = 'success' | 'error' | 'info';
+
+type ShowNotificationFunc = (message: string, type: NotificationType) => void;
 
 export const handleToggleFolder = (
-	expandedFolders,
-	setExpandedFolders,
-	path
-) => {
+	expandedFolders: Set<string>,
+	setExpandedFolders: (newExpanded: Set<string>) => void,
+	path: string
+): void => {
 	const newExpanded = new Set(expandedFolders);
-	newExpanded.has(path) ? newExpanded.delete(path) : newExpanded.add(path);
+	if (newExpanded.has(path)) {
+		newExpanded.delete(path);
+	} else {
+		newExpanded.add(path);
+	}
 	setExpandedFolders(newExpanded);
 };
 
-export const handleFileSelect = (dispatch, item, parentPath = '') => {
+export const handleFileSelect = (
+	dispatch: Dispatch<Action>,
+	item: BaseItem,
+	parentPath: string = ''
+): void => {
 	// CORRECTED: Use proper path joining
 	const fullPath = [parentPath, item.path].filter(Boolean).join('/');
 	dispatch(selectFile(fullPath)); // Dispatch just the path string
 };
 
 export const handleCreateFile = (
-	dispatch,
-	files,
-	showNotification,
-	newFilePath
-) => {
+	dispatch: Dispatch<Action>,
+	files: (File | Folder)[],
+	showNotification: ShowNotificationFunc,
+	newFilePath: string
+): void => {
 	if (!newFilePath.trim()) {
 		showNotification('Please enter a file name', 'error');
 		return;
@@ -38,22 +54,23 @@ export const handleCreateFile = (
 		: `${newFilePath.trim()}.md`;
 
 	const pathParts = fullPath.split('/');
-	const fileName = pathParts.pop();
+	const fileName = pathParts.pop()?.toString() || '';
 	const folderPath = pathParts;
 
 	// Traverse through existing folders only (don't modify files array directly)
 	let currentLevel = files;
-	let parentPath = [];
+	const parentPath: string[] = [];
 
 	try {
 		for (const folderName of folderPath) {
 			const folder = currentLevel.find(
-				(item) => item.type === 'folder' && item.path === folderName
+				(item): item is Folder =>
+					item.type === 'folder' && item.path === folderName
 			);
 
 			if (!folder) {
 				// Create missing folder structure
-				const newFolder = {
+				const newFolder: Folder = {
 					path: folderName,
 					type: 'folder',
 					children: [],
@@ -100,15 +117,23 @@ export const handleCreateFile = (
 	}
 };
 
-export const handleDeleteFile = (dispatch, fullPath, showNotification) => {
+export const handleDeleteFile = (
+	dispatch: Dispatch<Action>,
+	fullPath: string,
+	showNotification: ShowNotificationFunc
+): void => {
 	if (fullPath) {
 		dispatch(deleteFile({ path: fullPath }));
 		showNotification('File/Folder deleted successfully', 'success');
 	}
 };
 
-export const handleRenameFile = (dispatch, path, newName, showNotification) => {
-	console.log(path, newName);
+export const handleRenameFile = (
+	dispatch: Dispatch<Action>,
+	path: string,
+	newName: string,
+	showNotification: ShowNotificationFunc
+): void => {
 	if (!newName) {
 		showNotification('Please enter a valid name', 'error');
 		return;
@@ -123,7 +148,10 @@ export const handleRenameFile = (dispatch, path, newName, showNotification) => {
 	showNotification('File renamed successfully', 'success');
 };
 
-export const findFileByPath = (files, fullPath) => {
+export const findFileByPath = (
+	files: (File | Folder)[],
+	fullPath: string
+): File | null => {
 	// Add error handling for invalid inputs
 	if (!fullPath || typeof fullPath !== 'string') {
 		console.error('Invalid path provided to findFileByPath:', fullPath);
@@ -155,7 +183,9 @@ export const findFileByPath = (files, fullPath) => {
 };
 
 // Sorting function (A-Z, folders first)
-export const sortFilesAlphabetically = (items) => {
+export const sortFilesAlphabetically = (
+	items: (File | Folder)[]
+): (File | Folder)[] => {
 	return [...items].sort((a, b) => {
 		// Folders first
 		if (a.type === 'folder' && b.type !== 'folder') return -1;

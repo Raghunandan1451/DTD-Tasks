@@ -22,7 +22,7 @@ const Input: React.FC<BaseInputProps> = ({
 	onFocus,
 	onKeyDown,
 	inputRef,
-	className = 'w-full',
+	className,
 	min,
 	max,
 	placeholder,
@@ -30,13 +30,14 @@ const Input: React.FC<BaseInputProps> = ({
 	return (
 		<input
 			id={id}
+			name={id}
 			type={type}
 			value={value || ''}
 			onChange={onChange}
 			onFocus={onFocus}
 			onKeyDown={onKeyDown}
 			ref={inputRef}
-			className={`bg-transparent outline-hidden ${className}`}
+			className={`outline-hidden ${className}`}
 			min={min}
 			max={max}
 			placeholder={placeholder}

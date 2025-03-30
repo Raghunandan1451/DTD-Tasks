@@ -3,7 +3,7 @@ import NumericInputCell from '@src/components/molecules/TableCell/NumericInputCe
 import TextInputCell from '@src/components/molecules/TableCell/TextInputCell';
 import DropdownCell from '@src/components/molecules/TableCell/DropdownCell';
 import React from 'react';
-import { BaseCellProps } from '@components/shared/table';
+import { BaseCellProps } from '@src/components/shared/table';
 
 interface CellTypesProps extends BaseCellProps {
 	columnType: string;

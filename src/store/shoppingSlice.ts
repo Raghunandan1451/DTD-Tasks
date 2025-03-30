@@ -1,4 +1,5 @@
 import { createSlice, nanoid } from '@reduxjs/toolkit';
+import { getFromLocalStorage } from '@src/utils/persistMiddleware';
 
 interface Shopping {
 	uid: string;
@@ -7,17 +8,17 @@ interface Shopping {
 	unit: string;
 }
 
-const initialState: Shopping[] = [
-	{
-		uid: nanoid(),
-		productName: '',
-		quantity: '',
-		unit: '',
-	},
-];
+const getInitialState = (): Shopping[] => {
+	const storedData = getFromLocalStorage<Shopping[]>('redux_shopping_data');
+	return (
+		storedData || [
+			{ uid: nanoid(), productName: '', quantity: '', unit: '' },
+		]
+	);
+};
 const shoppingSlice = createSlice({
 	name: 'shopping',
-	initialState,
+	initialState: getInitialState(),
 	reducers: {
 		addItem: (
 			state: Shopping[],
