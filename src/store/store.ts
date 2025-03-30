@@ -5,7 +5,7 @@ import qrSettingReducer from '@src/store/qrSettingSlice';
 import markdownReducer from '@src/store/markdownSlice';
 import { persistMiddleware } from '@src/utils/persistMiddleware';
 
-const store: ReturnType<typeof configureStore> = configureStore({
+const store = configureStore({
 	reducer: {
 		todos: todoReducer,
 		shopping: shoppingReducer,
@@ -18,6 +18,5 @@ const store: ReturnType<typeof configureStore> = configureStore({
 });
 
 export type RootState = ReturnType<typeof store.getState>;
-export type AppDispatch = typeof store.dispatch;
 
 export default store;

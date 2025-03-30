@@ -9,7 +9,7 @@ interface StorageConfig {
 
 // Define storage configuration for each slice
 const sliceStorageConfig: Record<string, StorageConfig> = {
-	files: {
+	fileManager: {
 		key: 'redux_markdown_data',
 		expiryMs: 24 * 60 * 60 * 1000, // 24 hours
 	},
@@ -61,7 +61,7 @@ export const getFromLocalStorage = <T>(key: string): T | null => {
 };
 
 // The middleware implementation
-export const persistMiddleware: Middleware<unknown, RootState> =
+export const persistMiddleware: Middleware =
 	(store) => (next) => (action: unknown) => {
 		if (!isReduxAction(action)) return next(action);
 		const result = next(action);

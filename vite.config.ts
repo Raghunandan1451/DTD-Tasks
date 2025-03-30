@@ -6,9 +6,7 @@ import tailwindcss from '@tailwindcss/vite';
 export default defineConfig({
 	plugins: [react(), tailwindcss()],
 	build: {
-		rollupOptions: {
-			external: [/\.test\.(js|jsx|ts|tsx)$/, /\.spec\.(js|jsx|ts|tsx)$/],
-		},
+		emptyOutDir: true,
 	},
 	optimizeDeps: {
 		esbuildOptions: {
