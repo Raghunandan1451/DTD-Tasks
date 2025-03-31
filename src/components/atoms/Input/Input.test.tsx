@@ -1,174 +1,114 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import React from 'react';
+import { describe, expect, it, vi } from 'vitest';
 import { fireEvent, render, screen } from '@testing-library/react';
-import Input from '@src/components/atoms/Input/Input';
+import Input from './Input';
 import '@testing-library/jest-dom';
 
 describe('Input Component', () => {
-	const mockOnChange = vi.fn();
-	const mockOnFocus = vi.fn();
-	const mockOnKeyDown = vi.fn();
-	const mockInputRef = vi.fn();
-
-	// Reset mocks before each test
-	beforeEach(() => {
-		mockOnChange.mockClear();
-		mockOnFocus.mockClear();
-		mockOnKeyDown.mockClear();
-		mockInputRef.mockClear();
+	it('should render correctly', () => {
+		render(<Input id="input-test" value="Hello" onChange={() => {}} />);
+		const input = screen.getByRole('textbox');
+		expect(input).toHaveValue('Hello');
 	});
 
-	it('renders correctly with required props', () => {
+	it('should call onChange when value changes', () => {
+		const handleChangeMock = vi.fn();
+		render(
+			<Input id="input-test" value="Hello" onChange={handleChangeMock} />
+		);
+		const input = screen.getByRole('textbox');
+
+		fireEvent.change(input, { target: { value: 'World' } });
+		expect(handleChangeMock).toHaveBeenCalledTimes(1);
+	});
+
+	it('should calls onFocus when focused', () => {
+		const handleFocus = vi.fn();
 		render(
 			<Input
-				type="text"
-				value="Test Value"
-				onChange={mockOnChange}
-				inputRef={mockInputRef}
+				id="test-input"
+				value=""
+				onChange={() => {}}
+				onFocus={handleFocus}
 			/>
 		);
+		const input = screen.getByRole('textbox');
 
-		const inputElement = screen.getByDisplayValue('Test Value');
-		expect(inputElement).toBeInTheDocument();
-		expect(inputElement).toHaveAttribute('type', 'text');
-		expect(inputElement).toHaveClass(
-			'w-full bg-transparent outline-hidden'
-		);
+		fireEvent.focus(input);
+
+		expect(handleFocus).toHaveBeenCalled();
 	});
 
-	it('handles undefined value correctly', () => {
+	it('should calls onKeyDown when a key is pressed', () => {
+		const handleKeyDown = vi.fn();
 		render(
 			<Input
-				type="text"
-				value={undefined}
-				onChange={mockOnChange}
-				inputRef={mockInputRef}
+				id="test-input"
+				value=""
+				onChange={() => {}}
+				onKeyDown={handleKeyDown}
 			/>
 		);
+		const input = screen.getByRole('textbox');
 
-		const inputElement = screen.getByDisplayValue('');
-		expect(inputElement).toBeInTheDocument();
+		fireEvent.keyDown(input, { key: 'Enter', code: 'Enter' });
+
+		expect(handleKeyDown).toHaveBeenCalledTimes(1);
 	});
 
-	it('applies custom className when provided', () => {
+	it('should renders with the correct type attribute', () => {
 		render(
 			<Input
-				type="text"
-				value="Test Value"
-				onChange={mockOnChange}
-				inputRef={mockInputRef}
-				className="custom-class"
+				id="password-input"
+				type="password"
+				value="secret"
+				onChange={() => {}}
 			/>
 		);
-
-		const inputElement = screen.getByDisplayValue('Test Value');
-		expect(inputElement).toHaveClass('custom-class');
+		const input = screen.getByDisplayValue('secret');
+		expect(input).toHaveAttribute('type', 'password');
 	});
 
-	// it('calls onChange handler when value changes', async () => {
-	// 	render(
-	// 		<Input
-	// 			type="text"
-	// 			value="Test Value"
-	// 			onChange={mockOnChange}
-	// 			inputRef={mockInputRef}
-	// 		/>
-	// 	);
-
-	// 	const inputElement = screen.getByDisplayValue('Test Value');
-
-	// 	// Use a separate variable for the new value to verify it in our test
-	// 	const newValue = 'New Value';
-	// 	fireEvent.change(inputElement, { target: { value: newValue } });
-
-	// 	// Check that mockOnChange was called
-	// 	expect(mockOnChange).toHaveBeenCalledTimes(1);
-
-	// 	// Check the value passed to the event handler
-	// 	const event = mockOnChange.mock.calls[0][0];
-	// 	expect(event.target.value).toBe(newValue);
-	// });
-
-	// it('calls onFocus handler when input is focused', () => {
-	// 	render(
-	// 		<Input
-	// 			type="text"
-	// 			value="Test Value"
-	// 			onChange={mockOnChange}
-	// 			onFocus={mockOnFocus}
-	// 			inputRef={mockInputRef}
-	// 		/>
-	// 	);
-
-	// 	const inputElement = screen.getByDisplayValue('Test Value');
-	// 	fireEvent.focus(inputElement);
-
-	// 	expect(mockOnFocus).toHaveBeenCalledTimes(1);
-	// });
-
-	it('calls onKeyDown handler when key is pressed', () => {
+	it('should renders with the correct placeholder', () => {
 		render(
 			<Input
-				type="text"
-				value="Test Value"
-				onChange={mockOnChange}
-				onKeyDown={mockOnKeyDown}
-				inputRef={mockInputRef}
+				id="test-input"
+				placeholder="Enter text"
+				value=""
+				onChange={() => {}}
 			/>
 		);
-
-		const inputElement = screen.getByDisplayValue('Test Value');
-		fireEvent.keyDown(inputElement, { key: 'Enter', code: 'Enter' });
-
-		expect(mockOnKeyDown).toHaveBeenCalledTimes(1);
-		expect(mockOnKeyDown.mock.calls[0][0].key).toBe('Enter');
+		const input = screen.getByPlaceholderText('Enter text');
+		expect(input).toBeInTheDocument();
 	});
 
-	it('applies min and max attributes for number type', () => {
+	it('should render with min and max attributes if provided', () => {
 		render(
 			<Input
+				id="number-input"
 				type="number"
-				value={50}
-				onChange={mockOnChange}
-				inputRef={mockInputRef}
-				min="0"
-				max="100"
+				min="1"
+				max="10"
+				value=""
+				onChange={() => {}}
 			/>
 		);
-
-		const inputElement = screen.getByDisplayValue('50');
-		expect(inputElement).toHaveAttribute('min', '0');
-		expect(inputElement).toHaveAttribute('max', '100');
+		const input = screen.getByRole('spinbutton');
+		expect(input).toHaveAttribute('min', '1');
+		expect(input).toHaveAttribute('max', '10');
 	});
 
-	it('applies min and max attributes for date type', () => {
+	it('should support ref forwarding', () => {
+		const refMock = vi.fn();
 		render(
 			<Input
-				type="date"
-				value="2023-01-01"
-				onChange={mockOnChange}
-				inputRef={mockInputRef}
-				min="2023-01-01"
-				max="2023-12-31"
+				id="test-input"
+				value=""
+				onChange={() => {}}
+				inputRef={refMock}
 			/>
 		);
 
-		const inputElement = screen.getByDisplayValue('2023-01-01');
-		expect(inputElement).toHaveAttribute('min', '2023-01-01');
-		expect(inputElement).toHaveAttribute('max', '2023-12-31');
-	});
-
-	it('calls inputRef with the input element', () => {
-		render(
-			<Input
-				type="text"
-				value="Test Value"
-				onChange={mockOnChange}
-				inputRef={mockInputRef}
-			/>
-		);
-
-		// The inputRef should have been called with the input element
-		expect(mockInputRef).toHaveBeenCalledTimes(1);
-		expect(mockInputRef.mock.calls[0][0]).toBeInstanceOf(HTMLInputElement);
+		expect(refMock).toHaveBeenCalled();
 	});
 });

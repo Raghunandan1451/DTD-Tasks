@@ -17,6 +17,7 @@ const CreateFileFolder: React.FC<CreateFileFolderProps> = ({
 }) => {
 	return (
 		<div
+			data-testid="modal-overlay"
 			className="fixed inset-0 flex justify-center items-center bg-gray-800 bg-opacity-50 z-50"
 			onClick={(e) => {
 				if (e.target === e.currentTarget) {

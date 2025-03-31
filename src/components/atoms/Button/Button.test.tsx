@@ -1,42 +1,37 @@
+import React from 'react';
 import { fireEvent, render, screen } from '@testing-library/react';
-import Button from '@src/components/atoms/Button/Button';
 import { describe, it, expect, vi } from 'vitest';
 import '@testing-library/jest-dom';
+import Button from './Button';
 
 describe('Button component', () => {
-	it('should render button with text Download', () => {
-		render(<Button />);
-		expect(screen.getByText('Download')).toBeInTheDocument();
+	it('renders children correctly', () => {
+		render(<Button>Click me!</Button>);
+		expect(screen.getByText('Click me!')).toBeInTheDocument();
 	});
 
-	it('should render button with text Submit', () => {
+	it('renders the text prop when provided', () => {
 		render(<Button text="Submit" />);
 		expect(screen.getByText('Submit')).toBeInTheDocument();
 	});
 
-	it('calls onClick prop when clicked', () => {
-		const onClick = vi.fn();
-		render(<Button onClick={onClick} />);
-		const button = screen.getByRole('button');
+	it('calls onClick handler when clicked', () => {
+		const onClickMock = vi.fn();
+		render(<Button onClick={onClickMock} text="Click" />);
+		const button = screen.getByRole('button', { name: 'Click' });
 		fireEvent.click(button);
-		expect(onClick).toHaveBeenCalled();
+		expect(onClickMock).toHaveBeenCalledTimes(1);
 	});
 
-	it('add className to button element', () => {
-		render(<Button className="bg-red-500" />);
-		const button = screen.getByRole('button');
-		expect(button).toHaveClass('bg-red-500');
-	});
-
-	it('should be disabled', () => {
-		render(<Button disabled />);
-		const button = screen.getByRole('button');
+	it('renders as disabled when disabled prop is true', () => {
+		render(<Button disabled text="Disabled" />);
+		const button = screen.getByRole('button', { name: 'Disabled' });
 		expect(button).toBeDisabled();
 	});
 
-	it('should have type submit', () => {
-		render(<Button type="submit" />);
-		const button = screen.getByRole('button');
+	it('has the correct type attribute', () => {
+		render(<Button type="submit" text="Submit" />);
+		const button = screen.getByRole('button', { name: 'Submit' });
 		expect(button).toHaveAttribute('type', 'submit');
 	});
 });

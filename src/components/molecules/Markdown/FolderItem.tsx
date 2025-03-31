@@ -22,9 +22,9 @@ const FolderItem: React.FC<FolderItemProps> = ({
 			onClick={onToggle}>
 			<span className="flex items-center">
 				{isExpanded ? (
-					<ChevronDown size={16} />
+					<ChevronDown size={16} data-testid="chevron-down" />
 				) : (
-					<ChevronRight size={16} />
+					<ChevronRight size={16} data-testid="chevron-right" />
 				)}
 				<Folder size={16} className="text-yellow-500" />
 				<span className="ml-2 truncate">{path}</span>

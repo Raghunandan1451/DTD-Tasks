@@ -20,7 +20,7 @@ const EditDeletePair: React.FC<EditDeletePairProps> = ({
 					onEdit();
 				}}
 				className="p-1 text-gray-400 hover:text-yellow-500 rounded-full focus:outline-hidden focus:ring-3 focus:ring-yellow-300"
-				children={<Edit size={iconSize} />}
+				children={<Edit size={iconSize} data-testid="edit" />}
 			/>
 			<Button
 				onClick={(e) => {
@@ -28,7 +28,7 @@ const EditDeletePair: React.FC<EditDeletePairProps> = ({
 					onDelete();
 				}}
 				className="p-1 text-gray-400 hover:text-red-500 rounded-full focus:outline-hidden focus:ring-3 focus:ring-red-300"
-				children={<Trash2 size={iconSize} />}
+				children={<Trash2 size={iconSize} data-testid="trash" />}
 			/>
 		</div>
 	);

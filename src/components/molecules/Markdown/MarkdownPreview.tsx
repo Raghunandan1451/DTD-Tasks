@@ -17,6 +17,7 @@ const MarkdownPreview: React.FC = () => {
 
 	return (
 		<div
+			data-testid="markdown-preview"
 			ref={containerRef}
 			className="flex-1 overflow-y-auto p-2 bg-gray-700 rounded-sm mb-4">
 			{parseMarkdown(content)}
