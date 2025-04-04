@@ -18,7 +18,7 @@ const DatePickerCell: React.FC<BaseCellProps> = (props) => {
 	oneMonthFromToday.setHours(0, 0, 0, 0);
 
 	const formatDateToISO = (date: Date): string =>
-		date.toISOString().split('T')[0];
+		date.toLocaleDateString('en-CA');
 
 	const validateDate = (
 		e: React.SyntheticEvent<HTMLInputElement>
@@ -67,7 +67,7 @@ const DatePickerCell: React.FC<BaseCellProps> = (props) => {
 			return;
 		}
 
-		const formattedDate = date.toISOString().split('T')[0];
+		const formattedDate = date.toLocaleDateString('en-CA'); // Format to YYYY-MM-DD
 		handleCellDataChange(row.uid, column.key, formattedDate);
 	};
 
