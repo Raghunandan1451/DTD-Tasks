@@ -1,7 +1,7 @@
 import React from 'react';
 import { handleZIPExport } from '@src/utils/downloadHandler';
 import { useSelector } from 'react-redux';
-import NotificationCenter from '@src/components/organisms/Notifications/NotificationCeter';
+import NotificationCenter from '@src/components/organisms/Notifications/NotificationCenter';
 import useNotifications from '@src/hooks/useNotifications';
 import TitleWithButton from '@src/components/molecules/Header/TitleWithButton';
 import FileTree from '@src/components/organisms/Markdown/FileTree';

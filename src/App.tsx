@@ -1,6 +1,6 @@
 import Home from '@src/pages/Home';
-import TodoPage from '@src/pages/Todo';
-import ShoppingPage from '@src/pages/Shopping';
+import Todo from '@src/pages/Todo';
+import Shopping from '@src/pages/Shopping';
 import QRGenerator from '@src/pages/QRGenerator';
 import MarkdownEditor from '@src/pages/MarkdownEditor';
 
@@ -14,8 +14,8 @@ const router = createBrowserRouter([
 		element: <Layout />, // Layout contains Navbar and Outlet
 		children: [
 			{ path: '/', element: <Home /> },
-			{ path: '/todo', element: <TodoPage /> },
-			{ path: '/shopping', element: <ShoppingPage /> },
+			{ path: '/todo', element: <Todo /> },
+			{ path: '/shopping', element: <Shopping /> },
 			{ path: '/qrgen', element: <QRGenerator /> },
 			{ path: '/markdown', element: <MarkdownEditor /> },
 		],

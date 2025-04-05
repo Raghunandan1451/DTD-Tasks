@@ -4,7 +4,7 @@ import CustomTable from '@src/components/organisms/Table/CustomTable';
 import { addTodo, deleteTodo, updateTodo } from '@src/store/todoSlice';
 import TitleWithButton from '@src/components/molecules/Header/TitleWithButton';
 import { handleDownloadPDF } from '@src/utils/downloadHandler';
-import NotificationCenter from '@src/components/organisms/Notifications/NotificationCeter';
+import NotificationCenter from '@src/components/organisms/Notifications/NotificationCenter';
 import useNotifications from '@src/hooks/useNotifications';
 import { RootState } from '@src/store/store';
 import { Column, DeleteParams, RowData } from '@src/components/shared/table';
@@ -32,7 +32,7 @@ const columns: Column[] = [
 		options: ['Not Started', 'In Progress', 'Completed'],
 	},
 ];
-const TodoPage = () => {
+const Todo = () => {
 	const todoList: TodoProp[] = useSelector((state: RootState) => state.todos);
 	const dispatch = useDispatch();
 	const { notifications, showNotification } = useNotifications();
@@ -76,4 +76,4 @@ const TodoPage = () => {
 	);
 };
 
-export default TodoPage;
+export default Todo;

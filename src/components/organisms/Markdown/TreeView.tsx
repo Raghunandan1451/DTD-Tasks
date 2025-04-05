@@ -8,7 +8,7 @@ import {
 	handleRenameFile,
 	sortFilesAlphabetically,
 } from '@src/utils/treeUtils';
-import NotificationCenter from '@src/components/organisms/Notifications/NotificationCeter';
+import NotificationCenter from '@src/components/organisms/Notifications/NotificationCenter';
 import { RootState } from '@src/store/store';
 
 import FileItem from '@src/components/molecules/Markdown/FileItem';

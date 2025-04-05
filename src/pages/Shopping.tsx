@@ -3,7 +3,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import CustomTable from '@src/components/organisms/Table/CustomTable';
 import TitleWithButton from '@src/components/molecules/Header/TitleWithButton';
 import { handleDownloadPDF } from '@src/utils/downloadHandler';
-import NotificationCenter from '@src/components/organisms/Notifications/NotificationCeter';
+import NotificationCenter from '@src/components/organisms/Notifications/NotificationCenter';
 import useNotifications from '@src/hooks/useNotifications';
 import { RootState } from '@src/store/store';
 import { Column, DeleteParams, RowData } from '@src/components/shared/table';
@@ -37,7 +37,7 @@ const columns: Column[] = [
 		className: 'w-1/5',
 	},
 ];
-const ShoppingPage = () => {
+const Shopping = () => {
 	const shoppingList: ShoppingProp[] = useSelector(
 		(state: RootState) => state.shopping
 	);
@@ -85,4 +85,4 @@ const ShoppingPage = () => {
 	);
 };
 
-export default ShoppingPage;
+export default Shopping;

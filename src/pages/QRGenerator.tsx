@@ -3,7 +3,7 @@ import { QRCodeCanvas } from 'qrcode.react';
 import TitleWithButton from '@src/components/molecules/Header/TitleWithButton';
 import QRCodeSettings from '@src/components/organisms/QRCode/QRCodeSettings';
 import { useDispatch, useSelector } from 'react-redux';
-import NotificationCenter from '@src/components/organisms/Notifications/NotificationCeter';
+import NotificationCenter from '@src/components/organisms/Notifications/NotificationCenter';
 import useNotifications from '@src/hooks/useNotifications';
 import { handleDownloadImage } from '@src/utils/downloadHandler';
 import { updateSettings } from '@src/store/qrSettingSlice';
