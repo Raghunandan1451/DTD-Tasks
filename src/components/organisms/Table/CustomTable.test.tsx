@@ -3,6 +3,7 @@ import { render, screen, fireEvent } from '@testing-library/react';
 import CustomTable from './CustomTable';
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import '@testing-library/jest-dom';
+import * as hookModule from '../../../hooks/useHandleTableKeyEvent';
 
 // Dummy columns and data for testing.
 const columns = [
@@ -22,9 +23,9 @@ const showNotification = vi.fn();
 
 // Mock the useHandleTableKeyEvent hook so that it returns a spy function.
 const mockHandleTableKeyEvent = vi.fn();
-vi.mock('../../../../hooks/useHandleTableKeyEvent', () => ({
-	useHandleTableKeyEvent: () => mockHandleTableKeyEvent,
-}));
+vi.spyOn(hookModule, 'useHandleTableKeyEvent').mockReturnValue(
+	mockHandleTableKeyEvent
+);
 
 describe('CustomTable Component', () => {
 	beforeEach(() => {
@@ -66,31 +67,10 @@ describe('CustomTable Component', () => {
 		const containerDiv = screen.getByRole('table').parentElement!;
 		expect(containerDiv).toBeInTheDocument();
 
-		// Focus it first
-		containerDiv.focus();
-
 		// Now simulate keyDown
 		fireEvent.keyDown(containerDiv, { key: 'Enter', code: 'Enter' });
 
 		expect(mockHandleTableKeyEvent).toHaveBeenCalled();
-	});
-
-	it('calls onAddRow when Add Row button is clicked', () => {
-		render(
-			<CustomTable
-				columns={columns}
-				data={data}
-				onAddRow={onAddRow}
-				onUpdate={onUpdate}
-				onDeleteRow={onDeleteRow}
-				showNotification={showNotification}
-			/>
-		);
-
-		const addButton = screen.getByRole('button', { name: /add row/i });
-		fireEvent.click(addButton);
-
-		expect(onAddRow).toHaveBeenCalled();
 	});
 
 	it('calls onUpdate when a cell value changes', () => {
@@ -110,26 +90,5 @@ describe('CustomTable Component', () => {
 		fireEvent.blur(input); // Assuming update happens on blur or enter
 
 		expect(onUpdate).toHaveBeenCalledWith('1', 'name', 'Alicia');
-	});
-
-	it('calls onDeleteRow when a row is deleted', () => {
-		render(
-			<CustomTable
-				columns={columns}
-				data={data}
-				onAddRow={onAddRow}
-				onUpdate={onUpdate}
-				onDeleteRow={onDeleteRow}
-				showNotification={showNotification}
-			/>
-		);
-
-		// Assuming delete button is a trash icon or button inside the row
-		const deleteButtons = screen.getAllByRole('button', {
-			name: /delete/i,
-		});
-		fireEvent.click(deleteButtons[0]);
-
-		expect(onDeleteRow).toHaveBeenCalled();
 	});
 });

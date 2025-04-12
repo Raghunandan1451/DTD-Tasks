@@ -1,15 +1,16 @@
 import React from 'react';
-import { render, screen, fireEvent } from '@testing-library/react';
-import { beforeEach, describe, expect, it, Mock, vi } from 'vitest';
-import { useSelector, useDispatch } from 'react-redux';
-import Todo from '../Todo';
 import '@testing-library/jest-dom';
 
+import { render, screen, fireEvent } from '@testing-library/react';
+import { describe, it, expect, vi, Mock, beforeEach } from 'vitest';
+import { useSelector, useDispatch } from 'react-redux';
+import Shopping from '../Shopping';
+
 import * as downloadHandler from '../../utils/downloadHandler';
-import { addTodo, deleteTodo, updateTodo } from '../../store/todoSlice';
+import { addItem, deleteItem, updateItem } from '../../store/shoppingSlice';
 import { RootState } from '../../store/store';
 
-// Mock Redux hooks with types
+// 🧪 Mock Redux
 vi.mock('react-redux', async () => {
 	const actual = await vi.importActual<typeof import('react-redux')>(
 		'react-redux'
@@ -21,7 +22,7 @@ vi.mock('react-redux', async () => {
 	};
 });
 
-// Mock child components with proper types
+// 🧪 Mock CustomTable
 vi.mock('../../components/organisms/Table/CustomTable', () => ({
 	default: ({
 		onAddRow,
@@ -34,7 +35,8 @@ vi.mock('../../components/organisms/Table/CustomTable', () => ({
 	}) => (
 		<div>
 			<button onClick={onAddRow}>Add Row</button>
-			<button onClick={() => onUpdate('1', 'task', 'Updated Task')}>
+			<button
+				onClick={() => onUpdate('1', 'productName', 'Updated Product')}>
 				Update Row
 			</button>
 			<button onClick={() => onDeleteRow({ id: '1' })}>Delete Row</button>
@@ -42,48 +44,52 @@ vi.mock('../../components/organisms/Table/CustomTable', () => ({
 	),
 }));
 
+// 🧪 Mock TitleWithButton
 vi.mock('../../components/molecules/Header/TitleWithButton', () => ({
 	default: ({ onDownload }: { onDownload: (heading: string) => void }) => (
-		<button onClick={() => onDownload('To-Do List')}>Download PDF</button>
+		<button onClick={() => onDownload('Shopping List')}>
+			Download PDF
+		</button>
 	),
 }));
 
+// 🧪 Mock NotificationCenter
 vi.mock('../../components/organisms/Notifications/NotificationCenter', () => ({
 	default: () => <div>Notifications</div>,
 }));
 
-// Mock useNotifications hook properly typed
+// 🧪 Mock useNotifications
 vi.mock('../../hooks/useNotifications', () => ({
-	default: vi.fn().mockReturnValue({
+	default: vi.fn(() => ({
 		notifications: [],
 		showNotification: vi.fn(),
-	}),
+	})),
 }));
 
-// Mock download utility with no `any`
+// 🧪 Mock download handler
 vi.mock('../../utils/downloadHandler', () => ({
 	handleDownloadPDF: vi.fn(),
 }));
 
-describe('Todo Component', () => {
+describe('Shopping Component', () => {
 	const mockDispatch = vi.fn();
 
 	beforeEach(() => {
 		vi.clearAllMocks();
 
-		// Properly type mocked useSelector and useDispatch
+		// 🔧 Correctly type useSelector + useDispatch
 		(useSelector as unknown as Mock).mockImplementation(
 			(selector: (state: RootState) => unknown) =>
 				selector({
-					todos: [
+					todos: [],
+					shopping: [
 						{
 							uid: '1',
-							task: 'Test Task',
-							target: '2025-04-12',
-							status: 'Not Started',
+							productName: 'Milk',
+							quantity: '2',
+							unit: 'L',
 						},
 					],
-					shopping: [],
 					qr: [],
 					fileManager: [],
 				})
@@ -92,37 +98,41 @@ describe('Todo Component', () => {
 		(useDispatch as unknown as Mock).mockReturnValue(mockDispatch);
 	});
 
-	it('renders todo list with title and table', () => {
-		render(<Todo />);
+	it('renders shopping list UI', () => {
+		render(<Shopping />);
 		expect(screen.getByText('Download PDF')).toBeInTheDocument();
 		expect(screen.getByText('Add Row')).toBeInTheDocument();
 		expect(screen.getByText('Notifications')).toBeInTheDocument();
 	});
 
-	it('dispatches addTodo on add row', () => {
-		render(<Todo />);
+	it('dispatches addItem when Add Row is clicked', () => {
+		render(<Shopping />);
 		fireEvent.click(screen.getByText('Add Row'));
 		expect(mockDispatch).toHaveBeenCalledWith(
-			addTodo({ task: '', target: '', status: '' })
+			addItem({ productName: '', quantity: '', unit: '' })
 		);
 	});
 
-	it('dispatches updateTodo on row update', () => {
-		render(<Todo />);
+	it('dispatches updateItem when Update Row is clicked', () => {
+		render(<Shopping />);
 		fireEvent.click(screen.getByText('Update Row'));
 		expect(mockDispatch).toHaveBeenCalledWith(
-			updateTodo({ id: '1', key: 'task', value: 'Updated Task' })
+			updateItem({
+				id: '1',
+				key: 'productName',
+				value: 'Updated Product',
+			})
 		);
 	});
 
-	it('dispatches deleteTodo on row delete', () => {
-		render(<Todo />);
+	it('dispatches deleteItem when Delete Row is clicked', () => {
+		render(<Shopping />);
 		fireEvent.click(screen.getByText('Delete Row'));
-		expect(mockDispatch).toHaveBeenCalledWith(deleteTodo({ id: '1' }));
+		expect(mockDispatch).toHaveBeenCalledWith(deleteItem({ id: '1' }));
 	});
 
-	it('calls handleDownloadPDF on download click', () => {
-		render(<Todo />);
+	it('calls handleDownloadPDF on download', () => {
+		render(<Shopping />);
 		fireEvent.click(screen.getByText('Download PDF'));
 		expect(downloadHandler.handleDownloadPDF).toHaveBeenCalled();
 	});

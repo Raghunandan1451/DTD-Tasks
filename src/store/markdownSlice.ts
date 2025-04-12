@@ -3,7 +3,7 @@ import { findFileByPath } from '@src/utils/treeUtils';
 import { File, Folder, FileState } from '@src/components/shared/markdown';
 import { getFromLocalStorage } from '@src/utils/persistMiddleware';
 
-const getInitialState = (): FileState => {
+export const getInitialState = (): FileState => {
 	const storedData = getFromLocalStorage<FileState>('redux_markdown_data');
 	return storedData || { files: [], selectedFile: null, content: '' };
 };

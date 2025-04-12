@@ -25,7 +25,6 @@ export const handleDownloadPDF = (
 		columns.some((col) => row[col.key]?.trim() !== '')
 	);
 
-	console.log(columns);
 	if (filteredData.length === 0) {
 		showNotification('No non-empty rows available to download.', 'error');
 		return;
@@ -65,7 +64,6 @@ export const handleDownloadPDF = (
 
 			// Redraw header row on new page
 			columns.forEach((col, index) => {
-				console.log(col);
 				const xPos = 14 + index * COLUMN_WIDTH;
 				doc.text(col.header || col.key, xPos + 2, yPos + 6);
 				doc.rect(xPos, yPos, COLUMN_WIDTH, ROW_HEIGHT);
@@ -100,7 +98,7 @@ export const handleDownloadImage = (
 	link.download = 'qr-code.png';
 	link.click();
 };
-interface FileTree {
+export interface FileTree {
 	path: string;
 	type: 'file' | 'folder';
 	content?: string;

@@ -8,7 +8,7 @@ interface QrSettings {
 	fgColor: string;
 }
 
-const getInitialState = (): QrSettings => {
+export const getInitialState = (): QrSettings => {
 	const storedData = getFromLocalStorage<QrSettings>('redux_qr_settings');
 	return (
 		storedData || {

@@ -9,7 +9,7 @@ import useNotifications from '@src/hooks/useNotifications';
 import { RootState } from '@src/store/store';
 import { Column, DeleteParams, RowData } from '@src/components/shared/table';
 
-interface TodoProp {
+export interface TodoProp {
 	uid: string;
 	task: string;
 	target: string;
