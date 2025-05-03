@@ -1,33 +1,61 @@
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
+import ThemeToggle from '@src/components/molecules/ThemeToggle/ThemeToggle';
 
+// Define the proper types for our navigation structure
 interface ListItem {
 	id: string;
 	name: string;
-}
-
-const listNames: ListItem[] = [
+  }
+  
+  interface NavigationGroup {
+	title?: string; // Optional group title
+	items: ListItem[];
+  }
+  
+  // Create the updated navigation structure
+  const navigationData: NavigationGroup[] = [
 	{
-		id: '',
-		name: 'Home',
+	  // Home doesn't need a group title
+	  items: [
+		{
+		  id: '',
+		  name: 'Home',
+		}
+	  ]
 	},
 	{
-		id: 'todo',
-		name: 'ToDo List',
+	  title: 'Lists',
+	  items: [
+		{
+		  id: 'todo',
+		  name: 'To-Do',
+		},
+		{
+		  id: 'shopping',
+		  name: 'Shopping',
+		}
+	  ]
 	},
 	{
-		id: 'shopping',
-		name: 'Shopping List',
+	  title: 'Generators',
+	  items: [
+		{
+		  id: 'qrgen',
+		  name: 'QR Code',
+		}
+	  ]
 	},
 	{
-		id: 'qrgen',
-		name: 'QR Code Generator',
-	},
-	{
-		id: 'markdown',
-		name: 'Markdown Editor',
-	},
-];
+	  title: 'Editors',
+	  items: [
+		{
+		  id: 'markdown',
+		  name: 'Markdown',
+		}
+	  ]
+	}
+  ];
 
 const ListSelector: React.FC = () => {
 	const location = useLocation();
@@ -40,18 +68,29 @@ const ListSelector: React.FC = () => {
 	};
 
 	return (
-		<nav className="flex flex-col gap-4 min-w-48 h-full px-1 py-2 overflow-y-auto scrollbar-hide">
-			{listNames.map(({ id, name }) => (
-				<Link
-					key={id}
-					to={`/${id}`}
-					className={`${
-						isActive(location, `/${id}`)
-							? 'bg-teal-400 text-white hover:text-white'
-							: ''
-					} px-2 py-1 rounded-md text-white hover:text-white hover:bg-teal-500`}>
-					{name}
-				</Link>
+		<nav className="glass-nav scrollbar-hide">
+			<div className="flex justify-between items-center px-2 mb-4">
+				<h2 className="text-lg font-semibold text-gray-800 dark:text-gray-200">
+					AIOLists
+				</h2>
+				<ThemeToggle />
+    		</div>
+			{navigationData.map((group, groupIndex) => (
+				<div key={groupIndex} className="flex flex-col gap-1">
+					{group.title && (
+						<div className="glass-nav-section-title">{group.title}</div>
+					)}
+					{group.items.map(({ id, name }) => (
+						<Link
+							key={id}
+							to={`/${id}`}
+							className={`${
+								isActive(location, `/${id}`) ? 'active' : ''
+							} glass-link`}>
+							{name}
+						</Link>
+  					))}
+				</div>
 			))}
 		</nav>
 	);

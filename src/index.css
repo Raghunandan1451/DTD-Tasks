@@ -1,97 +1,25 @@
-@import 'tailwindcss';
+@import "tailwindcss";
 
-/*
-  The default border color has changed to `currentColor` in Tailwind CSS v4,
-  so we've added these compatibility styles to make sure everything still
-  looks the same as it did with Tailwind CSS v3.
+@theme {
+	--background-light: 146 148 151;
+	--background-dark: 15 23 42;
 
-  If we ever want to remove these styles, we need to add an explicit border
-  color utility to any element that depends on these defaults.
-*/
-@layer base {
-	*,
-	::after,
-	::before,
-	::backdrop,
-	::file-selector-button {
-		border-color: var(--color-gray-200, currentColor);
-	}
+	--glass-opacity-light: 0.7;
+	--glass-opacity-dark: 0.2;
+
+	--gradient-accent1-light: 11 141 235;
+	--gradient-accent1-dark: 30 58 138;
+
+	--gradient-accent2-light: 237 24 24;
+	--gradient-accent2-dark: 190 30 44;
 }
 
-:root {
-	font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
-	line-height: 1.5;
-	font-weight: 400;
+@import "../src/styles/base.css";
+@import "../src/styles/components.css";
+@import "../src/styles/utilities.css";
 
-	color-scheme: light dark;
-	color: rgba(255, 255, 255, 0.87);
-	background-color: #242424;
-
-	font-synthesis: none;
-	text-rendering: optimizeLegibility;
-	-webkit-font-smoothing: antialiased;
-	-moz-osx-font-smoothing: grayscale;
-}
+@custom-variant dark (&.dark, .dark &);
 
 #root {
-	width: 100vw;
-	height: 100vh;
-	/* padding: 1rem; */
-}
-
-a {
-	font-weight: 500;
-	text-decoration: inherit;
-}
-a:hover {
-	color: #535bf2;
-}
-
-body {
-	min-height: 100vh;
-	overflow-y: hidden;
-}
-
-h1 {
-	/* font-size: 3.2em; */
-	line-height: 1.1;
-}
-
-button {
-	border-radius: 8px;
-	border: 1px solid transparent;
-	font-size: 1em;
-	font-weight: 500;
-	font-family: inherit;
-	cursor: pointer;
-	transition: border-color 0.25s;
-}
-button:hover {
-	border-color: #646cff;
-}
-button:focus,
-button:focus-visible {
-	outline: 4px auto -webkit-focus-ring-color;
-}
-
-@media (prefers-color-scheme: light) {
-	:root {
-		color: #213547;
-		background-color: #ffffff;
-	}
-	a:hover {
-		color: #747bff;
-	}
-	button {
-		background-color: #f9f9f9;
-	}
-}
-
-.scrollbar-hide::-webkit-scrollbar {
-	display: none; /* Hide scrollbar for Chrome, Safari, and Opera */
-}
-
-.scrollbar-hide {
-	-ms-overflow-style: none; /* Hide scrollbar for Internet Explorer and Edge */
-	scrollbar-width: none; /* Hide scrollbar for Firefox */
+	@apply w-screen h-screen;
 }
