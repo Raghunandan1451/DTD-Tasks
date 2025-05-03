@@ -16,13 +16,15 @@ const Button: React.FC<ButtonProps> = ({
 	type = 'button',
 	text,
 	children,
+	...props
 }) => {
 	return (
 		<button
 			onClick={onClick}
 			className={className}
 			disabled={disabled}
-			type={type}>
+			type={type}
+			{...props}>
 			{children}
 			{text && <span>{text}</span>}
 		</button>
