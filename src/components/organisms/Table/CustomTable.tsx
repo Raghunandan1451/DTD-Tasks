@@ -93,11 +93,11 @@ const CustomTable: React.FC<TableProps> = ({
 	return (
 		<TableProvider value={contextValue}>
 			<div
-				className="overflow-y-auto flex-1 scrollbar-hide border"
+				className="overflow-y-auto flex-1 scrollbar-hide p-2 rounded-bl-xl bg-white/10 dark:bg-gray-800/20 backdrop-blur-md border border-white/20 dark:border-white/10 shadow-inner"
 				tabIndex={0}
 				ref={containerRef}
 				onKeyDown={handleCellChange}>
-				<table className="min-w-full table-auto">
+				<table className="min-w-full table-auto text-black dark:text-white">
 					<TableHeader columns={columns} />
 
 					<tbody>

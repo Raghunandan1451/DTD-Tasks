@@ -18,8 +18,8 @@ const FileItem: React.FC<FileItemProps> = ({
 	onRename,
 }) => (
 	<div
-		className={`flex justify-between cursor-pointer relative group p-1 rounded-md ${
-			isSelected ? 'bg-gray-700' : ''
+		className={`flex justify-between cursor-pointer group p-1 rounded-md ${
+			isSelected ? 'active' : ''
 		}`}
 		onClick={onSelect}>
 		<span className="flex items-center ">

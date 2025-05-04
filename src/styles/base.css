@@ -32,9 +32,9 @@
 	}
 
 	h1 {
-		@apply text-3xl font-bold text-gray-800 dark:text-gray-200;
+		@apply text-3xl font-bold text-gray-800 dark:text-gray-200 duration-300;
 	}
 	p {
-		@apply text-gray-800 dark:text-gray-400;
+		@apply text-gray-800 dark:text-gray-400 duration-300;
 	}
 }

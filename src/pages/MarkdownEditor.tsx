@@ -13,7 +13,7 @@ const MarkdownEditor: React.FC = () => {
 
 	const { notifications, showNotification } = useNotifications();
 	return (
-		<div className="h-full bg-gray-900 text-white flex flex-col">
+		<div className="h-full text-white flex flex-col">
 			<TitleWithButton
 				heading="Markdown Editor"
 				buttonText="Export as ZIP"

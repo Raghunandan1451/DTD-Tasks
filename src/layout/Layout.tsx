@@ -4,7 +4,7 @@ import ListSelector from '@src/layout/ListSelector';
 
 const Layout: React.FC = () => {
 	return (
-		<main className="flex h-full gap-4">
+		<main className="flex h-full gap-2">
 			<ListSelector />
 			<section className="flex flex-col w-full h-screen">
 				<Outlet />

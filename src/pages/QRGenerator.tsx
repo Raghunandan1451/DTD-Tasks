@@ -42,6 +42,7 @@ const QRGenerator: React.FC = () => {
 					)
 				}
 				buttonText="Download Image"
+				containerClass="rounded-bl-xl"
 			/>
 			<div className="flex flex-col items-center mt-6 space-y-12">
 				<div className="flex items-center space-x-4">
@@ -51,11 +52,11 @@ const QRGenerator: React.FC = () => {
 						placeholder="Enter URL or Text"
 						value={input}
 						onChange={handleInputChange}
-						className="border border-gray-300 rounded-md px-4 py-2 w-72 focus:outline-hidden"
+						className="w-72 bg-white/10 dark:bg-white/10 text-black dark:text-white px-4 py-2 rounded-lg shadow-md backdrop-blur-md border border-white/20 focus:outline-none placeholder-white/70"
 					/>
 					<Button
 						onClick={handleGenerate}
-						className="bg-green-500 text-white px-6 py-2 rounded-md hover:bg-green-600 focus:outline-hidden"
+						className="bg-green-500/80 hover:bg-green-600/80 text-white px-6 py-2 rounded-lg backdrop-blur-md shadow-lg transition"
 						text="Generate"
 					/>
 				</div>

@@ -151,7 +151,7 @@ const TreeView: React.FC<TreeViewProps> = ({ showInput, setShowInput }) => {
 
 			{showRenameInput && renameTarget && (
 				<EditFileFolder
-					renameValue={renameValue}
+					renameValue={renameValue.replace(/\.md$/, '')}
 					setRenameValue={setRenameValue}
 					setShowRenameInput={setShowRenameInput}
 					onEdit={() => {

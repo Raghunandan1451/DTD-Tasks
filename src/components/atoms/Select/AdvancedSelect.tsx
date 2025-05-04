@@ -27,11 +27,11 @@ const AdvancedSelect = <T,>({
 			name={id}
 			value={value}
 			onChange={onChange}
-			className={`w-full bg-transparent outline-hidden ${className}`}>
+			className={`w-full bg-white/10 dark:bg-gray-700/30 text-black dark:text-white p-1 backdrop-blur-sm outline-none ${className || ''}`}>
 			<option
 				value=""
 				disabled={isDisabled}
-				className="dark:text-white dark:bg-gray-800">
+				className="text-black dark:text-white bg-white dark:bg-gray-800">
 				{placeholder}
 			</option>
 			{options.map((option, index) => {
@@ -42,7 +42,7 @@ const AdvancedSelect = <T,>({
 					<option
 						key={index}
 						value={optionValue}
-						className="dark:text-white dark:bg-gray-800">
+						className="text-black dark:text-white bg-white dark:bg-gray-800">
 						{optionLabel}
 					</option>
 				);

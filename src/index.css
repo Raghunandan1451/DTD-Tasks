@@ -4,8 +4,7 @@
 	--background-light: 146 148 151;
 	--background-dark: 15 23 42;
 
-	--glass-opacity-light: 0.7;
-	--glass-opacity-dark: 0.2;
+	--glass-opacity: 20%;
 
 	--gradient-accent1-light: 11 141 235;
 	--gradient-accent1-dark: 30 58 138;
@@ -14,11 +13,11 @@
 	--gradient-accent2-dark: 190 30 44;
 }
 
+@custom-variant dark (&.dark, .dark &);
+
 @import "../src/styles/base.css";
 @import "../src/styles/components.css";
 @import "../src/styles/utilities.css";
-
-@custom-variant dark (&.dark, .dark &);
 
 #root {
 	@apply w-screen h-screen;

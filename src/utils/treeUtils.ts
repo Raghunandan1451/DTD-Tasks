@@ -144,7 +144,9 @@ export const handleRenameFile = (
 		return;
 	}
 
-	dispatch(renameFile({ oldPath: path, newName }));
+	const renamedFile = newName.trim().endsWith('.md') ? newName.trim() : `${newName.trim()}.md`
+
+	dispatch(renameFile({ oldPath: path, newName: renamedFile }));
 	showNotification('File renamed successfully', 'success');
 };
 

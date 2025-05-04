@@ -18,7 +18,7 @@ const FolderItem: React.FC<FolderItemProps> = ({
 }) => {
 	return (
 		<div
-			className="flex justify-between cursor-pointer group p-1 rounded-md"
+			className="flex justify-between cursor-pointer group p-1 rounded-md hover:bg-white/10 dark:hover:bg-black/10 transition"
 			onClick={onToggle}>
 			<span className="flex items-center">
 				{isExpanded ? (

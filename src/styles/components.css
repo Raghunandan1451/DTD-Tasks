@@ -1,7 +1,7 @@
 @layer components {
 	.glass-nav {
-		@apply flex h-full min-w-48 flex-col gap-4 overflow-y-auto py-2 backdrop-blur-xl 
-			   bg-white/[var(--glass-opacity-light)] dark:bg-white/[var(--glass-opacity-dark)] 
+		@apply flex h-full min-w-48 flex-col gap-2 overflow-y-auto py-2 backdrop-blur-xl 
+			   bg-white/(--glass-opacity) dark:bg-black/(--glass-opacity) 
 			   border border-white/20 dark:border-white/10 
 			   rounded-r-xl shadow-lg;
 	}
@@ -17,7 +17,7 @@
 	}
 
 	.active {
-		@apply bg-white/20 dark:bg-white/10 
+		@apply bg-white/[calc(var(--glass-opacity)*1.5)] dark:bg-black/[calc(var(--glass-opacity)*1.5)] 
 			   px-2 py-1 
 			   text-gray-800 dark:text-gray-200;
 	}

@@ -18,14 +18,14 @@ const QRCodeSettings: React.FC = () => {
 	};
 
 	return (
-		<fieldset className="border p-4 rounded-lg shadow-lg">
-			<legend className="text-lg font-semibold text-pink-400">
+		<fieldset className="border border-white/20 rounded-xl shadow-xl bg-white/10 backdrop-blur-md p-6 space-y-6">
+			<legend className="text-lg font-semibold text-gray-700 dark:text-cyan-400 px-2">
 				Optional Settings
 			</legend>
 
 			<div>
 				<label
-					className="block text-sm font-medium text-pink-400 mb-2"
+					className="block text-sm font-medium text-gray-700 dark:text-cyan-500"
 					htmlFor="selectedIcon">
 					Select Icon
 				</label>
@@ -38,7 +38,7 @@ const QRCodeSettings: React.FC = () => {
 						value: option.src,
 						label: option.name,
 					})}
-					className="border border-pink-600 rounded-md px-4 py-2 focus:outline-hidden focus:ring-2 focus:ring-blue-500"
+					className="w-full bg-white/10 text-gray-700 dark:text-white p-2 rounded-md backdrop-blur-md border border-gray-700 dark:border-cyan-500 focus:outline-none focus:ring-2 focus:ring-gray-700 dark:focus:ring-cyan-500"
 					placeholder="Select Icon"
 					isDisabled={false}
 				/>
@@ -46,7 +46,7 @@ const QRCodeSettings: React.FC = () => {
 			{/* Color Pickers for Background and Foreground Colors */}
 			<div>
 				<label
-					className={`block text-sm font-medium text-pink-400 mb-2`}
+					className={`block text-sm font-medium text-gray-700 dark:text-cyan-400`}
 					htmlFor="bgColor">
 					Background Color
 				</label>
@@ -55,12 +55,12 @@ const QRCodeSettings: React.FC = () => {
 					type="color"
 					value={settings.bgColor}
 					onChange={handleSettingChange}
-					className={`w-16 h-10 p-0 border border-pink-600 rounded-md focus:outline-hidden`}
+					className={`w-16 h-10 bg-white/10 border border-gray-700 dark:border-cyan-500 rounded-md backdrop-blur-md focus:outline-none px-0 py-0`}
 				/>
 			</div>
 			<div>
 				<label
-					className="block text-sm font-medium text-pink-400 mb-2"
+					className="block text-sm font-medium text-gray-700 dark:text-cyan-400"
 					htmlFor="fgColor">
 					Foreground Color
 				</label>
@@ -69,7 +69,7 @@ const QRCodeSettings: React.FC = () => {
 					type="color"
 					value={settings.fgColor}
 					onChange={handleSettingChange}
-					className={`w-16 h-10 p-0 border border-pink-600 rounded-md focus:outline-hidden`}
+					className={`w-16 h-10 bg-white/10 border border-gray-700 dark:border-cyan-500 rounded-md backdrop-blur-md focus:outline-none px-0 py-0`}
 				/>
 			</div>
 		</fieldset>

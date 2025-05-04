@@ -12,4 +12,9 @@
 		-ms-overflow-style: auto;
 		scrollbar-width: auto;
 	}
+
+	.glassmorphic-bg {
+		@apply rounded-l-lg bg-white/(--glass-opacity) dark:bg-black/(--glass-opacity) 
+			   backdrop-blur-xl border border-white/20 dark:border-white/10;
+	}
 }

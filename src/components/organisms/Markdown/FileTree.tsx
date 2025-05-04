@@ -6,14 +6,12 @@ import TreeView from '@src/components/organisms/Markdown/TreeView';
 const FileTree: React.FC = () => {
 	const [showInput, setShowInput] = useState<boolean>(false);
 
-	// const sortedFiles = sortFilesAlphabetically(files);
-
 	return (
-		<div className="w-65 border-r bg-gray-800 flex flex-col max-h-[calc(100vh-4rem)]">
-			<div className="p-4 border-b flex justify-around">
+		<div className="w-65 border-r border-gray-200 dark:border-gray-700 bg-white/30 dark:bg-black/30 backdrop-blur-md shadow-sm flex flex-col max-h-full rounded-bl-xl">
+			<div className="p-4 border-b border-gray-200 dark:border-gray-700 flex justify-around">
 				<Button
 					onClick={() => setShowInput(true)}
-					className="bg-blue-500 hover:bg-blue-600 text-white px-3 py-1 rounded-sm flex items-center gap-2"
+					className="bg-blue-500 hover:bg-blue-600 text-white px-3 py-1 rounded-sm flex items-center gap-2 shadow-md"
 					text="Add File">
 					<Plus size={16} />
 				</Button>

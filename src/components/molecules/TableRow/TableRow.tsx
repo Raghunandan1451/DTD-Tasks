@@ -16,8 +16,8 @@ const TableRow: React.FC<TableCellProps> = ({ row, rowIndex, columns }) => {
 	const isDataRow = Object.keys(row).length > 0;
 
 	return (
-		<tr className="hover:bg-gray-700 transition-colors">
-			<td className="py-1 px-2 border">{rowIndex + 1}</td>
+		<tr className="hover:bg-white/10 dark:hover:bg-gray-700/30 transition-colors">
+			<td className="py-1 px-2 border text-center">{rowIndex + 1}</td>
 			{columns.map((column, colIndex) => {
 				if (isDataRow) {
 					const isActive =
@@ -26,8 +26,8 @@ const TableRow: React.FC<TableCellProps> = ({ row, rowIndex, columns }) => {
 					return (
 						<td
 							key={column.key}
-							className={`py1 px-2 border ${
-								isActive ? 'bg-zinc-700' : ''
+							className={`p-0 border-b border-white/10 ${
+								isActive ? 'active' : ''
 							} ${column.className}`}>
 							<CellSelector
 								columnType={column.type}
@@ -42,7 +42,7 @@ const TableRow: React.FC<TableCellProps> = ({ row, rowIndex, columns }) => {
 					return (
 						<td
 							key={column.key}
-							className={`py1 px-2 border ${column.className}`}></td>
+							className={`p-0 border-b border-white/10 ${column.className}`}></td>
 					);
 				}
 			})}

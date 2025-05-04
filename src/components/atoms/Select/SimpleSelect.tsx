@@ -32,15 +32,15 @@ const SimpleSelect: React.FC<BaseSelectProps> = ({
 			onFocus={onFocus}
 			onKeyDown={onKeyDown}
 			ref={selectRef}
-			className={`w-full bg-transparent outline-hidden ${className}`}>
-			<option value="" className="dark:text-white dark:bg-gray-800">
+			className={`w-full bg-white/10 dark:bg-gray-700/30 text-black dark:text-white p-1 backdrop-blur-sm outline-none appearance-none ${className || ''}`}>
+			<option value="" className="text-black dark:text-white bg-white dark:bg-gray-800">
 				{placeholder}
 			</option>
 			{options.map((option, index) => (
 				<option
 					key={index}
 					value={option}
-					className="dark:text-white dark:bg-gray-800">
+					className="text-black dark:text-white bg-white dark:bg-gray-800">
 					{option}
 				</option>
 			))}
