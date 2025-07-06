@@ -1,20 +1,20 @@
-import React, { useRef, useState } from 'react';
-import { QRCodeCanvas } from 'qrcode.react';
-import TitleWithButton from '@src/components/molecules/Header/TitleWithButton';
-import QRCodeSettings from '@src/components/organisms/QRCode/QRCodeSettings';
-import { useDispatch, useSelector } from 'react-redux';
-import NotificationCenter from '@src/components/organisms/Notifications/NotificationCenter';
-import useNotifications from '@src/hooks/useNotifications';
-import { handleDownloadImage } from '@src/utils/downloadHandler';
-import { updateSettings } from '@src/store/qrSettingSlice';
-import { RootState } from '@src/store/store';
-import Button from '@src/components/atoms/Button/Button';
-import Input from '@src/components/atoms/Input/Input';
+import React, { useRef, useState } from "react";
+import { QRCodeCanvas } from "qrcode.react";
+import TitleWithButton from "@src/components/shared/title_with_button/TitleWithButton";
+import QRCodeSettings from "@src/features/qr_generator/QRCodeSettings";
+import { useDispatch, useSelector } from "react-redux";
+import NotificationCenter from "@src/components/ui/toast/NotificationCenter";
+import useNotifications from "@src/lib/hooks/useNotifications";
+import { handleDownloadImage } from "@src/lib/utils/downloadHandler";
+import { updateSettings } from "@src/lib/store/qrSettingSlice";
+import { RootState } from "@src/lib/store/store";
+import Button from "@src/components/ui/button/Button";
+import Input from "@src/components/ui/input/Input";
 
 const QRGenerator: React.FC = () => {
 	const qrRef = useRef<HTMLCanvasElement | null>(null);
 	const dispatch = useDispatch();
-	const [input, setInput] = useState<string>('');
+	const [input, setInput] = useState<string>("");
 	const { notifications, showNotification } = useNotifications();
 	const settings = useSelector((state: RootState) => state.qr);
 
@@ -23,8 +23,8 @@ const QRGenerator: React.FC = () => {
 	};
 
 	const handleGenerate = () => {
-		if (input.trim() === '') {
-			showNotification('Please enter a valid input', 'error');
+		if (input.trim() === "") {
+			showNotification("Please enter a valid input", "error");
 			return;
 		}
 		dispatch(updateSettings({ qrData: input }));
@@ -72,7 +72,7 @@ const QRGenerator: React.FC = () => {
 								marginSize={1}
 								bgColor={settings.bgColor}
 								fgColor={settings.fgColor}
-								{...(settings.selectedIcon?.trim() !== ''
+								{...(settings.selectedIcon?.trim() !== ""
 									? {
 											imageSettings: {
 												src: settings.selectedIcon,

@@ -1,6 +1,6 @@
 import React from "react";
 import { Link, useLocation } from "react-router-dom";
-import ThemeToggle from "@src/components/molecules/ThemeToggle/ThemeToggle";
+import ThemeToggle from "@src/components/shared/theme_toggler/ThemeToggle";
 
 // Define the proper types for our navigation structure
 interface ListItem {
@@ -21,19 +21,6 @@ const navigationData: NavigationGroup[] = [
 			{
 				id: "",
 				name: "Home",
-			},
-		],
-	},
-	{
-		title: "Lists",
-		items: [
-			{
-				id: "todo",
-				name: "To-Do",
-			},
-			{
-				id: "shopping",
-				name: "Shopping",
 			},
 		],
 	},

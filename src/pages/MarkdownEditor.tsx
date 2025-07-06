@@ -1,12 +1,12 @@
-import React from 'react';
-import { handleZIPExport } from '@src/utils/downloadHandler';
-import { useSelector } from 'react-redux';
-import NotificationCenter from '@src/components/organisms/Notifications/NotificationCenter';
-import useNotifications from '@src/hooks/useNotifications';
-import TitleWithButton from '@src/components/molecules/Header/TitleWithButton';
-import FileTree from '@src/components/organisms/Markdown/FileTree';
-import Editor from '@src/components/organisms/Markdown/Editor';
-import { RootState } from '@src/store/store';
+import React from "react";
+import { handleZIPExport } from "@src/lib/utils/downloadHandler";
+import { useSelector } from "react-redux";
+import NotificationCenter from "@src/components/ui/toast/NotificationCenter";
+import useNotifications from "@src/lib/hooks/useNotifications";
+import TitleWithButton from "@src/components/shared/title_with_button/TitleWithButton";
+import FileTree from "@src/features/markdown/FileTree";
+import Editor from "@src/features/markdown/Editor";
+import { RootState } from "@src/lib/store/store";
 
 const MarkdownEditor: React.FC = () => {
 	const { files } = useSelector((state: RootState) => state.fileManager);
