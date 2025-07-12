@@ -1,17 +1,21 @@
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
 import { findFileByPath } from "@src/lib/utils/treeUtils";
 import { File, Folder, FileState } from "@src/lib/types/markdown";
-import { getFromLocalStorage } from "@src/lib/utils/persistMiddleware";
 
-export const getInitialState = (): FileState => {
-	const storedData = getFromLocalStorage<FileState>("redux_markdown_data");
-	return storedData || { files: [], selectedFile: null, content: "" };
+const initialState: FileState = {
+	files: [],
+	selectedFile: null,
+	content: "",
+	loaded: false,
 };
 
 const markdownSlice = createSlice({
 	name: "fileManager",
-	initialState: getInitialState(),
+	initialState: initialState,
 	reducers: {
+		setFileState: (_, action: PayloadAction<FileState>) => {
+			return { ...action.payload, loaded: true };
+		},
 		addFolder: (
 			state,
 			action: PayloadAction<{ parentPath: string; folder: Folder }>
@@ -229,6 +233,7 @@ const markdownSlice = createSlice({
 });
 
 export const {
+	setFileState,
 	addFolder,
 	addFile,
 	updateFileContent,

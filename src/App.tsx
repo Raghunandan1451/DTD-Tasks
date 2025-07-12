@@ -1,11 +1,13 @@
-import Home from "@src/pages/Home";
-import QRGenerator from "@src/pages/QRGenerator";
-import MarkdownEditor from "@src/pages/MarkdownEditor";
+import { RouterProvider, createBrowserRouter } from "react-router-dom";
+import { FC, lazy } from "react";
 
 import Layout from "@src/layout/Layout";
-import { RouterProvider, createBrowserRouter } from "react-router-dom";
-import { FC } from "react";
+import Home from "@src/pages/Home";
+const QRGenerator = lazy(() => import("@src/pages/QRGenerator"));
+const MarkdownEditor = lazy(() => import("@src/pages/MarkdownEditor"));
+
 import { ThemeProvider } from "@src/lib/context/ThemeContext";
+import withSuspense from "@src/lib/routing/withSuspense";
 
 const router = createBrowserRouter([
 	{
@@ -13,8 +15,8 @@ const router = createBrowserRouter([
 		element: <Layout />, // Layout contains Navbar and Outlet
 		children: [
 			{ path: "/", element: <Home /> },
-			{ path: "/qrgen", element: <QRGenerator /> },
-			{ path: "/markdown", element: <MarkdownEditor /> },
+			{ path: "/qrgen", element: withSuspense(QRGenerator) },
+			{ path: "/markdown", element: withSuspense(MarkdownEditor) },
 		],
 	},
 ]);

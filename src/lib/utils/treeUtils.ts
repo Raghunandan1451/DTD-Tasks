@@ -6,7 +6,7 @@ import {
 	selectFile,
 	deleteFile,
 	renameFile,
-} from "@src/lib/store/markdownSlice";
+} from "@src/lib/store/slices/markdownSlice";
 
 import { File, Folder, BaseItem } from "@src/lib/types/markdown";
 

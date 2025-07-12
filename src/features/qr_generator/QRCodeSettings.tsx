@@ -1,7 +1,7 @@
 import React, { ChangeEvent } from "react";
 import { getIconList } from "@src/lib/utils/svgUtils"; // Import utility
 import { useSelector, useDispatch } from "react-redux";
-import { updateSettings } from "@src/lib/store/qrSettingSlice";
+import { updateSettings } from "@src/lib/store/slices/qrSettingSlice";
 import { RootState } from "@src/lib/store/store";
 import AdvancedSelect from "@src/components/ui/select_dropdown/AdvancedSelect";
 import Input from "@src/components/ui/input/Input";

@@ -1,4 +1,5 @@
 import { createSlice, nanoid } from "@reduxjs/toolkit";
+// Need to change the import if in use
 import { getFromLocalStorage } from "@src/lib/utils/persistMiddleware";
 
 interface Todo {

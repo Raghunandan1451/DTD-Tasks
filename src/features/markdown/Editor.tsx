@@ -1,6 +1,6 @@
 import Textarea from "@src/components/ui/textbox/Textarea";
 import MarkdownPreview from "@src/features/markdown/MarkdownPreview";
-import { updateFileContent } from "@src/lib/store/markdownSlice";
+import { updateFileContent } from "@src/lib/store/slices/markdownSlice";
 import { RootState } from "@src/lib/store/store";
 import React from "react";
 import { useDispatch, useSelector } from "react-redux";

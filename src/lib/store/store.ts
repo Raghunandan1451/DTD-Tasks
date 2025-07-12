@@ -1,14 +1,10 @@
 import { configureStore } from "@reduxjs/toolkit";
-import todoReducer from "@src/lib/store/todoSlice";
-import shoppingReducer from "@src/lib/store/shoppingSlice";
-import qrSettingReducer from "@src/lib/store/qrSettingSlice";
-import markdownReducer from "@src/lib/store/markdownSlice";
+import qrSettingReducer from "@src/lib/store/slices/qrSettingSlice";
+import markdownReducer from "@src/lib/store/slices/markdownSlice";
 import { persistMiddleware } from "@src/lib/utils/persistMiddleware";
 
 const store = configureStore({
 	reducer: {
-		todos: todoReducer,
-		shopping: shoppingReducer,
 		qr: qrSettingReducer,
 		fileManager: markdownReducer,
 	},
@@ -18,5 +14,6 @@ const store = configureStore({
 });
 
 export type RootState = ReturnType<typeof store.getState>;
+export type AppDispatch = typeof store.dispatch;
 
 export default store;

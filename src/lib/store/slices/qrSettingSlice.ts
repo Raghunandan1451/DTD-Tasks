@@ -1,5 +1,4 @@
 import { createSlice } from "@reduxjs/toolkit";
-import { getFromLocalStorage } from "@src/lib/utils/persistMiddleware";
 
 interface QrSettings {
 	qrData: string;
@@ -8,21 +7,16 @@ interface QrSettings {
 	fgColor: string;
 }
 
-export const getInitialState = (): QrSettings => {
-	const storedData = getFromLocalStorage<QrSettings>("redux_qr_settings");
-	return (
-		storedData || {
-			qrData: "",
-			selectedIcon: "",
-			bgColor: "#ffffff",
-			fgColor: "#000000",
-		}
-	);
+const initialState: QrSettings = {
+	qrData: "",
+	selectedIcon: "",
+	bgColor: "#ffffff",
+	fgColor: "#000000",
 };
 
 const qrSettingSlice = createSlice({
 	name: "qrSettings",
-	initialState: getInitialState(),
+	initialState: initialState,
 	reducers: {
 		updateSettings: (state, action: { payload: Partial<QrSettings> }) => ({
 			...state,
