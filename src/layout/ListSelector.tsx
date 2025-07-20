@@ -24,6 +24,16 @@ const navigationData: NavigationGroup[] = [
 			},
 		],
 	},
+
+	{
+		title: "Trackers",
+		items: [
+			{
+				id: "finance",
+				name: "Finance",
+			},
+		],
+	},
 	{
 		title: "Generators",
 		items: [

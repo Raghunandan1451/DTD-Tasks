@@ -29,7 +29,7 @@ const MarkdownEditor: React.FC = () => {
 				buttonText="Export as ZIP"
 				onDownload={() => handleZIPExport(files, showNotification)}
 			/>
-			<div className="flex flex-1 min-h-0">
+			<div className="flex flex-1 min-h-0 border border-white/20 dark:border-white/10">
 				<FileTree />
 				<Editor />
 			</div>

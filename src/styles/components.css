@@ -21,4 +21,16 @@
 			   px-2 py-1 
 			   text-gray-800 dark:text-gray-200;
 	}
+
+	.frosted-panel {
+		@apply flex place-content-between place-items-center p-2 rounded-tl-xl bg-white/10 dark:bg-gray-900/20 backdrop-blur-md border border-white/20 dark:border-white/10 shadow-lg text-black dark:text-white;
+	}
+
+	.btn-primary {
+		@apply bg-blue-500/75 hover:bg-blue-600/75 text-white p-2 rounded-lg shadow-md;
+	}
+
+	.panel-title {
+		@apply text-4xl font-bold;
+	}
 }

@@ -5,11 +5,7 @@
 			"dest": "/"
 		},
 		{
-			"src": "/todo",
-			"dest": "/"
-		},
-		{
-			"src": "/shopping",
+			"src": "/finance",
 			"dest": "/"
 		},
 		{

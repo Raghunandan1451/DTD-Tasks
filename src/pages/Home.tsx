@@ -2,7 +2,7 @@ import React from "react";
 
 const Home: React.FC = () => {
 	return (
-		<div className="flex flex-col items-center justify-center h-full glassmorphic-bg">
+		<div className="flex flex-col items-center justify-center h-full glassmorphic-bg rounded-l-lg">
 			<div className="text-center">
 				<h1 className="text-3xl font-bold text-gray-800 dark:text-gray-200">
 					Welcome to Your List Manager!

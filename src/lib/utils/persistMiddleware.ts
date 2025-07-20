@@ -6,6 +6,8 @@ import { debounce } from "@src/lib/utils/debounce";
 // Enhanced storage configuration with expiry times
 const sliceStorageKeys: Record<string, string> = {
 	fileManager: "redux_markdown_data",
+	expenses: "redux_expenses_data",
+	finance: "redux_finance_data",
 };
 
 const debouncedSaves: Record<string, (state: unknown) => void> = {};

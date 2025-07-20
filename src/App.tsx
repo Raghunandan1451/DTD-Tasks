@@ -5,6 +5,7 @@ import Layout from "@src/layout/Layout";
 import Home from "@src/pages/Home";
 const QRGenerator = lazy(() => import("@src/pages/QRGenerator"));
 const MarkdownEditor = lazy(() => import("@src/pages/MarkdownEditor"));
+const Finance = lazy(() => import("@src/pages/Finance"));
 
 import { ThemeProvider } from "@src/lib/context/ThemeContext";
 import withSuspense from "@src/lib/routing/withSuspense";
@@ -17,6 +18,7 @@ const router = createBrowserRouter([
 			{ path: "/", element: <Home /> },
 			{ path: "/qrgen", element: withSuspense(QRGenerator) },
 			{ path: "/markdown", element: withSuspense(MarkdownEditor) },
+			{ path: "/finance", element: withSuspense(Finance) },
 		],
 	},
 ]);

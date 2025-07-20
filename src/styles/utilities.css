@@ -14,7 +14,33 @@
 	}
 
 	.glassmorphic-bg {
-		@apply rounded-l-lg bg-white/(--glass-opacity) dark:bg-black/(--glass-opacity) 
+		@apply bg-white/(--glass-opacity) dark:bg-black/(--glass-opacity) 
 			   backdrop-blur-xl border border-white/20 dark:border-white/10;
+	}
+	.text-theme {
+		@apply text-gray-800 dark:text-gray-200;
+	}
+
+	.text-theme-muted {
+		@apply text-gray-800 dark:text-gray-400;
+	}
+
+	/* Unselected: lighter background in both themes */
+	.btn-glass-unselected {
+		@apply bg-white/[var(--glass-opacity)] 
+			dark:bg-white/[var(--glass-opacity)] 
+			text-gray-800 dark:text-gray-100 
+			border-white/10 dark:border-white/10 
+			hover:bg-white/[calc(var(--glass-opacity)*1.5)] 
+			dark:hover:bg-white/[calc(var(--glass-opacity)*1.5)];
+	}
+
+	/* Selected: darker background in both themes */
+	.btn-glass-selected {
+		@apply bg-black/[calc(var(--glass-opacity)*1.5)] 
+			dark:bg-black/[calc(var(--glass-opacity)*1.5)] 
+			text-white 
+			border-white/20 dark:border-white/20 
+			shadow-inner;
 	}
 }
