@@ -1,11 +1,35 @@
 {
 	"compilerOptions": {
+		"target": "ES2020",
+		"module": "ESNext",
+		"lib": ["ES2020", "DOM", "DOM.Iterable"],
+		"moduleResolution": "bundler",
+		"jsx": "react-jsx",
+		"strict": true,
+
 		"baseUrl": ".",
 		"paths": {
-			"@src/*": ["src/*"],
-			"@src": ["src"]
-		}
+			"@src/*": ["src/*"]
+		},
+
+		"skipLibCheck": true,
+		"isolatedModules": true,
+		"useDefineForClassFields": true,
+		"noUnusedLocals": true,
+		"noUnusedParameters": true,
+		"noFallthroughCasesInSwitch": true,
+		"noEmit": true
 	},
-	"extends": "./tsconfig.app.json",
-	"exclude": ["node_modules"]
+	"include": [
+		"src",
+		"tests",
+		"vite.config.ts",
+		"dev_only/ShoppingPage.test.tsx",
+		"dev_only/TodoPage.test.tsx",
+		"dev_only/useHandleTableKeyEvent.test.ts",
+		"dev_only/useTableContext.test.tsx",
+		"dev_only/useTableContext.ts",
+		"dev_only/useHandleTableKeyEvent.ts"
+	],
+	"exclude": ["dist", "node_modules"]
 }

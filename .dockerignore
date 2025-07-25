@@ -1,0 +1,23 @@
+# Node & Vite
+node_modules
+dist
+.vite
+*.log
+
+# Test files (if not needed in image)
+tests
+
+# VCS
+.git
+.gitignore
+
+# OS/Editor junk
+.DS_Store
+*.swp
+*.tmp
+.vscode
+
+# Docker & Compose files (if you don't want them inside container)
+.dockerignore
+Dockerfile*
+docker-compose*
