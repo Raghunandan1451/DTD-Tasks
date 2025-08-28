@@ -5,10 +5,10 @@ import Layout from "@src/layout/Layout";
 import Home from "@src/pages/Home";
 const QRGenerator = lazy(() => import("@src/pages/QRGenerator"));
 const MarkdownEditor = lazy(() => import("@src/pages/MarkdownEditor"));
-const Finance = lazy(() => import("@src/pages/Finance"));
+const ExpenseTracker = lazy(() => import("@src/pages/ExpenseTracker"));
 
 import { ThemeProvider } from "@src/lib/context/ThemeContext";
-import withSuspense from "@src/lib/routing/withSuspense";
+import withSuspense from "@src/lib/hoc/withSuspense";
 
 const router = createBrowserRouter([
 	{
@@ -18,7 +18,7 @@ const router = createBrowserRouter([
 			{ path: "/", element: <Home /> },
 			{ path: "/qrgen", element: withSuspense(QRGenerator) },
 			{ path: "/markdown", element: withSuspense(MarkdownEditor) },
-			{ path: "/finance", element: withSuspense(Finance) },
+			{ path: "/expenses", element: withSuspense(ExpenseTracker) },
 		],
 	},
 ]);
@@ -26,7 +26,7 @@ const router = createBrowserRouter([
 const App: FC = () => {
 	return (
 		<ThemeProvider>
-			<RouterProvider router={router} />;
+			<RouterProvider router={router} />
 		</ThemeProvider>
 	);
 };

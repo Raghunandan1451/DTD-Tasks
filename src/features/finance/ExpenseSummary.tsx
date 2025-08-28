@@ -1,7 +1,7 @@
 import { FC } from "react";
-import Controls from "@src/features/expense_tracker/Controls";
-import { ExpenseSummaryProps } from "@src/lib/types/expense";
-import BalanceSection from "@src/features/expense_tracker/BalanceSection";
+import Controls from "@src/features/finance/Controls";
+import { ExpenseSummaryProps } from "@src/lib/types/finance";
+import BalanceSection from "@src/features/finance/BalanceSection";
 
 const ExpenseSummary: FC<ExpenseSummaryProps> = ({
 	balance,
@@ -20,7 +20,10 @@ const ExpenseSummary: FC<ExpenseSummaryProps> = ({
 				simulatedRemaining={simulatedRemaining}
 				viewMode={viewMode}
 			/>
-			<Controls viewMode={viewMode} onChangeView={onChangeView} />
+			<Controls
+				viewMode={viewMode ?? "salary"}
+				onChangeView={onChangeView}
+			/>
 		</div>
 	);
 };

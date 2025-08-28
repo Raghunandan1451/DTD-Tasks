@@ -1,6 +1,6 @@
 import { createAsyncThunk } from "@reduxjs/toolkit";
 import { getFromIndexedDB } from "@src/lib/utils/persistMiddleware";
-import { FinanceState } from "@src/lib/types/expense";
+import { FinanceState } from "@src/lib/types/finance";
 import { setFinanceState } from "@src/lib/store/slices/financeSlice";
 
 export const hydrateFinance = createAsyncThunk(

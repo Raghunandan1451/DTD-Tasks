@@ -1,6 +1,7 @@
-import React from 'react';
+import React from "react";
 
-export interface BaseInputProps {
+export interface BaseInputProps
+	extends React.InputHTMLAttributes<HTMLInputElement> {
 	id: string;
 	type?: string;
 	value: string | number | undefined;
@@ -16,32 +17,29 @@ export interface BaseInputProps {
 
 const Input: React.FC<BaseInputProps> = ({
 	id,
-	type = 'text',
+	type = "text",
 	value,
 	onChange,
 	onFocus,
 	onKeyDown,
 	inputRef,
 	className,
-	min,
-	max,
-	placeholder,
+	...rest
 }) => {
 	return (
 		<input
 			id={id}
 			name={id}
 			type={type}
-			value={value || ''}
+			value={value || ""}
 			onChange={onChange}
 			onFocus={onFocus}
 			onKeyDown={onKeyDown}
 			ref={inputRef}
-			className={`w-full bg-white/10 dark:bg-gray-700/30 text-black dark:text-white p-1 backdrop-blur-sm outline-none ${className || ''}`}
-			min={min}
-			max={max}
-			placeholder={placeholder}
-			autoFocus
+			className={`w-full bg-white/10 dark:bg-gray-700/30 text-black dark:text-white p-1 backdrop-blur-sm outline-none ${
+				className || ""
+			}`}
+			{...rest}
 		/>
 	);
 };

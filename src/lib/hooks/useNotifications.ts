@@ -1,13 +1,9 @@
 import { useState } from "react";
-import { Notification } from "@src/lib/types/notification";
+import {
+	Notification,
+	NotificationHookProps,
+} from "@src/lib/types/notification";
 
-interface NotificationHookProps {
-	notifications: Notification[];
-	showNotification: (
-		message: string,
-		type: "error" | "success" | "info"
-	) => void;
-}
 // Notification system instead of alerts
 let notificationId = 0;
 const useNotifications = (): NotificationHookProps => {

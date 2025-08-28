@@ -3,13 +3,13 @@
 import { FC } from "react";
 import Button from "@src/components/ui/button/Button";
 import clsx from "clsx";
-import { ControlsProps, ViewMode } from "@src/lib/types/expense";
+import { ControlsProps, ViewMode } from "@src/lib/types/finance";
 
 const views: { key: ViewMode; label: string }[] = [
-	{ key: "list", label: "Expenses" },
-	{ key: "graph", label: "Graphs" },
 	{ key: "salary", label: "Salary & Recurring" },
-	{ key: "simulation", label: "Simulator" },
+	{ key: "list", label: "Expenses" },
+	{ key: "estimate", label: "Estimator" },
+	{ key: "graph", label: "Graphs" },
 ];
 
 const Controls: FC<ControlsProps> = ({ viewMode, onChangeView }) => {

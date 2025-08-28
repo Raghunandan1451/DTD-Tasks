@@ -43,4 +43,10 @@
 			border-white/20 dark:border-white/20 
 			shadow-inner;
 	}
+
+	.number-input-noappearance {
+		@apply appearance-none 
+             [&::-webkit-outer-spin-button]:appearance-none 
+             [&::-webkit-inner-spin-button]:appearance-none;
+	}
 }

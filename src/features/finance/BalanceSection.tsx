@@ -1,11 +1,12 @@
-import { BalanceSectionProps, SummaryItemProps } from "@src/lib/types/expense";
+// import { BalanceSectionProps, SummaryItemProps } from "@src/lib/types/finance";
 import { FC } from "react";
+import { BalanceSectionProps, SummaryItemProps } from "@src/lib/types/finance";
 
 const BalanceSection: FC<BalanceSectionProps> = ({
-	balance,
-	expenses,
-	remaining,
-	simulatedRemaining,
+	balance = 0,
+	expenses = 0,
+	remaining = 0,
+	simulatedRemaining = 0,
 	viewMode,
 }) => (
 	<div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 text-sm">
@@ -15,7 +16,7 @@ const BalanceSection: FC<BalanceSectionProps> = ({
 		/>
 		<SummaryItem label="Expenses: " value={`${expenses.toFixed(2)}`} />
 		<SummaryItem label="Remaining: " value={`${remaining.toFixed(2)}`} />
-		{viewMode === "simulation" && (
+		{viewMode === "estimate" && (
 			<SummaryItem
 				label="Simulated Balance: "
 				value={`${simulatedRemaining?.toFixed(2) ?? "0.00"}`}

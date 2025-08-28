@@ -29,8 +29,8 @@ const navigationData: NavigationGroup[] = [
 		title: "Trackers",
 		items: [
 			{
-				id: "finance",
-				name: "Finance",
+				id: "expenses",
+				name: "Expenses",
 			},
 		],
 	},

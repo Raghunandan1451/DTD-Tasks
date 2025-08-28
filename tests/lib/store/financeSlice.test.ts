@@ -6,7 +6,7 @@ import financeReducer, {
 	setFinanceState,
 } from "@src/lib/store/slices/financeSlice";
 import { describe, it, expect } from "vitest";
-import type { FinanceState, SalaryConfig } from "@src/lib/types/expense";
+import type { FinanceState, SalaryConfig } from "@src/lib/types/finance";
 
 describe("financeSlice", () => {
 	const initialState: FinanceState = {
