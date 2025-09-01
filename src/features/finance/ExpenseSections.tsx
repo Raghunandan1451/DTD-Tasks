@@ -11,8 +11,8 @@ const ExpenseList = lazy(
 const GraphComponent = lazy(
 	() => import("@src/features/finance/expense_section/GraphComponent")
 );
-const Simulator = lazy(
-	() => import("@src/features/finance/expense_section/Simulator")
+const Estimator = lazy(
+	() => import("@src/features/finance/estimate_expense/Estimator")
 );
 
 export const ExpenseSections: FC<{
@@ -43,7 +43,7 @@ export const ExpenseSections: FC<{
 				<Suspense
 					fallback={<Loader className="animate-spin text-gray-500" />}
 				>
-					<Simulator />
+					<Estimator />
 				</Suspense>
 			)}
 		</div>

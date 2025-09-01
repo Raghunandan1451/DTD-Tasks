@@ -1,3 +1,4 @@
+// Updated ExpenseTracker.tsx
 import { useDispatch, useSelector } from "react-redux";
 import { AppDispatch, RootState } from "@src/lib/store/store";
 import { useEffect, useState } from "react";
@@ -7,32 +8,35 @@ import { ExpenseSections } from "@src/features/finance/ExpenseSections";
 import { ViewMode } from "@src/lib/types/finance";
 import { hydrateFinance } from "@src/lib/store/thunks/financeThunk";
 import { hydrateExpenses } from "@src/lib/store/thunks/expenseThunk";
-import { autoUpdateBalance } from "@src/lib/utils/finance";
 import {
-	selectSelectedDateTotal,
+	// selectSelectedDateTotal,
 	selectExpensesForSelectedDate,
+	selectCalculatedBalance,
+	// selectSelectedDateCredits,
+	selectTotalAllExpenses, // Add this import
 } from "@src/lib/store/selectors/expenseSelectors";
+import { addSalaryForMissedMonths } from "@src/lib/utils/finance";
 
-const Finance = () => {
+const ExpenseTracker = () => {
 	const finance = useSelector((state: RootState) => state.finance);
+	const expenses = useSelector((state: RootState) => state.expenses.expenses);
 	const expensesLoaded = useSelector(
 		(state: RootState) => state.expenses.loaded
 	);
 
-	// Using selectors instead of direct state access
+	// Using selectors for data
 	const selectedDateExpenses = useSelector(selectExpensesForSelectedDate);
-	const selectedDateTotal = useSelector(selectSelectedDateTotal);
+	const calculatedBalance = useSelector(selectCalculatedBalance);
+	const totalAllExpenses = useSelector(selectTotalAllExpenses); // Use the selector
 
 	const { salary, currentBalance, loaded } = finance;
 	const dispatch = useDispatch<AppDispatch>();
 
 	const [viewMode, setViewMode] = useState<ViewMode>("salary");
 
-	const simulatedRemaining = 0;
-
-	// Use the selector result for total expenses (for selected date)
-	const totalExpenses = selectedDateTotal;
-	const remaining = currentBalance - totalExpenses;
+	// For simulation: remaining - additional logged expenses
+	const additionalExpenses = 0;
+	const simulatedRemaining = calculatedBalance - additionalExpenses;
 
 	useEffect(() => {
 		if (!loaded) {
@@ -44,10 +48,22 @@ const Finance = () => {
 	}, [dispatch, loaded, expensesLoaded]);
 
 	useEffect(() => {
-		if (loaded) {
-			autoUpdateBalance(finance, dispatch);
+		if (loaded && expensesLoaded && salary) {
+			const addedCount = addSalaryForMissedMonths(
+				salary,
+				expenses,
+				dispatch,
+				finance,
+				6
+			);
+
+			if (addedCount && addedCount > 0) {
+				console.log(
+					`Auto-generated ${addedCount} missing salary entries`
+				);
+			}
 		}
-	}, [finance, dispatch, loaded]);
+	}, [loaded, expensesLoaded, salary, expenses, dispatch, finance]);
 
 	useEffect(() => {
 		if (loaded && salary && currentBalance) {
@@ -63,19 +79,19 @@ const Finance = () => {
 				onDownload={() => console.log("Exporting PDF...")}
 			/>
 			<ExpenseSummary
-				balance={currentBalance}
-				expenses={totalExpenses}
-				remaining={remaining}
+				balance={calculatedBalance}
+				expenses={totalAllExpenses}
+				remaining={calculatedBalance}
 				simulatedRemaining={simulatedRemaining}
 				viewMode={viewMode}
 				onChangeView={setViewMode}
 			/>
 			<ExpenseSections
 				viewMode={viewMode}
-				allExpenses={selectedDateExpenses} // Using selected date expenses for daily view
+				allExpenses={selectedDateExpenses}
 			/>
 		</>
 	);
 };
 
-export default Finance;
+export default ExpenseTracker;

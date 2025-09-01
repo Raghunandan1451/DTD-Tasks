@@ -1,4 +1,4 @@
-// src/store/slices/expensesSlice.ts
+// src/store/slices/expensesSlice.ts - Minimal changes to existing code
 import { createSlice, nanoid, PayloadAction } from "@reduxjs/toolkit";
 import { ExpenseEntry } from "@src/lib/types/finance";
 
@@ -50,10 +50,17 @@ const expensesSlice = createSlice({
 
 		// Add expense with explicit date
 		addExpense(state, action: PayloadAction<Omit<ExpenseEntry, "id">>) {
-			state.expenses.push({ ...action.payload, id: nanoid() });
+			state.expenses.push({
+				...action.payload,
+				id: nanoid(),
+				// Set default type based on whether it's salary or regular expense
+				type:
+					action.payload.type ||
+					(action.payload.group === "Salary" ? "Cr" : "Dr"),
+			});
 		},
 
-		// Add expense to currently selected date
+		// Add expense to currently selected date (unchanged - user entries default to Dr)
 		addExpenseToSelectedDate(
 			state,
 			action: PayloadAction<Omit<ExpenseEntry, "id" | "date">>
@@ -62,6 +69,7 @@ const expensesSlice = createSlice({
 				...action.payload,
 				id: nanoid(),
 				date: state.selectedDate,
+				type: "Dr", // User entries are always expenses (Dr)
 			});
 		},
 
