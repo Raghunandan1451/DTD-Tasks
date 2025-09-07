@@ -1,19 +1,16 @@
-// Updated ExpenseTracker.tsx
 import { useDispatch, useSelector } from "react-redux";
 import { AppDispatch, RootState } from "@src/lib/store/store";
 import { useEffect, useState } from "react";
 import ExpenseSummary from "@src/features/finance/ExpenseSummary";
 import TitleWithButton from "@src/components/shared/title_with_button/TitleWithButton";
 import { ExpenseSections } from "@src/features/finance/ExpenseSections";
-import { ViewMode } from "@src/lib/types/finance";
+import { ViewMode, SimulatedExpense } from "@src/lib/types/finance";
 import { hydrateFinance } from "@src/lib/store/thunks/financeThunk";
 import { hydrateExpenses } from "@src/lib/store/thunks/expenseThunk";
 import {
-	// selectSelectedDateTotal,
 	selectExpensesForSelectedDate,
 	selectCalculatedBalance,
-	// selectSelectedDateCredits,
-	selectTotalAllExpenses, // Add this import
+	selectTotalAllExpenses,
 } from "@src/lib/store/selectors/expenseSelectors";
 import { addSalaryForMissedMonths } from "@src/lib/utils/finance";
 
@@ -27,16 +24,22 @@ const ExpenseTracker = () => {
 	// Using selectors for data
 	const selectedDateExpenses = useSelector(selectExpensesForSelectedDate);
 	const calculatedBalance = useSelector(selectCalculatedBalance);
-	const totalAllExpenses = useSelector(selectTotalAllExpenses); // Use the selector
+	const totalAllExpenses = useSelector(selectTotalAllExpenses);
 
 	const { salary, currentBalance, loaded } = finance;
 	const dispatch = useDispatch<AppDispatch>();
 
 	const [viewMode, setViewMode] = useState<ViewMode>("salary");
+	const [simulatedExpenses, setSimulatedExpenses] = useState<
+		SimulatedExpense[]
+	>([]);
 
-	// For simulation: remaining - additional logged expenses
-	const additionalExpenses = 0;
-	const simulatedRemaining = calculatedBalance - additionalExpenses;
+	// Calculate simulated remaining balance
+	const totalSimulatedCost = simulatedExpenses.reduce(
+		(sum, item) => sum + item.amount,
+		0
+	);
+	const projectedBalance = calculatedBalance - totalSimulatedCost;
 
 	useEffect(() => {
 		if (!loaded) {
@@ -81,14 +84,15 @@ const ExpenseTracker = () => {
 			<ExpenseSummary
 				balance={calculatedBalance}
 				expenses={totalAllExpenses}
-				remaining={calculatedBalance}
-				simulatedRemaining={simulatedRemaining}
+				simulatedRemaining={projectedBalance}
 				viewMode={viewMode}
 				onChangeView={setViewMode}
 			/>
 			<ExpenseSections
 				viewMode={viewMode}
 				allExpenses={selectedDateExpenses}
+				setSimulatedExpenses={setSimulatedExpenses}
+				simulatedExpenses={simulatedExpenses}
 			/>
 		</>
 	);

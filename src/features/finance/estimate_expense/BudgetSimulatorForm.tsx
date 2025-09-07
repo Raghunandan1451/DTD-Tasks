@@ -1,28 +1,32 @@
 import React, { useState, useRef } from "react";
-import { useDispatch, useSelector } from "react-redux";
-import { RootState } from "@src/lib/store/store";
-import { addExpenseToSelectedDate } from "@src/lib/store/slices/expensesSlice";
 import GenericForm from "@src/components/shared/form/GenericForm";
-import { createExpenseFormFields, ExpenseFormData } from "./ExpenseFormConfig";
+import {
+	createBudgetSimulatorFormFields,
+	BudgetSimulatorFormData,
+} from "@src/features/finance/estimate_expense/BudgetSimulatorFormConfig";
 import { FormHandlers } from "@src/lib/types/form";
+import { SimulatedExpense } from "@src/lib/types/finance";
 
-const ExpenseEntryForm: React.FC = () => {
-	const groups = useSelector((state: RootState) => state.finance.groups);
+interface BudgetSimulatorFormProps {
+	onAddItem: (item: SimulatedExpense) => void;
+}
+
+const BudgetSimulatorForm: React.FC<BudgetSimulatorFormProps> = ({
+	onAddItem,
+}) => {
 	const nameInputRef = useRef<HTMLInputElement | null>(null);
-	const dispatch = useDispatch();
 
-	const [form, setForm] = useState<ExpenseFormData>({
+	const [form, setForm] = useState<BudgetSimulatorFormData>({
 		name: "",
-		amount: "",
-		group: "",
 		quantity: "",
 		unit: "",
+		amount: "",
 	});
 
-	const fields = createExpenseFormFields(groups);
+	const fields = createBudgetSimulatorFormFields();
 
 	const handleChange = (
-		field: keyof ExpenseFormData,
+		field: keyof BudgetSimulatorFormData,
 		value: string | number
 	) => {
 		setForm((prev) => ({ ...prev, [field]: value }));
@@ -54,25 +58,24 @@ const ExpenseEntryForm: React.FC = () => {
 
 	const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
 		e.preventDefault();
-		const { name, amount, group, quantity, unit } = form;
-		if (!name || !amount || !group) return;
+		const { name, amount, quantity, unit } = form;
+		if (!name || !amount) return;
 
-		dispatch(
-			addExpenseToSelectedDate({
-				name,
-				amount: parseFloat(amount),
-				group,
-				quantity: parseInt(quantity, 10),
-				unit,
-			})
-		);
+		const newItem: SimulatedExpense = {
+			id: `sim-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+			name,
+			quantity: parseInt(quantity, 10),
+			unit: unit,
+			amount: parseFloat(amount),
+		};
+
+		onAddItem(newItem);
 
 		setForm({
 			name: "",
-			amount: "",
-			group: "",
 			quantity: "",
 			unit: "",
+			amount: "",
 		});
 
 		// Auto-focus the first field after successful submission
@@ -83,7 +86,7 @@ const ExpenseEntryForm: React.FC = () => {
 		}, 50);
 	};
 
-	const handlers: FormHandlers<ExpenseFormData> = {
+	const handlers: FormHandlers<BudgetSimulatorFormData> = {
 		handleChange,
 		handleKeyDown,
 		handleSubmit,
@@ -101,4 +104,4 @@ const ExpenseEntryForm: React.FC = () => {
 	);
 };
 
-export default ExpenseEntryForm;
+export default BudgetSimulatorForm;

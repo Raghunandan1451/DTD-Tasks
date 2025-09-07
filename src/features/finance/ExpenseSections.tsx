@@ -1,6 +1,10 @@
 // src/components/expenses/ExpenseSections.tsx
 import { FC, lazy } from "react";
-import { ExpenseEntry, ViewMode } from "@src/lib/types/finance";
+import {
+	ExpenseEntry,
+	SimulatedExpense,
+	ViewMode,
+} from "@src/lib/types/finance";
 import { Suspense } from "react";
 import { Loader } from "lucide-react";
 
@@ -12,13 +16,22 @@ const GraphComponent = lazy(
 	() => import("@src/features/finance/expense_section/GraphComponent")
 );
 const Estimator = lazy(
-	() => import("@src/features/finance/estimate_expense/Estimator")
+	() => import("@src/features/finance/estimate_expense/BudgetSimulator")
 );
 
 export const ExpenseSections: FC<{
 	viewMode: ViewMode;
 	allExpenses: ExpenseEntry[];
-}> = ({ viewMode, allExpenses = [] }) => {
+	simulatedExpenses: SimulatedExpense[];
+	setSimulatedExpenses: React.Dispatch<
+		React.SetStateAction<SimulatedExpense[]>
+	>;
+}> = ({
+	viewMode,
+	allExpenses = [],
+	simulatedExpenses,
+	setSimulatedExpenses,
+}) => {
 	return (
 		<div className="flex-1 overflow-auto glassmorphic-bg p-4">
 			{viewMode === "list" && (
@@ -43,7 +56,10 @@ export const ExpenseSections: FC<{
 				<Suspense
 					fallback={<Loader className="animate-spin text-gray-500" />}
 				>
-					<Estimator />
+					<Estimator
+						setSimulatedExpenses={setSimulatedExpenses}
+						simulatedExpenses={simulatedExpenses}
+					/>
 				</Suspense>
 			)}
 		</div>

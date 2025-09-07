@@ -10,8 +10,8 @@ export interface BaseInputProps
 	onKeyDown?: (e: React.KeyboardEvent<HTMLInputElement>) => void;
 	inputRef?: (el: HTMLInputElement | null) => void;
 	className?: string;
-	min?: string;
-	max?: string;
+	min?: number | string;
+	max?: number | string;
 	placeholder?: string;
 }
 

@@ -1,19 +1,20 @@
-import React from 'react';
+import React from "react";
 
 interface ButtonProps {
 	onClick?: (event: React.MouseEvent<HTMLButtonElement>) => void;
 	className?: string;
 	disabled?: boolean;
-	type?: 'button' | 'submit' | 'reset' | undefined;
+	type?: "button" | "submit" | "reset" | undefined;
 	text?: string;
 	children?: React.ReactNode;
+	title?: string;
 }
 
 const Button: React.FC<ButtonProps> = ({
 	onClick,
 	className,
 	disabled = false,
-	type = 'button',
+	type = "button",
 	text,
 	children,
 	...props
@@ -24,7 +25,8 @@ const Button: React.FC<ButtonProps> = ({
 			className={className}
 			disabled={disabled}
 			type={type}
-			{...props}>
+			{...props}
+		>
 			{children}
 			{text && <span>{text}</span>}
 		</button>

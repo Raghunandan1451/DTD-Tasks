@@ -18,6 +18,7 @@ import {
 } from "@src/lib/store/slices/expensesSlice";
 import { ExpenseEntry } from "@src/lib/types/finance";
 import { ChevronLeft, ChevronRight } from "lucide-react";
+import Button from "@src/components/ui/button/Button";
 
 interface ExpenseListProps {
 	expenses?: ExpenseEntry[];
@@ -129,27 +130,27 @@ const ExpenseList: FC<ExpenseListProps> = ({ expenses: propExpenses }) => {
 
 				{totalPages > 1 && (
 					<div className="flex items-center gap-2 text-xs">
-						<button
+						<Button
 							onClick={handlePrevious}
 							disabled={currentPage === 1}
 							className="p-1 backdrop-blur-md bg-white/20 dark:bg-white/10 border border-white/30 dark:border-white/20 rounded shadow-lg disabled:opacity-40 disabled:cursor-not-allowed hover:bg-white/30 dark:hover:bg-white/15 transition-all duration-300"
 							title="Previous page"
 						>
 							<ChevronLeft className="w-3 h-3" />
-						</button>
+						</Button>
 
 						<span className="px-2 text-xs font-medium text-gray-800 dark:text-gray-200 backdrop-blur-md bg-white/10 dark:bg-white/5 rounded py-1">
 							{currentPage}/{totalPages}
 						</span>
 
-						<button
+						<Button
 							onClick={handleNext}
 							disabled={currentPage === totalPages}
 							className="p-1 backdrop-blur-md bg-white/20 dark:bg-white/10 border border-white/30 dark:border-white/20 rounded shadow-lg disabled:opacity-40 disabled:cursor-not-allowed hover:bg-white/30 dark:hover:bg-white/15 transition-all duration-300"
 							title="Next page"
 						>
 							<ChevronRight className="w-3 h-3" />
-						</button>
+						</Button>
 					</div>
 				)}
 

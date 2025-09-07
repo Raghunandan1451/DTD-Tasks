@@ -1,4 +1,4 @@
-import React from 'react';
+import React from "react";
 
 export type CellPosition = {
 	row: number;
@@ -40,4 +40,30 @@ export interface RowData {
 export interface DeleteParams {
 	uid: string;
 	length: number;
+}
+export interface ColumnConfig<T> {
+	key: string;
+	label: string;
+	width: string; // flex width like "flex-[2]" or "w-32"
+	render: (
+		item: T,
+		isEditing: boolean,
+		editForm: T | null,
+		handlers: TableHandlers<T>
+	) => React.ReactNode;
+	editable?: boolean;
+}
+
+export interface TableHandlers<T> {
+	handleEditChange: (field: keyof T, value: string | number) => void;
+	handleKeyDown: (e: React.KeyboardEvent) => void;
+	handleSaveEdit: () => void;
+	handleCancelEdit: () => void;
+	handleStartEdit: (item: T) => void;
+	handleDelete: (id: string, name: string, isProtected?: boolean) => void;
+	displayQuantity?: (quantity: number, unit: string) => string;
+}
+
+export interface TableRowRef {
+	current: HTMLTableRowElement | null;
 }
