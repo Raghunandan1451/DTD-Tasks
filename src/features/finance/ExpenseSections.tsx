@@ -12,8 +12,8 @@ import SalaryForm from "@src/features/finance/base_setup/FinanceSetup";
 const ExpenseList = lazy(
 	() => import("@src/features/finance/expense_list/ExpenseList")
 );
-const GraphComponent = lazy(
-	() => import("@src/features/finance/expense_section/GraphComponent")
+const ExpenseGraphs = lazy(
+	() => import("@src/features/finance/expense_graph/ExpenseGraphs")
 );
 const Estimator = lazy(
 	() => import("@src/features/finance/estimate_expense/BudgetSimulator")
@@ -22,23 +22,27 @@ const Estimator = lazy(
 export const ExpenseSections: FC<{
 	viewMode: ViewMode;
 	allExpenses: ExpenseEntry[];
+	datedExpenses: ExpenseEntry[];
 	simulatedExpenses: SimulatedExpense[];
 	setSimulatedExpenses: React.Dispatch<
 		React.SetStateAction<SimulatedExpense[]>
 	>;
+	currentBalance?: number;
 }> = ({
 	viewMode,
 	allExpenses = [],
+	datedExpenses = [],
 	simulatedExpenses,
 	setSimulatedExpenses,
+	currentBalance,
 }) => {
 	return (
-		<div className="flex-1 overflow-auto glassmorphic-bg p-4">
+		<div className="flex-1 overflow-auto glassmorphic-bg p-4 scrollbar-hide">
 			{viewMode === "list" && (
 				<Suspense
 					fallback={<Loader className="animate-spin text-gray-500" />}
 				>
-					<ExpenseList expenses={allExpenses as ExpenseEntry[]} />
+					<ExpenseList expenses={datedExpenses as ExpenseEntry[]} />
 				</Suspense>
 			)}
 
@@ -46,7 +50,10 @@ export const ExpenseSections: FC<{
 				<Suspense
 					fallback={<Loader className="animate-spin text-gray-500" />}
 				>
-					<GraphComponent />
+					<ExpenseGraphs
+						expenses={allExpenses}
+						initialBalance={currentBalance}
+					/>
 				</Suspense>
 			)}
 

@@ -66,7 +66,7 @@ export const createExpenseColumns = (
 									e.target.value
 								)
 							}
-							className="w-12 text-sm [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+							className="w-12 text-sm number-input-noappearance"
 							onKeyDown={handlers.handleKeyDown}
 						/>
 						<SimpleSelect
@@ -112,7 +112,7 @@ export const createExpenseColumns = (
 						onChange={(e) =>
 							handlers.handleEditChange("amount", e.target.value)
 						}
-						className="w-full text-sm [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+						className="w-full text-sm number-input-noappearance"
 						step="0.01"
 						onKeyDown={handlers.handleKeyDown}
 					/>

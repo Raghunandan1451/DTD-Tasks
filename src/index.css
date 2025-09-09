@@ -11,6 +11,12 @@
 
 	--gradient-accent2-light: 237 24 24;
 	--gradient-accent2-dark: 190 30 44;
+
+	--tooltip-bg: rgba(255, 255, 255, 0.95);
+	--tooltip-text: #374151;
+	--tooltip-label: #6b7280;
+
+	--cursor-fill: rgba(0, 0, 0, 0.1);
 }
 
 @custom-variant dark (&.dark, .dark &);

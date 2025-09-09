@@ -53,7 +53,7 @@ const GenericFormField = <T,>({
 					handlers.handleChange(field.key, e.target.value)
 				}
 				placeholder={field.placeholder}
-				className={`${fieldClassName} [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none`}
+				className={`${fieldClassName} number-input-noappearance`}
 				onKeyDown={handlers.handleKeyDown}
 				autoFocus={autoFocus}
 				min={field.validation?.min}

@@ -29,6 +29,10 @@
 				rgb(var(--gradient-accent2-dark)) 0,
 				transparent 60%
 			);
+		--tooltip-bg: rgba(0, 0, 0, 0.85);
+		--tooltip-text: #f9fafb;
+		--tooltip-label: #d1d5db;
+		--cursor-fill: rgba(255, 255, 255, 0.2);
 	}
 
 	h1 {

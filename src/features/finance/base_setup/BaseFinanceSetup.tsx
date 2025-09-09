@@ -8,6 +8,7 @@ import Input from "@src/components/ui/input/Input";
 import Button from "@src/components/ui/button/Button";
 import { AppDispatch, RootState } from "@src/lib/store/store";
 import { validateFinanceSetup } from "@src/lib/utils/finance";
+import { AlertTriangle, Lock } from "lucide-react";
 
 interface BaseFinanceSetupProps {
 	showNotification: (
@@ -15,6 +16,7 @@ interface BaseFinanceSetupProps {
 		type: "error" | "success" | "info"
 	) => void;
 }
+
 const BaseFinanceSetup = ({ showNotification }: BaseFinanceSetupProps) => {
 	const { salary, currentBalance, loaded } = useSelector(
 		(state: RootState) => state.finance
@@ -23,21 +25,48 @@ const BaseFinanceSetup = ({ showNotification }: BaseFinanceSetupProps) => {
 	const [amount, setAmount] = useState("");
 	const [day, setDay] = useState("");
 	const [balance, setBalance] = useState("");
+
+	// Check if balance has been set before (this would come from your store/localStorage)
+	const isBalanceAlreadySet =
+		currentBalance !== null &&
+		currentBalance !== undefined &&
+		currentBalance !== 0;
+
 	const handleSave = () => {
-		const result = validateFinanceSetup({ amount, day, balance });
+		// For updates after initial setup, only validate salary fields
+		const fieldsToValidate = isBalanceAlreadySet
+			? { amount, day }
+			: { amount, day, balance };
+
+		const result = validateFinanceSetup(fieldsToValidate);
 
 		if (!result.success) {
 			showNotification(result.message, "error");
 			return;
 		}
 
+		// Always update salary
 		dispatch(
 			setSalary({ amount: parseFloat(amount), dayOfMonth: parseInt(day) })
 		);
-		dispatch(setCurrentBalance(parseFloat(balance)));
 
-		showNotification(result.message, "success");
+		// Only set balance if it hasn't been set before
+		if (!isBalanceAlreadySet && balance) {
+			dispatch(setCurrentBalance(parseFloat(balance)));
+			showNotification(
+				"Finance setup completed successfully! Note: Current balance can only be set once.",
+				"success"
+			);
+		} else if (isBalanceAlreadySet) {
+			showNotification(
+				"Salary information updated successfully!",
+				"success"
+			);
+		} else {
+			showNotification(result.message, "success");
+		}
 	};
+
 	useEffect(() => {
 		if (loaded) {
 			setAmount(salary?.amount?.toString() || "");
@@ -45,6 +74,7 @@ const BaseFinanceSetup = ({ showNotification }: BaseFinanceSetupProps) => {
 			setBalance(currentBalance?.toString() || "");
 		}
 	}, [loaded, salary, currentBalance]);
+
 	return (
 		<div className="space-y-4 p-4 border rounded-xl">
 			<label className="font-bold text-sm">Monthly Income</label>
@@ -68,23 +98,62 @@ const BaseFinanceSetup = ({ showNotification }: BaseFinanceSetupProps) => {
 				/>
 			</div>
 
-			<label className="font-bold text-sm">Current Balance</label>
+			<label className="font-bold text-sm flex items-center gap-2">
+				Current Balance
+				{isBalanceAlreadySet && (
+					<Lock className="w-4 h-4 text-gray-500" />
+				)}
+			</label>
 
-			<Input
-				id="currentBalance"
-				type="number"
-				placeholder="Current Balance"
-				value={balance}
-				onChange={(e) => setBalance(e.target.value)}
-				className="number-input-noappearance"
-			/>
+			<div className="space-y-2">
+				<Input
+					id="currentBalance"
+					type="number"
+					placeholder="Current Balance"
+					value={balance}
+					onChange={(e) => setBalance(e.target.value)}
+					className="number-input-noappearance"
+					disabled={isBalanceAlreadySet}
+				/>
+
+				{!isBalanceAlreadySet && (
+					<div className="flex items-start gap-2 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
+						<AlertTriangle className="w-5 h-5 text-red-600 dark:text-red-400 mt-0.5 flex-shrink-0" />
+						<div className="text-sm text-red-800 dark:text-red-200">
+							<p className="font-medium">
+								Important: One-time Entry
+							</p>
+							<p>
+								The current balance can only be set{" "}
+								<strong>once</strong> and cannot be changed
+								later. Please enter the correct amount
+								carefully.
+							</p>
+						</div>
+					</div>
+				)}
+
+				{isBalanceAlreadySet && (
+					<div className="flex items-start gap-2 p-3 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg">
+						<Lock className="w-5 h-5 text-amber-600 dark:text-amber-400 mt-0.5 flex-shrink-0" />
+						<div className="text-sm text-amber-800 dark:text-amber-200">
+							<p className="font-medium">Balance Locked</p>
+							<p>
+								The current balance has already been set and
+								cannot be modified. You can only update salary
+								amount and payment day.
+							</p>
+						</div>
+					</div>
+				)}
+			</div>
 
 			<Button
 				type="button"
 				onClick={handleSave}
 				className="btn-glass-unselected p-2 rounded-lg shadow-md w-full sm:w-fit"
 			>
-				Save
+				{isBalanceAlreadySet ? "Update Salary Info" : "Save Setup"}
 			</Button>
 		</div>
 	);

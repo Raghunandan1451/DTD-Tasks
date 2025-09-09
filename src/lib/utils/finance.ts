@@ -12,7 +12,7 @@ import { addExpense } from "@src/lib/store/slices/expensesSlice";
 interface FinanceFormValues {
 	amount: string;
 	day: string;
-	balance: string;
+	balance?: string;
 }
 export const validateFinanceSetup = ({
 	amount,

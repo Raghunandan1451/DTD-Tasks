@@ -90,9 +90,11 @@ const ExpenseTracker = () => {
 			/>
 			<ExpenseSections
 				viewMode={viewMode}
-				allExpenses={selectedDateExpenses}
+				allExpenses={expenses}
+				datedExpenses={selectedDateExpenses}
 				setSimulatedExpenses={setSimulatedExpenses}
 				simulatedExpenses={simulatedExpenses}
+				currentBalance={currentBalance}
 			/>
 		</>
 	);
