@@ -11,7 +11,9 @@ interface TitleWithButtonProps {
 const TitleWithButton: React.FC<TitleWithButtonProps> = (props) => {
 	const { heading, onDownload, buttonText, containerClass } = props;
 	return (
-		<div className={`frosted-panel ${containerClass}`}>
+		<div
+			className={`frosted-panel ${containerClass ? containerClass : ""}`}
+		>
 			<h1 className="panel-title">{heading.toUpperCase()}</h1>
 			<Button
 				type="button"

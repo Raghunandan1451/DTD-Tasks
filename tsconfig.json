@@ -29,7 +29,8 @@
 		"dev_only/useHandleTableKeyEvent.test.ts",
 		"dev_only/useTableContext.test.tsx",
 		"dev_only/useTableContext.ts",
-		"dev_only/useHandleTableKeyEvent.ts"
+		"dev_only/useHandleTableKeyEvent.ts",
+		"dev_only/TableContext.tsx"
 	],
 	"exclude": ["dist", "node_modules"]
 }

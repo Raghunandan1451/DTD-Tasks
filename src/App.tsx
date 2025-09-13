@@ -6,6 +6,7 @@ import Home from "@src/pages/Home";
 const QRGenerator = lazy(() => import("@src/pages/QRGenerator"));
 const MarkdownEditor = lazy(() => import("@src/pages/MarkdownEditor"));
 const ExpenseTracker = lazy(() => import("@src/pages/ExpenseTracker"));
+const EventTracker = lazy(() => import("@src/pages/EventTracker"));
 
 import { ThemeProvider } from "@src/lib/context/ThemeContext";
 import withSuspense from "@src/lib/hoc/withSuspense";
@@ -19,6 +20,7 @@ const router = createBrowserRouter([
 			{ path: "/qrgen", element: withSuspense(QRGenerator) },
 			{ path: "/markdown", element: withSuspense(MarkdownEditor) },
 			{ path: "/expenses", element: withSuspense(ExpenseTracker) },
+			{ path: "/events", element: withSuspense(EventTracker) },
 		],
 	},
 ]);
