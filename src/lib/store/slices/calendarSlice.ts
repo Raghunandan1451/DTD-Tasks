@@ -1,5 +1,5 @@
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
-import { CalendarState, Event } from "@src/lib/types/event";
+import { CalendarState, Event } from "@src/features/event/type";
 import { hydrateCalendar } from "@src/lib/store/thunks/calendarThunk";
 
 const initialState: CalendarState = {

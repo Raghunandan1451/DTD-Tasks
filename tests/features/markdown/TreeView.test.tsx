@@ -4,7 +4,7 @@ import { configureStore } from "@reduxjs/toolkit";
 import TreeView from "@src/features/markdown/TreeView";
 import { describe, it, expect, vi } from "vitest";
 import "@testing-library/jest-dom";
-import { File } from "@src/lib/types/markdown";
+import { File } from "@src/features/markdown/type";
 
 // Mock notifications hook
 vi.mock("@src/lib/hooks/useNotifications", () => ({

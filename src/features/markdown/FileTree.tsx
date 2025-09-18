@@ -7,7 +7,7 @@ const FileTree: React.FC = () => {
 	const [showInput, setShowInput] = useState<boolean>(false);
 
 	return (
-		<div className="w-65 border-r border-gray-200 dark:border-gray-700 bg-white/30 dark:bg-black/30 backdrop-blur-md shadow-sm flex flex-col max-h-full rounded-bl-xl">
+		<div className="border-r border-gray-200 dark:border-gray-700 bg-white/30 dark:bg-black/30 backdrop-blur-md shadow-sm flex flex-col max-h-full rounded-bl-xl">
 			<div className="p-4 border-b border-gray-200 dark:border-gray-700 flex justify-around">
 				<Button
 					onClick={() => setShowInput(true)}

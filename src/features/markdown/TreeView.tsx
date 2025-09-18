@@ -17,7 +17,7 @@ import FolderItem from "@src/features/markdown/FolderItem";
 import CreateFileFolder from "@src/features/markdown/CreateFileFolder";
 import EditFileFolder from "@src/features/markdown/EditFileFolder";
 import useNotifications from "@src/lib/hooks/useNotifications";
-import { File, Folder } from "@src/lib/types/markdown";
+import { File, Folder } from "@src/features/markdown/type";
 
 interface TreeViewProps {
 	showInput: boolean;

@@ -15,7 +15,7 @@ import {
 	deleteFile,
 	renameFile,
 } from "@src/lib/store/slices/markdownSlice";
-import { File, Folder } from "@src/lib/types/markdown";
+import { File, Folder } from "@src/features/markdown/type";
 
 vi.mock("@src/lib/store/slices/markdownSlice", async () => {
 	const actual = await vi.importActual<

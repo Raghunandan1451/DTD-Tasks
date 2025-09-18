@@ -4,7 +4,7 @@ import {
 	ExpenseEntry,
 	ExpenseTableHandlers,
 	TableRowRef,
-} from "@src/lib/types/finance";
+} from "@src/features/finance/type";
 import Input from "@src/components/ui/input/Input";
 import SimpleSelect from "@src/components/ui/select_dropdown/SimpleSelect";
 import ExpenseRowActions from "@src//features/finance/expense_list/table/ExpenseRowActions";

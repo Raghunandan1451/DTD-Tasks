@@ -1,7 +1,7 @@
 // src/lib/store/selectors/expenseSelectors.ts - Fixed balance calculations
 import { createSelector } from "@reduxjs/toolkit";
 import { RootState } from "@src/lib/store/store";
-import { ExpenseEntry } from "@src/lib/types/finance";
+import { ExpenseEntry } from "@src/features/finance/type";
 
 // Base selectors
 const selectExpenses = (state: RootState) => state.expenses.expenses;

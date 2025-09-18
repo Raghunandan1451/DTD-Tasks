@@ -1,5 +1,5 @@
 import { ColumnConfig } from "@src/lib/types/table";
-import { ExpenseEntry } from "@src/lib/types/finance";
+import { ExpenseEntry } from "@src/features/finance/type";
 import Input from "@src/components/ui/input/Input";
 import SimpleSelect from "@src/components/ui/select_dropdown/SimpleSelect";
 import ActionButtons from "@src/components/shared/table/ActionButtons";

@@ -5,7 +5,7 @@ import {
 	BudgetSimulatorFormData,
 } from "@src/features/finance/estimate_expense/BudgetSimulatorFormConfig";
 import { FormHandlers } from "@src/lib/types/form";
-import { SimulatedExpense } from "@src/lib/types/finance";
+import { SimulatedExpense } from "@src/features/finance/type";
 
 interface BudgetSimulatorFormProps {
 	onAddItem: (item: SimulatedExpense) => void;

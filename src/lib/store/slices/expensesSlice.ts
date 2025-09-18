@@ -1,6 +1,6 @@
 // src/store/slices/expensesSlice.ts - Minimal changes to existing code
 import { createSlice, nanoid, PayloadAction } from "@reduxjs/toolkit";
-import { ExpenseEntry } from "@src/lib/types/finance";
+import { ExpenseEntry } from "@src/features/finance/type";
 
 interface ExpensesState {
 	expenses: ExpenseEntry[];

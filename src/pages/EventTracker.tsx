@@ -12,7 +12,7 @@ import {
 } from "@src/lib/store/slices/calendarSlice";
 import { hydrateCalendar } from "@src/lib/store/thunks/calendarThunk";
 
-import { Event } from "@src/lib/types/event";
+import { Event } from "@src/features/event/type";
 import CalendarGrid from "@src/features/event/CalendarGrid";
 import EventForm from "@src/features/event/EventForm";
 import EventModal from "@src/features/event/EventModal";

@@ -1,7 +1,7 @@
 // src/lib/store/thunks/expenseThunk.ts
 import { createAsyncThunk } from "@reduxjs/toolkit";
 import { getFromIndexedDB } from "@src/lib/utils/persistMiddleware";
-import { ExpenseEntry } from "@src/lib/types/finance";
+import { ExpenseEntry } from "@src/features/finance/type";
 import { setExpenses } from "@src/lib/store/slices/expensesSlice";
 import { RootState } from "@src/lib/store/store";
 

@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from "react";
-import { SimulatedExpense } from "@src/lib/types/finance";
+import { SimulatedExpense } from "@src/features/finance/type";
 import BudgetSimulatorForm from "@src/features/finance/estimate_expense/BudgetSimulatorForm";
 import BudgetSimulatorTable from "@src/features/finance/estimate_expense/BudgetSimulatorTable";
 import PaginationControls from "@src/features/finance/estimate_expense/PaginationControls";

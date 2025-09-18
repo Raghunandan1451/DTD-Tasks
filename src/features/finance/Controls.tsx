@@ -3,7 +3,7 @@
 import { FC } from "react";
 import Button from "@src/components/ui/button/Button";
 import clsx from "clsx";
-import { ControlsProps, ViewMode } from "@src/lib/types/finance";
+import { ControlsProps, ViewMode } from "@src/features/finance/type";
 
 const views: { key: ViewMode; label: string }[] = [
 	{ key: "salary", label: "Salary & Recurring" },

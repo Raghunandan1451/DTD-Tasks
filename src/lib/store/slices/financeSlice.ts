@@ -1,6 +1,6 @@
 // financeSlice.ts - Updated with proper lastUpdatedDate handling
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
-import { FinanceState, DatedSalary } from "@src/lib/types/finance";
+import { FinanceState, DatedSalary } from "@src/features/finance/type";
 
 const initialState: FinanceState = {
 	salary: null,

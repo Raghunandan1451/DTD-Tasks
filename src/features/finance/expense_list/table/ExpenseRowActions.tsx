@@ -1,6 +1,6 @@
 // src/features/finance/expense_list/ExpenseRowActions.tsx
 import { FC } from "react";
-import { ExpenseEntry, ExpenseTableHandlers } from "@src/lib/types/finance";
+import { ExpenseEntry, ExpenseTableHandlers } from "@src/features/finance/type";
 import { Pencil, Trash2, Check, X } from "lucide-react";
 
 interface ExpenseRowActionsProps {

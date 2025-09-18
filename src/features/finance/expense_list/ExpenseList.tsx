@@ -16,7 +16,7 @@ import {
 	updateExpense,
 	deleteExpense,
 } from "@src/lib/store/slices/expensesSlice";
-import { ExpenseEntry } from "@src/lib/types/finance";
+import { ExpenseEntry } from "@src/features/finance/type";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import Button from "@src/components/ui/button/Button";
 

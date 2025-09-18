@@ -1,6 +1,11 @@
 import React, { useState } from "react";
 import { X, Clock, Tag, Calendar, Repeat } from "lucide-react";
-import { Event, RepeatType, TAGS, REPEAT_OPTIONS } from "@src/lib/types/event";
+import {
+	Event,
+	RepeatType,
+	TAGS,
+	REPEAT_OPTIONS,
+} from "@src/features/event/type";
 import { parseMarkdown } from "@src/lib/utils/parseMarkdown";
 import Button from "@src/components/ui/button/Button";
 import Input from "@src/components/ui/input/Input";

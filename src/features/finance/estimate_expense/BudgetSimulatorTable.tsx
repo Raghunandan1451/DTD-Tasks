@@ -1,5 +1,5 @@
 import { FC } from "react";
-import { SimulatedExpense } from "@src/lib/types/finance";
+import { SimulatedExpense } from "@src/features/finance/type";
 import GenericTable from "@src/components/shared/table/GenericTable";
 import { createBudgetSimulatorColumns } from "@src/features/finance/estimate_expense/BudgetSimulatorTableConfig";
 import { TableHandlers } from "@src/lib/types/table";

@@ -4,7 +4,7 @@ import {
 	DatedSalary,
 	ExpenseEntry,
 	FinanceState,
-} from "@src/lib/types/finance";
+} from "@src/features/finance/type";
 import { AppDispatch } from "@src/lib/store/store";
 import { setFinanceState } from "@src/lib/store/slices/financeSlice";
 import { addExpense } from "@src/lib/store/slices/expensesSlice";

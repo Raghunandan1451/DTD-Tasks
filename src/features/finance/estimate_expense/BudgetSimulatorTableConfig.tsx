@@ -1,5 +1,5 @@
 import { ColumnConfig } from "@src/lib/types/table";
-import { SimulatedExpense } from "@src/lib/types/finance";
+import { SimulatedExpense } from "@src/features/finance/type";
 import ActionButtons from "@src/components/shared/table/ActionButtons";
 
 export const createBudgetSimulatorColumns =

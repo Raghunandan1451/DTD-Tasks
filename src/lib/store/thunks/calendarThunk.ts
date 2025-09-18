@@ -1,5 +1,5 @@
 import { createAsyncThunk } from "@reduxjs/toolkit";
-import { CalendarState } from "@src/lib/types/event";
+import { CalendarState } from "@src/features/event/type";
 import { getFromIndexedDB } from "@src/lib/utils/persistMiddleware";
 import { setCalendarState } from "@src/lib/store/slices/calendarSlice";
 // Async thunk for hydrating calendar data from IndexedDB

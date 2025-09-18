@@ -1,5 +1,5 @@
 import { FC } from "react";
-import { ExpenseEntry } from "@src/lib/types/finance";
+import { ExpenseEntry } from "@src/features/finance/type";
 import useExpenseTable from "@src/lib/hooks/useExpenseTable";
 import GenericTable from "@src/components/shared/table/GenericTable";
 import { createExpenseColumns } from "@src/features/finance/expense_list/ExpenseTableConfig";

@@ -2,7 +2,7 @@ import React from "react";
 import BalanceTrendChart from "@src/features/finance/expense_graph/BalanceTrendChart";
 import ExpensesByCategoryBar from "@src/features/finance/expense_graph/ExpensesByCategoryBar";
 import ExpensesByCategoryPie from "@src/features/finance/expense_graph/ExpensesByCategoryPie";
-import { Expense } from "@src/lib/types/graphs";
+import { Expense } from "@src/features/finance/type";
 
 interface Props {
 	expenses: Expense[];

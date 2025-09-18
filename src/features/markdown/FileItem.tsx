@@ -1,6 +1,6 @@
-import React from 'react';
-import EditDeletePair from './EditDeletePair';
-import { File } from 'lucide-react';
+import React from "react";
+import EditDeletePair from "@src/features/markdown/EditDeletePair";
+import { File } from "lucide-react";
 
 interface FileItemProps {
 	path: string;
@@ -19,9 +19,10 @@ const FileItem: React.FC<FileItemProps> = ({
 }) => (
 	<div
 		className={`flex justify-between cursor-pointer group p-1 rounded-md ${
-			isSelected ? 'active' : ''
+			isSelected ? "active" : ""
 		}`}
-		onClick={onSelect}>
+		onClick={onSelect}
+	>
 		<span className="flex items-center ">
 			<File size={16} className="text-blue-500" />
 			<span className="ml-2 truncate">{path}</span>

@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import ExpenseSummary from "@src/features/finance/ExpenseSummary";
 import TitleWithButton from "@src/components/shared/title_with_button/TitleWithButton";
 import { ExpenseSections } from "@src/features/finance/ExpenseSections";
-import { ViewMode, SimulatedExpense } from "@src/lib/types/finance";
+import { ViewMode, SimulatedExpense } from "@src/features/finance/type";
 import { hydrateFinance } from "@src/lib/store/thunks/financeThunk";
 import { hydrateExpenses } from "@src/lib/store/thunks/expenseThunk";
 import {

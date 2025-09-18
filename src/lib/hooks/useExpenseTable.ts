@@ -1,6 +1,6 @@
 // src/features/finance/expense_list/useExpenseTable.ts
 import { useState, useRef, useEffect } from "react";
-import { ExpenseEntry, ExpenseTableHandlers } from "@src/lib/types/finance";
+import { ExpenseEntry, ExpenseTableHandlers } from "@src/features/finance/type";
 import { useConfirmationModal } from "@src/lib/hooks/useConfirmDialog";
 
 const useExpenseTable = ({

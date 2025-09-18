@@ -8,7 +8,7 @@ import reducer, {
 	renameFile,
 } from "@src/lib/store/slices/markdownSlice";
 import { getFromIndexedDB } from "@src/lib/utils/persistMiddleware";
-import { File, FileState } from "@src/lib/types/markdown";
+import { File, FileState } from "@src/features/markdown/type";
 
 vi.mock("@src/lib/utils/persistMiddleware", () => ({
 	getFromIndexedDB: vi.fn(),

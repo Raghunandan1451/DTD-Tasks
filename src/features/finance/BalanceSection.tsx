@@ -1,6 +1,9 @@
 // Updated BalanceSection.tsx - Remove remaining balance
 import { FC } from "react";
-import { BalanceSectionProps, SummaryItemProps } from "@src/lib/types/finance";
+import {
+	BalanceSectionProps,
+	SummaryItemProps,
+} from "@src/features/finance/type";
 
 const BalanceSection: FC<BalanceSectionProps> = ({
 	balance = 0,

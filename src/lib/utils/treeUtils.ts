@@ -8,7 +8,7 @@ import {
 	renameFile,
 } from "@src/lib/store/slices/markdownSlice";
 
-import { File, Folder, BaseItem } from "@src/lib/types/markdown";
+import { File, Folder, BaseItem } from "@src/features/markdown/type";
 
 type NotificationType = "success" | "error" | "info";
 

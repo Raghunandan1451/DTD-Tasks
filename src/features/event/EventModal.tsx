@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from "react";
 import { X, Edit2, Trash2, Save, Clock, Tag, Calendar } from "lucide-react";
-import { Event, TAGS } from "@src/lib/types/event";
+import { Event, TAGS } from "@src/features/event/type";
 import { parseMarkdown } from "@src/lib/utils/parseMarkdown";
 
 interface EventModalProps {
@@ -103,7 +103,7 @@ const EventModal: React.FC<EventModalProps> = ({
 												"Are you sure you want to delete this event?"
 											)
 										) {
-											onDelete(event.id);
+											onDelete(event.id as number);
 										}
 									}}
 									className="text-red-600 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300 transition-colors"

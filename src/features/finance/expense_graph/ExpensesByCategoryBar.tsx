@@ -9,7 +9,7 @@ import {
 	Cell,
 } from "recharts";
 import { Calendar } from "lucide-react";
-import { DateFilter, Expense } from "@src/lib/types/graphs";
+import { DateFilter, Expense } from "@src/features/finance/type";
 import Button from "@src/components/ui/button/Button";
 
 const chartColors = [

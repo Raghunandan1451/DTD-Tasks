@@ -1,6 +1,6 @@
 import { FC } from "react";
 import Controls from "@src/features/finance/Controls";
-import { ExpenseSummaryProps } from "@src/lib/types/finance";
+import { ExpenseSummaryProps } from "@src/features/finance/type";
 import BalanceSection from "@src/features/finance/BalanceSection";
 
 const ExpenseSummary: FC<ExpenseSummaryProps> = ({

@@ -5,7 +5,7 @@ import expenseReducer, {
 	setExpenseState,
 	ExpenseState,
 } from "@src/lib/store/slices/expenseSlice";
-import { Expense } from "@src/lib/types/finance";
+import { Expense } from "@src/features/finance/type";
 import { describe, it, expect } from "vitest";
 
 describe("expenseSlice", () => {

@@ -1,7 +1,7 @@
 import { createAsyncThunk } from "@reduxjs/toolkit";
 import { getFromIndexedDB } from "@src/lib/utils/persistMiddleware";
 import { setFileState } from "@src/lib/store/slices/markdownSlice";
-import type { FileState } from "@src/lib/types/markdown";
+import type { FileState } from "@src/features/markdown/type";
 
 export const hydrateMarkdown = createAsyncThunk(
 	"fileManager/hydrate",

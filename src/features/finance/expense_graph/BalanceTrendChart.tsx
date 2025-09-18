@@ -9,7 +9,7 @@ import {
 	ReferenceLine,
 } from "recharts";
 import { TrendingUp } from "lucide-react";
-import { Expense } from "@src/lib/types/graphs";
+import { Expense } from "@src/features/finance/type";
 
 interface BalanceTrendChartProps {
 	expenses: Expense[];

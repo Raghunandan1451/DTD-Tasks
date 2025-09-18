@@ -1,6 +1,6 @@
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
 import { findFileByPath } from "@src/lib/utils/treeUtils";
-import { File, Folder, FileState } from "@src/lib/types/markdown";
+import { File, Folder, FileState } from "@src/features/markdown/type";
 
 const initialState: FileState = {
 	files: [],

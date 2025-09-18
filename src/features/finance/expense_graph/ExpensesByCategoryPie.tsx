@@ -1,4 +1,4 @@
-import { Expense } from "@src/lib/types/graphs";
+import { Expense } from "@src/features/finance/type";
 import React, { useMemo } from "react";
 import {
 	PieChart,

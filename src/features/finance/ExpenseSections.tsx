@@ -4,7 +4,7 @@ import {
 	ExpenseEntry,
 	SimulatedExpense,
 	ViewMode,
-} from "@src/lib/types/finance";
+} from "@src/features/finance/type";
 import { Suspense } from "react";
 import { Loader } from "lucide-react";
 
