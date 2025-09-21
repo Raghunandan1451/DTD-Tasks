@@ -1,11 +1,7 @@
 import React, { useState } from "react";
 import { X, Clock, Tag, Calendar, Repeat } from "lucide-react";
-import {
-	Event,
-	RepeatType,
-	TAGS,
-	REPEAT_OPTIONS,
-} from "@src/features/event/type";
+import { Event, RepeatType } from "@src/features/event/type";
+import { TAGS, REPEAT_OPTIONS } from "@src/features/event/constants";
 import { parseMarkdown } from "@src/lib/utils/parseMarkdown";
 import Button from "@src/components/ui/button/Button";
 import Input from "@src/components/ui/input/Input";
@@ -77,7 +73,7 @@ const EventForm: React.FC<EventFormProps> = ({ onSave, onCancel }) => {
 		endTime: laterTime,
 		color: TAGS[0].color,
 		repeatType: "none",
-		repeatLimit: 12,
+		repeatLimit: 2,
 	});
 
 	// Form field definitions

@@ -18,6 +18,7 @@ import EventForm from "@src/features/event/EventForm";
 import EventModal from "@src/features/event/EventModal";
 import TitleWithButton from "@src/components/shared/title_with_button/TitleWithButton";
 import ControlBar from "@src/features/event/ControlBar";
+import { getBaseEventId } from "@src/features/event/lib/utils";
 
 const EventTracker = () => {
 	const dispatch = useDispatch<AppDispatch>();
@@ -49,13 +50,80 @@ const EventTracker = () => {
 		dispatch(setShowAddForm(false));
 	};
 
-	const handleUpdateEvent = (updatedEvent: Event) => {
-		dispatch(updateEvent(updatedEvent));
+	const handleUpdateEvent = (
+		updatedEvent: Event,
+		editType?: "single" | "all"
+	) => {
+		if (editType) {
+			// Handle recurring event update
+			if (editType === "single") {
+				// For single instance updates, you might want to create a new separate event
+				// or handle exceptions in your data structure
+				console.log("Updating single occurrence:", updatedEvent);
+
+				// For now, create a new non-recurring event for this specific instance
+				const singleEvent: Event = {
+					...updatedEvent,
+					id: `${updatedEvent.id}-exception-${Date.now()}`,
+					repeatType: "none",
+					repeatLimit: 0,
+				};
+
+				dispatch(addEvent(singleEvent));
+				// You might also want to add logic to track exceptions in the base event
+			} else {
+				// Update all occurrences (update the base recurring event)
+				const baseEventId =
+					typeof updatedEvent.id === "string" &&
+					updatedEvent.id.includes("-")
+						? getBaseEventId(updatedEvent.id)
+						: updatedEvent.id;
+
+				const baseEvent = events.find((e) => e.id === baseEventId);
+				if (baseEvent) {
+					const updatedBaseEvent: Event = {
+						...baseEvent,
+						...updatedEvent,
+						id: baseEventId,
+					};
+					dispatch(updateEvent(updatedBaseEvent));
+				}
+			}
+		} else {
+			// Handle regular event update
+			dispatch(updateEvent(updatedEvent));
+		}
+
 		dispatch(setSelectedEvent(null));
 	};
 
-	const handleDeleteEvent = (id: number) => {
-		dispatch(deleteEvent(id));
+	const handleDeleteEvent = (
+		eventId: string | number,
+		deleteType?: "single" | "all"
+	) => {
+		if (deleteType) {
+			// Handle recurring event deletion
+			if (deleteType === "single") {
+				// For single occurrence deletion, you might want to add to an exceptions list
+				// For now, we'll just log it since this requires more complex state management
+				console.log("Deleting single occurrence:", eventId);
+
+				// You could implement this by tracking deleted instances in your state
+				// or by creating a separate "exceptions" array in your recurring event
+			} else {
+				// Delete entire recurring series
+				const baseEventId =
+					typeof eventId === "string" && eventId.includes("-")
+						? getBaseEventId(eventId)
+						: eventId;
+
+				dispatch(deleteEvent(baseEventId as number));
+			}
+		} else {
+			// Handle regular event deletion
+			dispatch(deleteEvent(eventId as number));
+		}
+
 		dispatch(setSelectedEvent(null));
 	};
 
@@ -157,6 +225,7 @@ const EventTracker = () => {
 					onUpdate={handleUpdateEvent}
 					onDelete={handleDeleteEvent}
 					onClose={() => dispatch(setSelectedEvent(null))}
+					allEvents={events}
 				/>
 			)}
 

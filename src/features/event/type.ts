@@ -1,3 +1,5 @@
+export type RepeatType = "none" | "daily" | "weekly" | "monthly";
+
 export interface Event {
 	id: string | number;
 	title: string;
@@ -10,9 +12,17 @@ export interface Event {
 	color: string;
 	repeatType: RepeatType;
 	repeatLimit: number;
+	recurring?: {
+		type: "daily" | "weekly" | "monthly";
+		interval?: number;
+		endDate?: string;
+		daysOfWeek?: number[];
+		dayOfMonth?: number;
+	};
 }
 
-export type RepeatType = "none" | "daily" | "weekly" | "monthly";
+// Helper type for creating new events
+export type EventInput = Omit<Event, "id">;
 
 export interface TimeSlot {
 	hour: number;
@@ -36,18 +46,9 @@ export interface CalendarState {
 	loaded?: boolean;
 }
 
-export const TAGS = [
-	{ name: "Personal", color: "#10b981" },
-	{ name: "Work", color: "#3b82f6" },
-	{ name: "Shopping", color: "#f59e0b" },
-	{ name: "Entertainment", color: "#8b5cf6" },
-	{ name: "Health", color: "#ef4444" },
-	{ name: "Other", color: "#6b7280" },
-];
-
-export const REPEAT_OPTIONS = [
-	{ value: "none", label: "No Repeat" },
-	{ value: "daily", label: "Daily" },
-	{ value: "weekly", label: "Weekly" },
-	{ value: "monthly", label: "Monthly" },
-];
+export interface CalendarGridProps {
+	events: Event[];
+	currentDate: Date;
+	viewMode: "daily" | "weekly";
+	onEventClick: (event: Event) => void;
+}
