@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach, Mock } from "vitest";
 import { render, screen } from "@testing-library/react";
-import MarkdownPreview from "@src/features/markdown/MarkdownPreview";
+import MarkdownPreview from "@src/components/shared/preview_editor/MarkdownPreview";
 import { parseMarkdown } from "@src/lib/utils/parseMarkdown";
 import { useSelector } from "react-redux";
 import "@testing-library/jest-dom";

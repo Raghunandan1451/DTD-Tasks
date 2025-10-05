@@ -1,4 +1,10 @@
-import { DateColumn, Event } from "@src/features/event/type";
+import {
+	DateColumn,
+	Event,
+	EventFormData,
+	ValidationErrors,
+	ValidationRules,
+} from "@src/features/event/type";
 
 // Generate date columns for daily or weekly view
 export function getDateColumns(
@@ -37,6 +43,7 @@ export function getDateColumns(
 }
 
 // Fixed recurring event instance generation
+// Fixed recurring event instance generation with excludedDates support
 export function generateRecurringInstances(
 	events: Event[],
 	dateColumns: DateColumn[]
@@ -66,16 +73,19 @@ export function generateRecurringInstances(
 			return;
 		}
 
+		// CRITICAL: Get excluded dates for this event
+		const excludedDates = new Set(event.excludedDates || []);
+
 		const baseDate = new Date(event.startDate);
 		let occurrenceCount = 0;
-		const maxOccurrences = repeatLimit || 1000; // Use repeatLimit or default
+		const maxOccurrences = repeatLimit || 1000;
 
 		// Generate instances within the visible range
 		const generateInstances = (baseDate: Date, type: string) => {
 			const currentDate = new Date(baseDate);
 			const interval = recurringConfig?.interval || 1;
 
-			// For weekly events with specific days, we need special handling
+			// For weekly events with specific days
 			if (
 				type === "weekly" &&
 				recurringConfig?.daysOfWeek &&
@@ -85,13 +95,11 @@ export function generateRecurringInstances(
 				let weekCount = 0;
 
 				while (occurrenceCount < maxOccurrences) {
-					// Calculate the start of the current week
 					const weekStart = new Date(baseDate);
 					weekStart.setDate(
 						baseDate.getDate() + weekCount * 7 * interval
 					);
 
-					// For each specified day of the week in this week
 					for (const dayOfWeek of daysOfWeek) {
 						if (occurrenceCount >= maxOccurrences) break;
 
@@ -100,17 +108,20 @@ export function generateRecurringInstances(
 						const daysToAdd = (dayOfWeek - currentWeekDay + 7) % 7;
 						eventDate.setDate(weekStart.getDate() + daysToAdd);
 
-						// Only include if within our date range
 						if (eventDate >= startDate && eventDate <= endDate) {
 							const dateString = eventDate
 								.toISOString()
 								.split("T")[0];
-							const instanceId = `${event.id}-${dateString}`;
-							instances.push({
-								...event,
-								id: instanceId,
-								startDate: dateString,
-							});
+
+							// CRITICAL: Skip if this date is excluded
+							if (!excludedDates.has(dateString)) {
+								const instanceId = `${event.id}-${dateString}`;
+								instances.push({
+									...event,
+									id: instanceId,
+									startDate: dateString,
+								});
+							}
 						}
 
 						occurrenceCount++;
@@ -118,7 +129,6 @@ export function generateRecurringInstances(
 
 					weekCount++;
 
-					// Safety check: if we've gone way past our end date, break
 					const checkDate = new Date(weekStart);
 					checkDate.setDate(weekStart.getDate() + 7);
 					if (
@@ -138,11 +148,27 @@ export function generateRecurringInstances(
 				// For monthly events with specific day of month
 				if (type === "monthly" && recurringConfig?.dayOfMonth) {
 					if (currentDate.getDate() === recurringConfig.dayOfMonth) {
-						// Check if this date is within our visible range
 						if (
 							currentDate >= startDate &&
 							currentDate <= endDate
 						) {
+							// CRITICAL: Skip if this date is excluded
+							if (!excludedDates.has(dateString)) {
+								const instanceId = `${event.id}-${dateString}`;
+								instances.push({
+									...event,
+									id: instanceId,
+									startDate: dateString,
+								});
+							}
+						}
+						occurrenceCount++;
+					}
+				} else {
+					// For daily and simple weekly events
+					if (currentDate >= startDate && currentDate <= endDate) {
+						// CRITICAL: Skip if this date is excluded
+						if (!excludedDates.has(dateString)) {
 							const instanceId = `${event.id}-${dateString}`;
 							instances.push({
 								...event,
@@ -150,18 +176,6 @@ export function generateRecurringInstances(
 								startDate: dateString,
 							});
 						}
-						occurrenceCount++;
-					}
-				} else {
-					// For daily and simple weekly events
-					// Check if this date is within our visible range
-					if (currentDate >= startDate && currentDate <= endDate) {
-						const instanceId = `${event.id}-${dateString}`;
-						instances.push({
-							...event,
-							id: instanceId,
-							startDate: dateString,
-						});
 					}
 					occurrenceCount++;
 				}
@@ -173,7 +187,6 @@ export function generateRecurringInstances(
 						break;
 					}
 					case "weekly": {
-						// Simple weekly (every N weeks, same day)
 						currentDate.setDate(
 							currentDate.getDate() + 7 * interval
 						);
@@ -183,7 +196,6 @@ export function generateRecurringInstances(
 						const originalDay = currentDate.getDate();
 						currentDate.setMonth(currentDate.getMonth() + interval);
 
-						// Handle month overflow (e.g., Jan 31 -> Feb 28)
 						if (recurringConfig?.dayOfMonth) {
 							currentDate.setDate(
 								Math.min(
@@ -192,7 +204,6 @@ export function generateRecurringInstances(
 								)
 							);
 						} else {
-							// Try to maintain the same day of month, but handle overflow
 							const lastDayOfMonth =
 								getLastDayOfMonth(currentDate);
 							currentDate.setDate(
@@ -203,7 +214,6 @@ export function generateRecurringInstances(
 					}
 				}
 
-				// Safety check: if we've gone way past our end date and we have enough occurrences, break
 				if (
 					currentDate > endDate &&
 					occurrenceCount >= maxOccurrences
@@ -225,41 +235,12 @@ function getLastDayOfMonth(date: Date): number {
 	return lastDay.getDate();
 }
 
-// Function to delete a specific recurring event instance
-export function deleteRecurringInstance(
-	events: Event[],
-	instanceId: string,
-	dateColumns: DateColumn[]
-): Event[] {
-	// Generate all instances
-	const allInstances = generateRecurringInstances(events, dateColumns);
-
-	// Filter out the specific instance to delete
-	return allInstances.filter((instance) => instance.id !== instanceId);
-}
-
-// Function to delete all instances of a recurring event
-export function deleteAllRecurringInstances(
-	events: Event[],
-	baseEventId: string
-): Event[] {
-	return events.filter((event) => event.id !== baseEventId);
-}
-
 // Function to get the base event ID from an instance ID
 export function getBaseEventId(instanceId: string): string {
-	// Instance IDs are in format: "baseId-dateString"
-	const parts = instanceId.split("-");
-	// Remove the last part (date) and rejoin
-	return parts.slice(0, -1).join("-");
-}
-
-// Simplified recurring instances function (uses the fixed generateRecurringInstances)
-export function getRecurringInstances(
-	events: Event[],
-	dateColumns: DateColumn[]
-) {
-	return generateRecurringInstances(events, dateColumns);
+	const firstDashIndex = instanceId.indexOf("-");
+	return firstDashIndex !== -1
+		? instanceId.substring(0, firstDashIndex)
+		: instanceId;
 }
 
 // Helpers
@@ -409,4 +390,124 @@ export function getRecurringIndicator(event: Event): string {
 	}
 
 	return baseText;
+}
+export const validateForm = (
+	data: Record<string, unknown>,
+	rules: ValidationRules
+): ValidationErrors => {
+	const errors: ValidationErrors = {};
+
+	Object.keys(rules).forEach((field) => {
+		const value = data[field];
+		const fieldRules = rules[field];
+
+		for (const rule of fieldRules) {
+			// Required validation
+			if (
+				rule.required &&
+				(!value || (typeof value === "string" && !value.trim()))
+			) {
+				errors[field] = rule.message;
+				break;
+			}
+
+			// Skip other validations if value is empty and not required
+			if (!value) continue;
+
+			// String length validations
+			if (typeof value === "string") {
+				if (rule.minLength && value.length < rule.minLength) {
+					errors[field] = rule.message;
+					break;
+				}
+				if (rule.maxLength && value.length > rule.maxLength) {
+					errors[field] = rule.message;
+					break;
+				}
+				if (rule.pattern && !rule.pattern.test(value)) {
+					errors[field] = rule.message;
+					break;
+				}
+			}
+
+			// Custom validation
+			if (rule.custom && !rule.custom(value)) {
+				errors[field] = rule.message;
+				break;
+			}
+		}
+	});
+
+	return errors;
+};
+
+// utils/dateTime.ts
+export const pad = (n: number): string => n.toString().padStart(2, "0");
+
+export const getCurrentDate = (): string =>
+	new Date().toISOString().split("T")[0];
+
+export const getCurrentTime = (): string => {
+	const now = new Date();
+	return `${pad(now.getHours())}:${pad(now.getMinutes())}`;
+};
+
+export const addMinutes = (time: string, minutes: number): string => {
+	const [hours, mins] = time.split(":").map(Number);
+	const date = new Date();
+	date.setHours(hours, mins + minutes);
+	return `${pad(date.getHours())}:${pad(date.getMinutes())}`;
+};
+
+export const isValidTimeRange = (
+	startDate: string,
+	startTime: string,
+	endDate: string,
+	endTime: string
+): boolean => {
+	const start = new Date(`${startDate}T${startTime}`);
+	const end = new Date(`${endDate}T${endTime}`);
+	return end > start;
+};
+
+export function updateEventFormData(
+	currentData: EventFormData,
+	updates: Partial<EventFormData>
+): EventFormData {
+	const result: EventFormData = { ...currentData };
+
+	// Explicit property updates with type safety
+	if (updates.title !== undefined) result.title = updates.title;
+	if (updates.content !== undefined) result.content = updates.content;
+	if (updates.tag !== undefined) result.tag = updates.tag;
+	if (updates.startDate !== undefined) result.startDate = updates.startDate;
+	if (updates.endDate !== undefined) result.endDate = updates.endDate;
+	if (updates.startTime !== undefined) result.startTime = updates.startTime;
+	if (updates.endTime !== undefined) result.endTime = updates.endTime;
+	if (updates.color !== undefined) result.color = updates.color;
+	if (updates.repeatType !== undefined)
+		result.repeatType = updates.repeatType;
+	if (updates.repeatLimit !== undefined)
+		result.repeatLimit = updates.repeatLimit;
+
+	return result;
+}
+
+export function applyDefaultRepeatLimit(event: Event): Event {
+	if (event.repeatType && event.repeatType !== "none") {
+		if (!event.repeatLimit || event.repeatLimit === 0) {
+			switch (event.repeatType) {
+				case "daily":
+					event.repeatLimit = 90;
+					break;
+				case "weekly":
+					event.repeatLimit = 13;
+					break;
+				case "monthly":
+					event.repeatLimit = 3;
+					break;
+			}
+		}
+	}
+	return event;
 }

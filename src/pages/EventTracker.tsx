@@ -54,74 +54,111 @@ const EventTracker = () => {
 		updatedEvent: Event,
 		editType?: "single" | "all"
 	) => {
-		if (editType) {
-			// Handle recurring event update
-			if (editType === "single") {
-				// For single instance updates, you might want to create a new separate event
-				// or handle exceptions in your data structure
-				console.log("Updating single occurrence:", updatedEvent);
+		// Check if this is a recurring instance
+		const isRecurringInstance =
+			typeof updatedEvent.id === "string" &&
+			updatedEvent.id.includes("-");
 
-				// For now, create a new non-recurring event for this specific instance
-				const singleEvent: Event = {
-					...updatedEvent,
-					id: `${updatedEvent.id}-exception-${Date.now()}`,
-					repeatType: "none",
-					repeatLimit: 0,
+		if (editType === "single" && isRecurringInstance) {
+			const baseEventId = getBaseEventId(updatedEvent.id as string);
+
+			// Convert string ID to number for finding base event
+			const numericBaseId =
+				typeof baseEventId === "string"
+					? parseInt(baseEventId, 10)
+					: baseEventId;
+
+			const baseEvent = events.find((e) => e.id === numericBaseId);
+
+			if (baseEvent) {
+				// 1. Update base event to exclude this date
+				const excludedDate = updatedEvent.startDate;
+				const updatedBaseEvent = {
+					...baseEvent,
+					excludedDates: [
+						...(baseEvent.excludedDates || []),
+						excludedDate,
+					],
 				};
+				dispatch(updateEvent(updatedBaseEvent));
 
-				dispatch(addEvent(singleEvent));
-				// You might also want to add logic to track exceptions in the base event
-			} else {
-				// Update all occurrences (update the base recurring event)
-				const baseEventId =
-					typeof updatedEvent.id === "string" &&
-					updatedEvent.id.includes("-")
-						? getBaseEventId(updatedEvent.id)
-						: updatedEvent.id;
-
-				const baseEvent = events.find((e) => e.id === baseEventId);
-				if (baseEvent) {
-					const updatedBaseEvent: Event = {
-						...baseEvent,
-						...updatedEvent,
-						id: baseEventId,
-					};
-					dispatch(updateEvent(updatedBaseEvent));
-				}
+				// 2. Create the modified occurrence as a new event
+				const newExceptionEvent: Event = {
+					...updatedEvent,
+					id: Date.now(), // Generate new unique numeric ID
+					repeatType: "none", // Exception events don't repeat
+					originalEventId: numericBaseId, // Now it's a number, not string
+					repeatLimit: 0, // No repeat limit for exceptions
+					recurring: undefined, // Remove recurring config
+					excludedDates: undefined, // Exception events don't have excluded dates
+				};
+				dispatch(addEvent(newExceptionEvent));
 			}
+		} else if (editType === "all") {
+			// Update the base event
+			dispatch(updateEvent(updatedEvent));
 		} else {
-			// Handle regular event update
+			// Regular single event update
 			dispatch(updateEvent(updatedEvent));
 		}
 
 		dispatch(setSelectedEvent(null));
 	};
 
+	// In your onDelete handler
 	const handleDeleteEvent = (
 		eventId: string | number,
 		deleteType?: "single" | "all"
 	) => {
-		if (deleteType) {
-			// Handle recurring event deletion
-			if (deleteType === "single") {
-				// For single occurrence deletion, you might want to add to an exceptions list
-				// For now, we'll just log it since this requires more complex state management
-				console.log("Deleting single occurrence:", eventId);
+		if (deleteType === "single") {
+			// Check if this is a recurring instance
+			const isInstanceId =
+				typeof eventId === "string" && eventId.includes("-");
 
-				// You could implement this by tracking deleted instances in your state
-				// or by creating a separate "exceptions" array in your recurring event
+			if (isInstanceId) {
+				const baseEventId = getBaseEventId(eventId as string);
+
+				// Convert to numeric ID
+				const numericBaseId =
+					typeof baseEventId === "string"
+						? parseInt(baseEventId, 10)
+						: baseEventId;
+
+				const baseEvent = events.find((e) => e.id === numericBaseId);
+
+				if (baseEvent) {
+					// Extract the date from the instance ID (e.g., "1-2025-09-30" -> "2025-09-30")
+					const dateToExclude = (eventId as string)
+						.split("-")
+						.slice(1)
+						.join("-");
+
+					const updatedBaseEvent = {
+						...baseEvent,
+						excludedDates: [
+							...(baseEvent.excludedDates || []),
+							dateToExclude,
+						],
+					};
+
+					dispatch(updateEvent(updatedBaseEvent));
+				}
 			} else {
-				// Delete entire recurring series
-				const baseEventId =
-					typeof eventId === "string" && eventId.includes("-")
-						? getBaseEventId(eventId)
-						: eventId;
-
-				dispatch(deleteEvent(baseEventId as number));
+				// Regular single event - just delete it
+				dispatch(deleteEvent(eventId));
 			}
+		} else if (deleteType === "all") {
+			// Delete the base event (all occurrences)
+			// Make sure we're using the numeric base ID
+			const numericId =
+				typeof eventId === "string" && eventId.includes("-")
+					? parseInt(getBaseEventId(eventId), 10)
+					: eventId;
+
+			dispatch(deleteEvent(numericId));
 		} else {
-			// Handle regular event deletion
-			dispatch(deleteEvent(eventId as number));
+			// Regular delete without type specified
+			dispatch(deleteEvent(eventId));
 		}
 
 		dispatch(setSelectedEvent(null));

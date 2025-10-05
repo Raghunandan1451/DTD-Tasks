@@ -1,4 +1,5 @@
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
+import { applyDefaultRepeatLimit } from "@src/features/event/lib/utils";
 import { CalendarState, Event } from "@src/features/event/type";
 import { hydrateCalendar } from "@src/lib/store/thunks/calendarThunk";
 
@@ -19,17 +20,16 @@ const calendarSlice = createSlice({
 	reducers: {
 		// Event actions
 		addEvent: (state, action: PayloadAction<Event>) => {
-			state.events.push(action.payload);
+			const event = applyDefaultRepeatLimit({ ...action.payload });
+			state.events.push(event);
 		},
 		updateEvent: (state, action: PayloadAction<Event>) => {
-			const index = state.events.findIndex(
-				(event) => event.id === action.payload.id
-			);
-			if (index !== -1) {
-				state.events[index] = action.payload;
-			}
+			const event = applyDefaultRepeatLimit(action.payload);
+			const index = state.events.findIndex((e) => e.id === event.id);
+			if (index !== -1) state.events[index] = event;
 		},
-		deleteEvent: (state, action: PayloadAction<number>) => {
+		// FIXED: Accept both string and number for recurring instance deletion
+		deleteEvent: (state, action: PayloadAction<number | string>) => {
 			state.events = state.events.filter(
 				(event) => event.id !== action.payload
 			);
@@ -74,11 +74,11 @@ const calendarSlice = createSlice({
 			})
 			.addCase(hydrateCalendar.fulfilled, (state) => {
 				state.loading = false;
-				state.loaded = true; // 👈 mark as loaded
+				state.loaded = true;
 			})
 			.addCase(hydrateCalendar.rejected, (state, action) => {
 				state.loading = false;
-				state.loaded = true; // 👈 even if failed, mark as loaded
+				state.loaded = true;
 				state.error =
 					action.error.message || "Failed to hydrate calendar data";
 			});

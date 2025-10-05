@@ -9,9 +9,15 @@ export const hydrateCalendar = createAsyncThunk(
 		const data = await getFromIndexedDB<CalendarState>(
 			"redux_calendar_data"
 		);
+		console.log(data);
 
 		if (data) {
-			dispatch(setCalendarState(data));
+			dispatch(
+				setCalendarState({
+					...data,
+					currentDate: new Date().toISOString().split("T")[0], // set on hydrate
+				})
+			);
 		} else {
 			console.warn(
 				"[Hydrate] No calendar data found, using initial state"

@@ -37,7 +37,6 @@ const CalendarEvent: React.FC<{
 		event.id &&
 		typeof event.id === "string" &&
 		event.id.includes("-") &&
-		event.repeatType &&
 		event.repeatType !== "none";
 
 	return (

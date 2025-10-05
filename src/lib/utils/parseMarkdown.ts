@@ -1,217 +1,369 @@
+// parseMarkdown.ts - Complete version with novel styles
 import { createElement, ReactElement, ReactNode } from "react";
-
-const VOID_ELEMENTS = new Set(["br", "hr", "img", "input", "link", "meta"]);
 
 interface MarkdownRule {
 	pattern: RegExp;
-	component: (content: string, key: string) => ReactElement;
+	component: (key: string, ...matches: string[]) => ReactElement;
 }
 
-const MARKDOWN_RULES: Readonly<MarkdownRule[]> = Object.freeze([
+const INLINE_RULES: readonly MarkdownRule[] = [
 	{
-		pattern: /\*\*__(\S(?:.*?\S)?)__\*\*/g, // **__Bold + Underline__**
-		component: (content, key) =>
-			createElement("strong", { key }, createElement("u", null, content)),
+		pattern: /!\[([^\]]*)\]\(([^)]+)\)/g,
+		component: (key, alt, src) =>
+			createElement("img", {
+				key,
+				alt,
+				src,
+				className: "inline max-h-64 rounded",
+			}),
 	},
 	{
-		pattern: /__\*\*(\S(?:.*?\S)?)\*\*__/g, // __**Underline + Bold**__
-		component: (content, key) =>
-			createElement("u", { key }, createElement("strong", null, content)),
-	},
-	{
-		pattern: /\*\*\*(\S(?:.*?\S)?)\*\*\*/g, // ***Bold + Italic***
-		component: (content, key) =>
+		pattern: /\[([^\]]+)\]\(([^)]+)\)/g,
+		component: (key, text, href) =>
 			createElement(
-				"strong",
-				{ key },
-				createElement("em", null, content)
+				"a",
+				{
+					key,
+					href,
+					target: "_blank",
+					rel: "noopener noreferrer",
+					className: "text-blue-500 hover:underline",
+				},
+				text
 			),
 	},
 	{
-		pattern: /\*__(\S(?:.*?\S)?)__\*/g, // *__Italic + Underline__*
-		component: (content, key) =>
-			createElement("em", { key }, createElement("u", null, content)),
-	},
-	{
-		pattern: /__\*(\S(?:.*?\S)?)\*__/g, // __*Underline + Italic*__
-		component: (content, key) =>
-			createElement("u", { key }, createElement("em", null, content)),
-	},
-	{
-		pattern: /\*\*~(\S(?:.*?\S)?)~\*\*/g, // **~Bold + Strikethrough~**
-		component: (content, key) =>
-			createElement("strong", { key }, createElement("s", null, content)),
-	},
-	{
-		pattern: /~\*\*(\S(?:.*?\S)?)\*\*~/g, // ~**Strikethrough + Bold**~
-		component: (content, key) =>
-			createElement("s", { key }, createElement("strong", null, content)),
-	},
-	{
-		pattern: /~\*(\S(?:.*?\S)?)\*~/g, // ~*Strikethrough + Italic*~
-		component: (content, key) =>
-			createElement("s", { key }, createElement("em", null, content)),
-	},
-	{
-		pattern: /~__(\S(?:.*?\S)?)__~/g, // ~__Strikethrough + Underline__~
-		component: (content, key) =>
-			createElement("s", { key }, createElement("u", null, content)),
-	},
-	{
-		pattern: /__~(\S(?:.*?\S)?)~__/g, // ~__Strikethrough + Underline__~
-		component: (content, key) =>
-			createElement("u", { key }, createElement("s", null, content)),
-	},
-	{
-		pattern: /\*\*(\S(?:.*?\S)?)\*\*/g,
-		component: (content, key) => createElement("strong", { key }, content),
-	},
-	{
-		pattern: /__(\S(?:.*?\S)?)__/g,
-		component: (content, key) => createElement("u", { key }, content),
-	},
-	{
-		pattern: /\*(\S(?:.*?\S)?)\*/g,
-		component: (content, key) => createElement("em", { key }, content),
-	},
-	{
-		pattern: /~(\S(?:.*?\S)?)~/g,
-		component: (content, key) => createElement("s", { key }, content),
-	},
-	{
-		pattern: /`(\S(?:.*?\S)?)`/g,
-		component: (content, key) =>
+		pattern: /`([^`]+)`/g,
+		component: (key, content) =>
 			createElement(
 				"code",
-				{ key, className: "bg-gray-700 px-1 rounded-sm" },
+				{
+					key,
+					className:
+						"bg-gray-800 text-gray-100 px-1 py-0.5 rounded text-sm",
+				},
 				content
 			),
 	},
-]);
+	{
+		pattern: /\*\*(?!\*)([^*]+?)\*\*(?!\*)/g,
+		component: (key, content) => createElement("strong", { key }, content),
+	},
+	{
+		pattern: /__(?!_)([^_]+?)__(?!_)/g,
+		component: (key, content) => createElement("u", { key }, content),
+	},
+	{
+		pattern: /~~(?!~)([^~]+?)~~(?!~)/g,
+		component: (key, content) => createElement("s", { key }, content),
+	},
+	{
+		pattern: /(?<!\*)\*(?!\*)([^*]+?)\*(?!\*)/g,
+		component: (key, content) => createElement("em", { key }, content),
+	},
+];
 
-type ElemenType = "p" | "h1" | "h2" | "h3" | "li" | "blockquote" | "br";
+function parseInline(text: string, baseKey: string = ""): ReactNode[] {
+	let processedText = text;
+	const replacements: Array<{ placeholder: string; node: ReactNode }> = [];
+	let placeholderIndex = 0;
 
-type ClassNameMapType = {
-	[key in ElemenType]: string | null;
-};
+	INLINE_RULES.forEach((rule, ruleIndex) => {
+		const regex = new RegExp(rule.pattern.source, rule.pattern.flags);
 
-export const parseMarkdown = (markdown: string): ReactElement[] => {
+		processedText = processedText.replace(regex, (_match, ...args) => {
+			const captures = args.slice(0, -2);
+
+			const key = `${baseKey}-r${ruleIndex}-${placeholderIndex}`;
+			const node = rule.component(key, ...captures);
+
+			const placeholder = `\u0000PLACEHOLDER_${placeholderIndex}\u0000`;
+			replacements.push({ placeholder, node });
+			placeholderIndex++;
+
+			return placeholder;
+		});
+	});
+
+	const nodes: ReactNode[] = [];
+	// eslint-disable-next-line no-control-regex
+	const parts = processedText.split(/(\u0000PLACEHOLDER_\d+\u0000)/);
+
+	parts.forEach((part) => {
+		if (part.startsWith("\u0000PLACEHOLDER_")) {
+			const replacement = replacements.find(
+				(r) => r.placeholder === part
+			);
+			if (replacement) {
+				nodes.push(replacement.node);
+			}
+		} else if (part) {
+			nodes.push(part);
+		}
+	});
+
+	return nodes.length > 0 ? nodes : [text];
+}
+
+interface BlockToken {
+	type:
+		| "heading"
+		| "blockquote"
+		| "list"
+		| "code"
+		| "paragraph"
+		| "empty"
+		| "indented-paragraph"
+		| "dialogue";
+	level?: number;
+	content?: string;
+	items?: string[];
+	lines?: string[];
+	speaker?: string;
+}
+
+function tokenizeBlocks(markdown: string): BlockToken[] {
 	const lines = markdown.split("\n");
+	const tokens: BlockToken[] = [];
+	let i = 0;
+
+	while (i < lines.length) {
+		const line = lines[i];
+
+		// Code blocks
+		if (line.trim().startsWith("```")) {
+			const codeLines: string[] = [];
+			i++;
+
+			while (i < lines.length && !lines[i].trim().startsWith("```")) {
+				codeLines.push(lines[i]);
+				i++;
+			}
+
+			tokens.push({ type: "code", lines: codeLines });
+			i++;
+			continue;
+		}
+
+		// Headings
+		const headingMatch = line.match(/^(#{1,3})\s+(.*)$/);
+		if (headingMatch) {
+			tokens.push({
+				type: "heading",
+				level: headingMatch[1].length,
+				content: headingMatch[2],
+			});
+			i++;
+			continue;
+		}
+
+		// Lists
+		if (line.match(/^[-*]\s+/)) {
+			const items: string[] = [];
+			while (i < lines.length && lines[i].match(/^[-*]\s+/)) {
+				items.push(lines[i].replace(/^[-*]\s+/, ""));
+				i++;
+			}
+			tokens.push({ type: "list", items });
+			continue;
+		}
+
+		// Blockquotes
+		if (line.match(/^>\s*/)) {
+			const quoteLines: string[] = [];
+			while (i < lines.length && lines[i].match(/^>\s*/)) {
+				quoteLines.push(lines[i].replace(/^>\s*/, ""));
+				i++;
+			}
+			tokens.push({ type: "blockquote", lines: quoteLines });
+			continue;
+		}
+
+		// NOVEL DIALOGUE: "Name: Dialog text"
+		const dialogueMatch = line.match(/^([A-Z][a-zA-Z\s]+):\s+(.+)$/);
+		if (dialogueMatch) {
+			tokens.push({
+				type: "dialogue",
+				speaker: dialogueMatch[1],
+				content: dialogueMatch[2],
+			});
+			i++;
+			continue;
+		}
+
+		// INDENTED PARAGRAPH: Start with ~>
+		if (line.match(/^~>\s*/)) {
+			tokens.push({
+				type: "indented-paragraph",
+				content: line.replace(/^~>\s*/, ""),
+			});
+			i++;
+			continue;
+		}
+
+		// Empty lines
+		if (line.trim() === "") {
+			tokens.push({ type: "empty" });
+			i++;
+			continue;
+		}
+
+		// Regular paragraph
+		tokens.push({ type: "paragraph", content: line });
+		i++;
+	}
+
+	return tokens;
+}
+
+export function parseMarkdown(markdown: string): ReactElement[] {
+	const tokens = tokenizeBlocks(markdown);
 	const elements: ReactElement[] = [];
 
-	const classNameMap: ClassNameMapType = {
-		h1: "text-2xl font-bold mb-2",
-		h2: "text-xl font-semibold mb-2",
-		h3: "text-lg font-medium mb-2",
-		li: "ml-4 list-disc mb-1",
-		blockquote: "border-l-4 border-gray-500 pl-4 my-2 italic text-gray-300",
-		p: "text-base mb-2",
-		br: null,
-	};
-	// Parse inline markdown formatting for a given text line.
-	const parseInline = (text: string, lineIndex: number): ReactNode[] => {
-		return MARKDOWN_RULES.reduce(
-			(
-				inlineElements: ReactNode[],
-				rule: MarkdownRule,
-				ruleIndex: number
-			) => {
-				return inlineElements.flatMap((part) => {
-					if (typeof part !== "string") return part;
+	tokens.forEach((token, tokenIndex) => {
+		const key = `block-${tokenIndex}`;
 
-					const parts = [];
-					let lastIndex = 0;
-					let matchCount = 0;
-					rule.pattern.lastIndex = 0;
+		switch (token.type) {
+			case "heading": {
+				const Tag = `h${token.level}` as "h1" | "h2" | "h3";
+				const className =
+					token.level === 1
+						? "text-2xl font-bold mb-2"
+						: token.level === 2
+						? "text-xl font-semibold mb-2"
+						: "text-lg font-medium mb-1";
 
-					let match;
-					while ((match = rule.pattern.exec(part)) !== null) {
-						if (match.index > lastIndex) {
-							parts.push(part.slice(lastIndex, match.index));
-						}
-						const key = `line-${lineIndex}-rule-${ruleIndex}-match-${matchCount++}`;
-						parts.push(rule.component(match[1], key));
-						lastIndex = rule.pattern.lastIndex;
-					}
+				elements.push(
+					createElement(
+						Tag,
+						{ key, className },
+						parseInline(token.content || "", key)
+					)
+				);
+				break;
+			}
 
-					if (lastIndex < part.length) {
-						parts.push(part.slice(lastIndex));
-					}
-					return parts;
-				});
-			},
-			[text]
-		);
-	};
-	lines.forEach((line, lineIndex) => {
-		const lineKey = `line-${lineIndex}-${line.replace(/\W/g, "")}`;
+			case "list": {
+				const listItems = token.items?.map((item, itemIndex) =>
+					createElement(
+						"li",
+						{ key: `${key}-item-${itemIndex}`, className: "ml-4" },
+						parseInline(item, `${key}-item-${itemIndex}`)
+					)
+				);
+				elements.push(
+					createElement(
+						"ul",
+						{ key, className: "list-disc mb-2" },
+						listItems
+					)
+				);
+				break;
+			}
 
-		// Define mappings for markdown syntax to HTML elements
-		const elementMapping: {
-			pattern: RegExp;
-			type: ElemenType;
-			slice: number;
-		}[] = [
-			{ pattern: /^#\s/, type: "h1", slice: 2 },
-			{ pattern: /^##\s/, type: "h2", slice: 3 },
-			{ pattern: /^###\s/, type: "h3", slice: 4 },
-			{ pattern: /^-\s/, type: "li", slice: 2 },
-			{ pattern: /^>\s/, type: "blockquote", slice: 2 },
-			{ pattern: /^\s*$/, type: "br", slice: 0 },
-		];
+			case "blockquote": {
+				const content = token.lines?.join("\n") || "";
+				elements.push(
+					createElement(
+						"blockquote",
+						{
+							key,
+							className:
+								"border-l-4 border-gray-500 pl-4 my-2 italic text-gray-600 dark:text-gray-300",
+						},
+						parseInline(content, key)
+					)
+				);
+				break;
+			}
 
-		// Determine the element type and extract content
-		const match = elementMapping.find(({ pattern }) => pattern.test(line));
-		const elementType: ElemenType = match ? match.type : "p";
-		const content = match ? line.slice(match.slice) : line;
+			case "code": {
+				const content = token.lines?.join("\n") || "";
+				elements.push(
+					createElement(
+						"pre",
+						{
+							key,
+							className:
+								"bg-gray-900 text-gray-100 p-3 rounded my-2 overflow-x-auto",
+						},
+						createElement(
+							"code",
+							{ className: "font-mono text-sm" },
+							content
+						)
+					)
+				);
+				break;
+			}
 
-		// Parse inline content unless it's a void element (like `<br>`)
-		const children = VOID_ELEMENTS.has(elementType)
-			? null
-			: parseInline(content, lineIndex);
+			case "indented-paragraph": {
+				// Book-style paragraph with first-line indent
+				elements.push(
+					createElement(
+						"p",
+						{
+							key,
+							className: "mb-2 indent-8",
+						},
+						parseInline(token.content || "", key)
+					)
+				);
+				break;
+			}
 
-		// Create and add the React element
-		elements.push(
-			createElement(
-				elementType,
-				{ key: lineKey, className: classNameMap[elementType] },
-				children
-			)
-		);
+			case "dialogue": {
+				// Novel-style dialogue
+				elements.push(
+					createElement(
+						"div",
+						{
+							key,
+							className: "grid grid-cols-[150px_1fr] gap-4 mb-2",
+						},
+						[
+							createElement(
+								"div",
+								{
+									key: `${key}-speaker`,
+									className:
+										"text-right font-semibold text-gray-700 dark:text-gray-300",
+								},
+								token.speaker
+							),
+							createElement(
+								"div",
+								{
+									key: `${key}-content`,
+									className:
+										"text-gray-900 dark:text-gray-100",
+								},
+								parseInline(token.content || "", key)
+							),
+						]
+					)
+				);
+				break;
+			}
+
+			case "empty": {
+				elements.push(createElement("br", { key }));
+				break;
+			}
+
+			case "paragraph":
+			default: {
+				elements.push(
+					createElement(
+						"p",
+						{ key, className: "mb-2" },
+						parseInline(token.content || "", key)
+					)
+				);
+				break;
+			}
+		}
 	});
 
 	return elements;
-};
-
-export const formatDate = (date: Date): string => {
-	return date.toISOString().split("T")[0];
-};
-
-export const formatTime = (time: string): string => {
-	const [hours, minutes] = time.split(":");
-	const hour = parseInt(hours, 10);
-	const ampm = hour >= 12 ? "PM" : "AM";
-	const displayHour = hour % 12 || 12;
-	return `${displayHour}:${minutes} ${ampm}`;
-};
-
-export const isToday = (date: Date): boolean => {
-	const today = new Date();
-	return date.toDateString() === today.toDateString();
-};
-
-export const getWeekDates = (date: Date): Date[] => {
-	const startOfWeek = new Date(date);
-	const day = startOfWeek.getDay();
-	const diff = startOfWeek.getDate() - day;
-	startOfWeek.setDate(diff);
-
-	const dates = [];
-	for (let i = 0; i < 7; i++) {
-		const currentDate = new Date(startOfWeek);
-		currentDate.setDate(startOfWeek.getDate() + i);
-		dates.push(currentDate);
-	}
-
-	return dates;
-};
+}
