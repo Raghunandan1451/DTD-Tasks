@@ -19,7 +19,7 @@ export interface Event {
 		daysOfWeek?: number[];
 		dayOfMonth?: number;
 	};
-	excludedDates?: string[]; // ADD THIS
+	excludedDates?: string[];
 	originalEventId?: number;
 }
 

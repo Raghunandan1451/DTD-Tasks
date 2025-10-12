@@ -4,7 +4,7 @@ export interface BaseInputProps
 	extends React.InputHTMLAttributes<HTMLInputElement> {
 	id: string;
 	type?: string;
-	value: string | number | undefined;
+	value?: string | number | undefined;
 	onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
 	onFocus?: () => void;
 	onKeyDown?: (e: React.KeyboardEvent<HTMLInputElement>) => void;

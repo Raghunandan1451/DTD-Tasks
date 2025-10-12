@@ -1,12 +1,19 @@
 import React, { ChangeEvent } from "react";
-import { getIconList } from "@src/lib/utils/svgUtils"; // Import utility
 import { useSelector, useDispatch } from "react-redux";
 import { updateSettings } from "@src/lib/store/slices/qrSettingSlice";
 import { RootState } from "@src/lib/store/store";
-import AdvancedSelect from "@src/components/ui/select_dropdown/AdvancedSelect";
 import Input from "@src/components/ui/input/Input";
 
-const QRCodeSettings: React.FC = () => {
+interface QRCodeSettingsProps {
+	showNotification: (
+		message: string,
+		type: "success" | "error" | "info"
+	) => void;
+}
+
+const QRCodeSettings: React.FC<QRCodeSettingsProps> = ({
+	showNotification,
+}) => {
 	const settings = useSelector((state: RootState) => state.qr);
 	const dispatch = useDispatch();
 
@@ -17,37 +24,63 @@ const QRCodeSettings: React.FC = () => {
 		dispatch(updateSettings({ [name]: value }));
 	};
 
-	return (
-		<fieldset className="border border-white/20 rounded-xl shadow-xl bg-white/10 backdrop-blur-md p-6 space-y-6">
-			<legend className="text-lg font-semibold text-gray-700 dark:text-cyan-400 px-2">
-				Optional Settings
-			</legend>
+	const handleIconUpload = (e: ChangeEvent<HTMLInputElement>) => {
+		const file = e.target.files?.[0];
+		if (!file) return;
 
-			<div>
+		const validTypes = ["image/x-icon", "image/png", "image/svg+xml"];
+		if (!validTypes.includes(file.type)) {
+			showNotification(
+				"Please upload a valid .ico, .png, or .svg file",
+				"error"
+			);
+			return;
+		}
+
+		const maxSize = 2 * 1024 * 1024;
+		if (file.size > maxSize) {
+			showNotification("File size must be less than 2MB", "error");
+			return;
+		}
+
+		const reader = new FileReader();
+		reader.onload = (event) => {
+			const dataUrl = event.target?.result as string;
+			dispatch(updateSettings({ selectedIcon: dataUrl }));
+			showNotification("Icon uploaded successfully", "success");
+		};
+		reader.readAsDataURL(file);
+	};
+
+	return (
+		<div className="w-100 md:w-1/2 flex items-center justify-around bg-white/10 dark:bg-gray-800/30 backdrop-blur-md border border-white/20 rounded-lg p-4">
+			{/* File input for custom icon */}
+			<div className="flex flex-col items-center">
 				<label
-					className="block text-sm font-medium text-gray-700 dark:text-cyan-500"
+					className="block text-xs font-medium text-gray-700 dark:text-cyan-500 mb-2"
 					htmlFor="selectedIcon"
 				>
-					Select Icon
+					Icon
 				</label>
-				<AdvancedSelect
+				<label
+					htmlFor="selectedIcon"
+					className="inline-block bg-cyan-500 hover:bg-cyan-600 text-white text-xs font-semibold py-2 px-4 rounded-md cursor-pointer transition-colors"
+				>
+					Choose File
+				</label>
+				<Input
 					id="selectedIcon"
-					value={settings.selectedIcon}
-					onChange={handleSettingChange}
-					options={getIconList()}
-					getOptionProps={(option) => ({
-						value: option.src,
-						label: option.name,
-					})}
-					className="w-full bg-white/10 text-gray-700 dark:text-white p-2 rounded-md backdrop-blur-md border border-gray-700 dark:border-cyan-500 focus:outline-none focus:ring-2 focus:ring-gray-700 dark:focus:ring-cyan-500"
-					placeholder="Select Icon"
-					isDisabled={false}
+					type="file"
+					accept=".ico,.png,.svg,image/x-icon,image/png,image/svg+xml"
+					onChange={handleIconUpload}
+					className="hidden"
 				/>
 			</div>
-			{/* Color Pickers for Background and Foreground Colors */}
-			<div>
+
+			{/* Background Color */}
+			<div className="flex flex-col items-center">
 				<label
-					className={`block text-sm font-medium text-gray-700 dark:text-cyan-400`}
+					className="block text-xs font-medium text-gray-700 dark:text-cyan-400 mb-2"
 					htmlFor="bgColor"
 				>
 					Background Color
@@ -57,12 +90,14 @@ const QRCodeSettings: React.FC = () => {
 					type="color"
 					value={settings.bgColor}
 					onChange={handleSettingChange}
-					className={`w-16 h-10 bg-white/10 border border-gray-700 dark:border-cyan-500 rounded-md backdrop-blur-md focus:outline-none px-0 py-0`}
+					className="w-16 h-10 bg-transparent border border-gray-700 dark:border-cyan-500 rounded-md cursor-pointer p-1"
 				/>
 			</div>
-			<div>
+
+			{/* Foreground Color */}
+			<div className="flex flex-col items-center">
 				<label
-					className="block text-sm font-medium text-gray-700 dark:text-cyan-400"
+					className="block text-xs font-medium text-gray-700 dark:text-cyan-400 mb-2"
 					htmlFor="fgColor"
 				>
 					Foreground Color
@@ -72,10 +107,10 @@ const QRCodeSettings: React.FC = () => {
 					type="color"
 					value={settings.fgColor}
 					onChange={handleSettingChange}
-					className={`w-16 h-10 bg-white/10 border border-gray-700 dark:border-cyan-500 rounded-md backdrop-blur-md focus:outline-none px-0 py-0`}
+					className="w-16 h-10 bg-transparent border border-gray-700 dark:border-cyan-500 rounded-md cursor-pointer p-1"
 				/>
 			</div>
-		</fieldset>
+		</div>
 	);
 };
 

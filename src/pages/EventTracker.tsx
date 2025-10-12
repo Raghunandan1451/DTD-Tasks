@@ -1,29 +1,39 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useSelector, useDispatch } from "react-redux";
-import { RootState, AppDispatch } from "@src/lib/store/store"; // adjust path
+import { RootState, AppDispatch } from "@src/lib/store/store";
 import {
-	addEvent,
-	updateEvent,
-	deleteEvent,
-	setCurrentDate,
 	setViewMode,
 	setSelectedEvent,
 	setShowAddForm,
+	setCalendarState,
 } from "@src/lib/store/slices/calendarSlice";
 import { hydrateCalendar } from "@src/lib/store/thunks/calendarThunk";
 
-import { Event } from "@src/features/event/type";
+import TitleWithButton from "@src/components/shared/title_with_button/TitleWithButton";
+import ControlBar from "@src/features/event/ControlBar";
 import CalendarGrid from "@src/features/event/CalendarGrid";
 import EventForm from "@src/features/event/EventForm";
 import EventModal from "@src/features/event/EventModal";
-import TitleWithButton from "@src/components/shared/title_with_button/TitleWithButton";
-import ControlBar from "@src/features/event/ControlBar";
-import { getBaseEventId } from "@src/features/event/lib/utils";
+import NotificationCenter from "@src/components/ui/toast/NotificationCenter";
+
+import { getDateRange, navigateDate } from "@src/features/event/lib/utils";
+import {
+	handleAddEvent,
+	handleUpdateEvent,
+	handleDeleteEvent,
+} from "@src/features/event/lib/eventHandlers";
+import useNotifications from "@src/lib/hooks/useNotifications";
+import {
+	handleCalendarExport,
+	handleJSONUpload,
+} from "@src/lib/utils/downloadHandler";
+import type { CalendarData } from "@src/lib/types/downloadHandlerTypes";
 
 const EventTracker = () => {
 	const dispatch = useDispatch<AppDispatch>();
+	const { notifications, showNotification } = useNotifications();
+	const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
 
-	// Redux state
 	const {
 		events,
 		currentDate,
@@ -34,212 +44,77 @@ const EventTracker = () => {
 		error,
 	} = useSelector((state: RootState) => state.calendar);
 
-	// Hydrate calendar state from IndexedDB on mount
+	const calendarState = useSelector((state: RootState) => state.calendar);
+
 	useEffect(() => {
 		dispatch(hydrateCalendar());
 	}, [dispatch]);
 
-	// Event handlers
-	const handleAddEvent = (eventData: Omit<Event, "id">) => {
-		dispatch(
-			addEvent({
-				...eventData,
-				id: Date.now(),
-			})
+	const dateRange = getDateRange(currentDate, viewMode);
+
+	const handleDownload = () => {
+		return handleCalendarExport(calendarState, showNotification);
+	};
+
+	const handleUpload = (file: File) => {
+		return handleJSONUpload<CalendarData>(
+			file,
+			(data) => {
+				dispatch(setCalendarState(data));
+				showNotification(
+					"Calendar data restored successfully",
+					"success"
+				);
+			},
+			(error) => {
+				showNotification(error, "error");
+			},
+			showNotification
 		);
-		dispatch(setShowAddForm(false));
 	};
+	// Handle mobile detection and force daily view
+	useEffect(() => {
+		const handleResize = () => {
+			const mobile = window.innerWidth < 768;
+			setIsMobile(mobile);
 
-	const handleUpdateEvent = (
-		updatedEvent: Event,
-		editType?: "single" | "all"
-	) => {
-		// Check if this is a recurring instance
-		const isRecurringInstance =
-			typeof updatedEvent.id === "string" &&
-			updatedEvent.id.includes("-");
-
-		if (editType === "single" && isRecurringInstance) {
-			const baseEventId = getBaseEventId(updatedEvent.id as string);
-
-			// Convert string ID to number for finding base event
-			const numericBaseId =
-				typeof baseEventId === "string"
-					? parseInt(baseEventId, 10)
-					: baseEventId;
-
-			const baseEvent = events.find((e) => e.id === numericBaseId);
-
-			if (baseEvent) {
-				// 1. Update base event to exclude this date
-				const excludedDate = updatedEvent.startDate;
-				const updatedBaseEvent = {
-					...baseEvent,
-					excludedDates: [
-						...(baseEvent.excludedDates || []),
-						excludedDate,
-					],
-				};
-				dispatch(updateEvent(updatedBaseEvent));
-
-				// 2. Create the modified occurrence as a new event
-				const newExceptionEvent: Event = {
-					...updatedEvent,
-					id: Date.now(), // Generate new unique numeric ID
-					repeatType: "none", // Exception events don't repeat
-					originalEventId: numericBaseId, // Now it's a number, not string
-					repeatLimit: 0, // No repeat limit for exceptions
-					recurring: undefined, // Remove recurring config
-					excludedDates: undefined, // Exception events don't have excluded dates
-				};
-				dispatch(addEvent(newExceptionEvent));
+			if (mobile && viewMode !== "daily") {
+				dispatch(setViewMode("daily"));
 			}
-		} else if (editType === "all") {
-			// Update the base event
-			dispatch(updateEvent(updatedEvent));
-		} else {
-			// Regular single event update
-			dispatch(updateEvent(updatedEvent));
-		}
+		};
 
-		dispatch(setSelectedEvent(null));
-	};
+		// Initial check
+		handleResize();
 
-	// In your onDelete handler
-	const handleDeleteEvent = (
-		eventId: string | number,
-		deleteType?: "single" | "all"
-	) => {
-		if (deleteType === "single") {
-			// Check if this is a recurring instance
-			const isInstanceId =
-				typeof eventId === "string" && eventId.includes("-");
+		// Add listener
+		window.addEventListener("resize", handleResize);
 
-			if (isInstanceId) {
-				const baseEventId = getBaseEventId(eventId as string);
-
-				// Convert to numeric ID
-				const numericBaseId =
-					typeof baseEventId === "string"
-						? parseInt(baseEventId, 10)
-						: baseEventId;
-
-				const baseEvent = events.find((e) => e.id === numericBaseId);
-
-				if (baseEvent) {
-					// Extract the date from the instance ID (e.g., "1-2025-09-30" -> "2025-09-30")
-					const dateToExclude = (eventId as string)
-						.split("-")
-						.slice(1)
-						.join("-");
-
-					const updatedBaseEvent = {
-						...baseEvent,
-						excludedDates: [
-							...(baseEvent.excludedDates || []),
-							dateToExclude,
-						],
-					};
-
-					dispatch(updateEvent(updatedBaseEvent));
-				}
-			} else {
-				// Regular single event - just delete it
-				dispatch(deleteEvent(eventId));
-			}
-		} else if (deleteType === "all") {
-			// Delete the base event (all occurrences)
-			// Make sure we're using the numeric base ID
-			const numericId =
-				typeof eventId === "string" && eventId.includes("-")
-					? parseInt(getBaseEventId(eventId), 10)
-					: eventId;
-
-			dispatch(deleteEvent(numericId));
-		} else {
-			// Regular delete without type specified
-			dispatch(deleteEvent(eventId));
-		}
-
-		dispatch(setSelectedEvent(null));
-	};
-
-	// Navigation logic
-	const navigateDate = (direction: "prev" | "next") => {
-		const newDate = new Date(currentDate);
-		if (viewMode === "weekly") {
-			newDate.setDate(
-				newDate.getDate() + (direction === "next" ? 7 : -7)
-			);
-		} else {
-			newDate.setDate(
-				newDate.getDate() + (direction === "next" ? 1 : -1)
-			);
-		}
-		dispatch(setCurrentDate(newDate.toISOString().split("T")[0]));
-	};
-
-	// Date label for header
-	const getDateRange = () => {
-		const baseDate = new Date(currentDate);
-
-		if (viewMode === "weekly") {
-			const startOfWeek = new Date(baseDate);
-			const day = startOfWeek.getDay();
-			const diff = startOfWeek.getDate() - day;
-			startOfWeek.setDate(diff);
-
-			const endOfWeek = new Date(startOfWeek);
-			endOfWeek.setDate(startOfWeek.getDate() + 6);
-
-			return {
-				start: startOfWeek,
-				end: endOfWeek,
-				label: `${startOfWeek.toLocaleDateString("en-US", {
-					month: "short",
-					day: "numeric",
-				})} - ${endOfWeek.toLocaleDateString("en-US", {
-					month: "short",
-					day: "numeric",
-					year: "numeric",
-				})}`,
-			};
-		} else {
-			return {
-				start: baseDate,
-				end: baseDate,
-				label: baseDate.toLocaleDateString("en-US", {
-					weekday: "short",
-					month: "short",
-					day: "numeric",
-					year: "numeric",
-				}),
-			};
-		}
-	};
-
-	const dateRange = getDateRange();
+		// Cleanup
+		return () => window.removeEventListener("resize", handleResize);
+	}, [dispatch, viewMode]);
 
 	return (
 		<>
-			{/* Header */}
 			<TitleWithButton
 				heading="Event Tracker"
-				buttonText="Export as PDF"
-				onDownload={() => console.log("Exporting PDF...")}
+				buttonText="Download"
+				onDownload={handleDownload}
+				onUpload={handleUpload}
+				showUpload={true}
+				showNotification={showNotification}
 			/>
 
-			{/* Control Bar */}
 			<ControlBar
 				dateLabel={dateRange.label}
 				viewMode={viewMode}
-				isMobile={window.innerWidth < 768}
-				onNavigate={navigateDate}
+				isMobile={isMobile}
+				onNavigate={(dir) =>
+					navigateDate(dispatch, currentDate, viewMode, dir)
+				}
 				onViewModeChange={(mode) => dispatch(setViewMode(mode))}
 				onAddEvent={() => dispatch(setShowAddForm(true))}
 			/>
 
-			{/* Calendar Grid */}
 			<CalendarGrid
 				events={events}
 				currentDate={new Date(currentDate)}
@@ -247,28 +122,31 @@ const EventTracker = () => {
 				onEventClick={(event) => dispatch(setSelectedEvent(event))}
 			/>
 
-			{/* Event Form Modal */}
 			{showAddForm && (
 				<EventForm
-					onSave={handleAddEvent}
+					onSave={(data) => handleAddEvent(dispatch, data)}
 					onCancel={() => dispatch(setShowAddForm(false))}
 				/>
 			)}
 
-			{/* Event Details Modal */}
 			{selectedEvent && (
 				<EventModal
 					event={selectedEvent}
-					onUpdate={handleUpdateEvent}
-					onDelete={handleDeleteEvent}
-					onClose={() => dispatch(setSelectedEvent(null))}
 					allEvents={events}
+					onUpdate={(event, type) =>
+						handleUpdateEvent(dispatch, events, event, type)
+					}
+					onDelete={(id, type) =>
+						handleDeleteEvent(dispatch, events, id, type)
+					}
+					onClose={() => dispatch(setSelectedEvent(null))}
 				/>
 			)}
 
-			{/* Loading / Error UI */}
 			{loading && <p className="text-gray-500">Loading...</p>}
 			{error && <p className="text-red-500">{error}</p>}
+
+			<NotificationCenter notifications={notifications} />
 		</>
 	);
 };

@@ -40,7 +40,8 @@ const INLINE_RULES: readonly MarkdownRule[] = [
 				{
 					key,
 					className:
-						"bg-gray-800 text-gray-100 px-1 py-0.5 rounded text-sm",
+						"px-2 py-1 rounded text-sm font-mono " +
+						"bg-gray-800/60 text-gray-100 dark:bg-gray-100/20 dark:text-gray-200",
 				},
 				content
 			),
@@ -269,7 +270,7 @@ export function parseMarkdown(markdown: string): ReactElement[] {
 						{
 							key,
 							className:
-								"border-l-4 border-gray-500 pl-4 my-2 italic text-gray-600 dark:text-gray-300",
+								"my-4 py-2 italic text-gray-700 dark:text-gray-300 text-center",
 						},
 						parseInline(content, key)
 					)
@@ -285,11 +286,12 @@ export function parseMarkdown(markdown: string): ReactElement[] {
 						{
 							key,
 							className:
-								"bg-gray-900 text-gray-100 p-3 rounded my-2 overflow-x-auto",
+								"p-4 rounded-lg font-mono text-sm " +
+								"bg-gray-800/60 text-gray-100 dark:bg-gray-100/20 dark:text-gray-200",
 						},
 						createElement(
 							"code",
-							{ className: "font-mono text-sm" },
+							{ className: "font-mono" },
 							content
 						)
 					)
@@ -327,7 +329,7 @@ export function parseMarkdown(markdown: string): ReactElement[] {
 								{
 									key: `${key}-speaker`,
 									className:
-										"text-right font-semibold text-gray-700 dark:text-gray-300",
+										"text-center font-semibold text-gray-700 dark:text-gray-300",
 								},
 								token.speaker
 							),

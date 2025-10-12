@@ -3,7 +3,7 @@ import { Provider } from "react-redux";
 import { configureStore } from "@reduxjs/toolkit";
 import fileManagerReducer from "@src/lib/store/slices/markdownSlice"; // example paths
 import qrReducer from "@src/lib/store/slices/qrSettingSlice";
-import MarkdownEditor from "@src/pages/MarkdownEditor";
+import MarkdownEditor from "@src/pages/FileManager";
 import * as downloadHandler from "@src/lib/utils/downloadHandler";
 import { vi, describe, it, beforeEach, expect } from "vitest";
 import "@testing-library/jest-dom";

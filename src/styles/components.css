@@ -29,6 +29,9 @@
 	.btn-primary {
 		@apply bg-blue-500/75 hover:bg-blue-600/75 text-white p-2 rounded-lg shadow-md;
 	}
+	.btn-secondary {
+		@apply bg-green-400 hover:bg-green-500 text-white p-2 rounded-lg shadow-md;
+	}
 
 	.panel-title {
 		@apply text-4xl font-bold;

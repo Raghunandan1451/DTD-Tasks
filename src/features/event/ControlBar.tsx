@@ -43,30 +43,32 @@ const ControlBar = ({
 
 				{/* View Controls */}
 				<div className="flex items-center gap-2">
-					<div className="flex bg-gray-100/50 dark:bg-gray-700 rounded-lg p-0.5">
-						<Button
-							onClick={() => onViewModeChange("daily")}
-							className={`px-2 py-1 rounded-md text-sm font-medium transition-colors ${
-								viewMode === "daily"
-									? "bg-white/70 dark:bg-gray-600 text-gray-900 dark:text-white shadow-sm"
-									: "text-gray-600 dark:text-gray-300"
-							}`}
-						>
-							Daily
-						</Button>
-						{!isMobile && (
+					{!isMobile && (
+						<div className="flex bg-gray-100/50 dark:bg-gray-700 rounded-lg p-0.5">
 							<Button
-								onClick={() => onViewModeChange("weekly")}
+								onClick={() => onViewModeChange("daily")}
 								className={`px-2 py-1 rounded-md text-sm font-medium transition-colors ${
-									viewMode === "weekly"
+									viewMode === "daily"
 										? "bg-white/70 dark:bg-gray-600 text-gray-900 dark:text-white shadow-sm"
 										: "text-gray-600 dark:text-gray-300"
 								}`}
 							>
-								Weekly
+								Daily
 							</Button>
-						)}
-					</div>
+							{!isMobile && (
+								<Button
+									onClick={() => onViewModeChange("weekly")}
+									className={`px-2 py-1 rounded-md text-sm font-medium transition-colors ${
+										viewMode === "weekly"
+											? "bg-white/70 dark:bg-gray-600 text-gray-900 dark:text-white shadow-sm"
+											: "text-gray-600 dark:text-gray-300"
+									}`}
+								>
+									Weekly
+								</Button>
+							)}
+						</div>
+					)}
 
 					<Button
 						onClick={onAddEvent}

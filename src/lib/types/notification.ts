@@ -1,20 +1,16 @@
+export type NotifyType = "error" | "success" | "info" | undefined;
+
 export type InjectedNotificationProps = {
-	showNotification: (
-		message: string,
-		type?: "error" | "success" | "info"
-	) => void;
+	showNotification: (message: string, type?: NotifyType) => void;
 };
 
 export interface Notification {
 	id: string | number;
 	message: string;
-	type: "error" | "success" | "info";
+	type: NotifyType;
 }
 
 export interface NotificationHookProps {
 	notifications: Notification[];
-	showNotification: (
-		message: string,
-		type: "error" | "success" | "info"
-	) => void;
+	showNotification: (message: string, type: NotifyType) => void;
 }

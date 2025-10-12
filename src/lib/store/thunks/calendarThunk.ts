@@ -9,7 +9,6 @@ export const hydrateCalendar = createAsyncThunk(
 		const data = await getFromIndexedDB<CalendarState>(
 			"redux_calendar_data"
 		);
-		console.log(data);
 
 		if (data) {
 			dispatch(

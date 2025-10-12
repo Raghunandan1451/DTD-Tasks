@@ -21,6 +21,7 @@
 		"jspdf": "^3.0.1",
 		"jszip": "^3.10.1",
 		"lucide-react": "^0.483.0",
+		"modern-screenshot": "^4.6.6",
 		"qrcode.react": "^4.2.0",
 		"react": "^19.0.0",
 		"react-dom": "^19.0.0",

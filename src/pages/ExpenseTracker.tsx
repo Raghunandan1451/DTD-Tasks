@@ -13,28 +13,37 @@ import {
 	selectTotalAllExpenses,
 } from "@src/lib/store/selectors/expenseSelectors";
 import { addSalaryForMissedMonths } from "@src/lib/utils/finance";
+import {
+	handleFinanceExport,
+	handleJSONUpload,
+} from "@src/lib/utils/downloadHandler";
+import { setFinanceState } from "@src/lib/store/slices/financeSlice";
+import { setExpenses } from "@src/lib/store/slices/expensesSlice";
+import useNotifications from "@src/lib/hooks/useNotifications";
+import NotificationCenter from "@src/components/ui/toast/NotificationCenter";
+import type { FinanceState } from "@src/features/finance/type";
+import type { ExpensesData } from "@src/lib/types/downloadHandlerTypes";
 
 const ExpenseTracker = () => {
-	const finance = useSelector((state: RootState) => state.finance);
-	const expenses = useSelector((state: RootState) => state.expenses.expenses);
-	const expensesLoaded = useSelector(
-		(state: RootState) => state.expenses.loaded
-	);
+	const dispatch = useDispatch<AppDispatch>();
+	const { notifications, showNotification } = useNotifications();
 
-	// Using selectors for data
+	const finance = useSelector((state: RootState) => state.finance);
+	const expensesState = useSelector((state: RootState) => state.expenses);
+	const expenses = expensesState.expenses;
+	const expensesLoaded = expensesState.loaded;
+
 	const selectedDateExpenses = useSelector(selectExpensesForSelectedDate);
 	const calculatedBalance = useSelector(selectCalculatedBalance);
 	const totalAllExpenses = useSelector(selectTotalAllExpenses);
 
 	const { salary, currentBalance, loaded } = finance;
-	const dispatch = useDispatch<AppDispatch>();
 
 	const [viewMode, setViewMode] = useState<ViewMode>("salary");
 	const [simulatedExpenses, setSimulatedExpenses] = useState<
 		SimulatedExpense[]
 	>([]);
 
-	// Calculate simulated remaining balance
 	const totalSimulatedCost = simulatedExpenses.reduce(
 		(sum, item) => sum + item.amount,
 		0
@@ -52,19 +61,7 @@ const ExpenseTracker = () => {
 
 	useEffect(() => {
 		if (loaded && expensesLoaded && salary) {
-			const addedCount = addSalaryForMissedMonths(
-				salary,
-				expenses,
-				dispatch,
-				finance,
-				6
-			);
-
-			if (addedCount && addedCount > 0) {
-				console.log(
-					`Auto-generated ${addedCount} missing salary entries`
-				);
-			}
+			addSalaryForMissedMonths(salary, expenses, dispatch, finance, 6);
 		}
 	}, [loaded, expensesLoaded, salary, expenses, dispatch, finance]);
 
@@ -74,12 +71,56 @@ const ExpenseTracker = () => {
 		}
 	}, [loaded, salary, currentBalance]);
 
+	const handleDownload = () => {
+		return handleFinanceExport(finance, expensesState, showNotification);
+	};
+
+	const handleUpload = async (file: File) => {
+		const fileName = file.name.toLowerCase();
+
+		if (fileName.includes("finance")) {
+			return handleJSONUpload<FinanceState>(
+				file,
+				(data) => {
+					dispatch(setFinanceState(data));
+					showNotification(
+						"Finance data restored successfully",
+						"success"
+					);
+				},
+				(error) => showNotification(error, "error"),
+				showNotification
+			);
+		} else if (fileName.includes("expense")) {
+			return handleJSONUpload<ExpensesData>(
+				file,
+				(data) => {
+					dispatch(setExpenses(data.expenses));
+					showNotification(
+						"Expenses data restored successfully",
+						"success"
+					);
+				},
+				(error) => showNotification(error, "error"),
+				showNotification
+			);
+		} else {
+			showNotification(
+				"Please select a finance or expense JSON file",
+				"error"
+			);
+		}
+	};
+
 	return (
 		<>
 			<TitleWithButton
 				heading="Expense Tracker"
-				buttonText="Export as PDF"
-				onDownload={() => console.log("Exporting PDF...")}
+				buttonText="Download"
+				onDownload={handleDownload}
+				onUpload={handleUpload}
+				showUpload={true}
+				showNotification={showNotification}
 			/>
 			<ExpenseSummary
 				balance={calculatedBalance}
@@ -96,6 +137,7 @@ const ExpenseTracker = () => {
 				simulatedExpenses={simulatedExpenses}
 				currentBalance={currentBalance}
 			/>
+			<NotificationCenter notifications={notifications} />
 		</>
 	);
 };
