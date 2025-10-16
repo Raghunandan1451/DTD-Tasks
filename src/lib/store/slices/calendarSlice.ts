@@ -18,7 +18,6 @@ const calendarSlice = createSlice({
 	name: "calendar",
 	initialState,
 	reducers: {
-		// Event actions
 		addEvent: (state, action: PayloadAction<Event>) => {
 			const event = applyDefaultRepeatLimit({ ...action.payload });
 			state.events.push(event);
@@ -28,14 +27,12 @@ const calendarSlice = createSlice({
 			const index = state.events.findIndex((e) => e.id === event.id);
 			if (index !== -1) state.events[index] = event;
 		},
-		// FIXED: Accept both string and number for recurring instance deletion
 		deleteEvent: (state, action: PayloadAction<number | string>) => {
 			state.events = state.events.filter(
 				(event) => event.id !== action.payload
 			);
 		},
 
-		// UI state actions
 		setCurrentDate: (state, action: PayloadAction<string>) => {
 			state.currentDate = action.payload;
 		},
@@ -49,7 +46,6 @@ const calendarSlice = createSlice({
 			state.showAddForm = action.payload;
 		},
 
-		// Bulk state setter for hydration
 		setCalendarState: (
 			state,
 			action: PayloadAction<Partial<CalendarState>>
@@ -57,7 +53,6 @@ const calendarSlice = createSlice({
 			return { ...state, ...action.payload, loading: false, error: null };
 		},
 
-		// Error handling
 		setError: (state, action: PayloadAction<string>) => {
 			state.error = action.payload;
 			state.loading = false;

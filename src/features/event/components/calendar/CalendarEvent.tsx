@@ -22,7 +22,6 @@ const CalendarEvent: React.FC<{
 		isEventMultiDay &&
 		getNextDayString(event.startDate) === columnDate;
 
-	// Add visual indicator for multi-day events
 	const borderRadius = isEventMultiDay
 		? isStartDay
 			? "rounded-l-lg rounded-tr-lg"
@@ -32,7 +31,6 @@ const CalendarEvent: React.FC<{
 	const opacity = isEventMultiDay && isEndDay ? "opacity-80" : "opacity-100";
 	const recurringIndicator = getRecurringIndicator(event);
 
-	// Check if this is a recurring instance
 	const isRecurringInstance =
 		event.id &&
 		typeof event.id === "string" &&

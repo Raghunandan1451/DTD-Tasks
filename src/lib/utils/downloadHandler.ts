@@ -10,14 +10,10 @@ import {
 	ShowNotificationFn,
 } from "@src/lib/types/downloadHandlerTypes";
 import { File, Folder } from "@src/features/markdown/type";
-import { FinanceState } from "@src/features/finance/type";
+import { FinanceState, SimulatedExpense } from "@src/features/finance/type";
 import { Event } from "@src/features/event/type";
 import { generateWeeklyCalendarScreenshot } from "@src/features/event/lib/utils";
 import { generateIndividualFilePDF } from "@src/features/markdown/lib/enhancedPDFGenerator";
-
-// ============================================
-// Utility Functions
-// ============================================
 
 const formatTimestamp = (): string => {
 	const timestamp = new Date()
@@ -85,15 +81,10 @@ const convertToFileTree = (
 	});
 };
 
-// ============================================
-// Expenses PDF Generation (Tabular Format)
-// ============================================
-
 const generateExpensesPDF = (expenses: ExpensesData): jsPDF => {
 	const doc = new jsPDF();
 	const pageWidth = doc.internal.pageSize.getWidth();
 
-	// Title
 	doc.setFontSize(18);
 	doc.text("Expense Report", pageWidth / 2, 20, { align: "center" });
 
@@ -105,7 +96,6 @@ const generateExpensesPDF = (expenses: ExpensesData): jsPDF => {
 		{ align: "center" }
 	);
 
-	// Group expenses by date
 	const expensesByDate = expenses.expenses.reduce((acc, exp) => {
 		if (!acc[exp.date]) acc[exp.date] = [];
 		acc[exp.date].push(exp);
@@ -116,7 +106,6 @@ const generateExpensesPDF = (expenses: ExpensesData): jsPDF => {
 	const lineHeight = 7;
 	const marginLeft = 14;
 
-	// Sort by date (descending)
 	const sortedDates = Object.keys(expensesByDate).sort(
 		(a, b) => new Date(b).getTime() - new Date(a).getTime()
 	);
@@ -203,9 +192,106 @@ const generateExpensesPDF = (expenses: ExpensesData): jsPDF => {
 	return doc;
 };
 
-// ============================================
-// Markdown to PDF Conversion
-// ============================================
+interface EstimatedData {
+	simulatedExpenses: SimulatedExpense[];
+	totalEstimatedPrice?: number;
+}
+
+export const generateEstimatedPDF = ({
+	simulatedExpenses,
+	totalEstimatedPrice,
+}: EstimatedData): jsPDF => {
+	const doc = new jsPDF();
+	const pageWidth = doc.internal.pageSize.getWidth();
+	const pageHeight = doc.internal.pageSize.getHeight();
+	const marginLeft = 14;
+	const marginTop = 20;
+	const lineHeight = 7;
+
+	let yPos = marginTop;
+
+	// --- Title ---
+	doc.setFontSize(18);
+	doc.setFont("helvetica", "bold");
+	doc.text("Estimated Expense Report", pageWidth / 2, yPos, {
+		align: "center",
+	});
+
+	yPos += 10;
+	doc.setFontSize(10);
+	doc.setFont("helvetica", "normal");
+	doc.text(
+		`Generated: ${new Date().toLocaleDateString()}`,
+		pageWidth / 2,
+		yPos,
+		{ align: "center" }
+	);
+
+	yPos += 15;
+
+	// --- Table Header ---
+	doc.setFontSize(11);
+	doc.setFont("helvetica", "bold");
+	doc.text("Name", marginLeft, yPos);
+	doc.text("Qty", marginLeft + 80, yPos);
+	doc.text("Unit", marginLeft + 110, yPos);
+	doc.text("Amount", marginLeft + 140, yPos);
+
+	yPos += 3;
+	doc.line(marginLeft, yPos, pageWidth - marginLeft, yPos);
+	yPos += 4;
+
+	// --- Table Rows ---
+	doc.setFont("helvetica", "normal");
+	simulatedExpenses.forEach((item) => {
+		// Check if next line fits, else add new page
+		if (yPos + lineHeight > pageHeight - 20) {
+			doc.addPage();
+			yPos = marginTop;
+
+			// Re-add table header on new page
+			doc.setFontSize(11);
+			doc.setFont("helvetica", "bold");
+			doc.text("Name", marginLeft, yPos);
+			doc.text("Qty", marginLeft + 80, yPos);
+			doc.text("Unit", marginLeft + 110, yPos);
+			doc.text("Amount", marginLeft + 140, yPos);
+			yPos += 3;
+			doc.line(marginLeft, yPos, pageWidth - marginLeft, yPos);
+			yPos += 4;
+			doc.setFont("helvetica", "normal");
+		}
+
+		const qtyText = item.quantity ? item.quantity.toString() : "-";
+		const amountText = item.amount.toFixed(2);
+
+		doc.text(item.name, marginLeft, yPos);
+		doc.text(qtyText, marginLeft + 80, yPos);
+		doc.text(item.unit || "-", marginLeft + 110, yPos);
+		doc.text(amountText, marginLeft + 140, yPos);
+
+		yPos += lineHeight;
+	});
+
+	yPos += 10;
+
+	// Add new page if summary won't fit
+	if (yPos + lineHeight > pageHeight - 20) {
+		doc.addPage();
+		yPos = marginTop;
+	}
+
+	doc.setFont("helvetica", "bold");
+	doc.text("Estimated Summary", marginLeft, yPos);
+	yPos += lineHeight;
+	doc.text(
+		`Total Estimated Price: ${totalEstimatedPrice?.toFixed(2)}`,
+		marginLeft + 10,
+		yPos
+	);
+
+	return doc;
+};
 
 export const handleCalendarExport = async (
 	calendarData: CalendarData,
@@ -266,9 +352,15 @@ export const handleCalendarExport = async (
 export const handleFinanceExport = async (
 	financeData: FinanceState,
 	expensesData: ExpensesData,
+	simulatedData?: SimulatedExpense[],
+	totalSimulatedCost?: number,
 	showNotification?: ShowNotificationFn
 ): Promise<void> => {
-	if (!financeData && !expensesData?.expenses?.length) {
+	if (
+		!financeData &&
+		!expensesData?.expenses?.length &&
+		!simulatedData?.length
+	) {
 		showNotification?.("No finance data to export", "error");
 		return;
 	}
@@ -276,27 +368,32 @@ export const handleFinanceExport = async (
 	try {
 		const zip = new JSZip();
 
-		// Add finance data
+		// Finance data
 		if (financeData) {
-			zip.file(
-				"expenses-data.json",
-				JSON.stringify(financeData, null, 2)
-			);
+			zip.file("finance-data.json", JSON.stringify(financeData, null, 2));
 		}
 
-		// Add expenses data
+		// Expenses data
 		if (expensesData?.expenses?.length) {
 			zip.file(
 				"expenses-data.json",
 				JSON.stringify(expensesData, null, 2)
 			);
 
-			// Generate tabular PDF
 			const expensesPDF = generateExpensesPDF(expensesData);
 			zip.file("expenses-report.pdf", expensesPDF.output("blob"));
 		}
 
-		// Add metadata
+		if (simulatedData?.length) {
+			const estimatedPDF = generateEstimatedPDF({
+				simulatedExpenses: simulatedData,
+				totalEstimatedPrice: totalSimulatedCost,
+			});
+
+			zip.file(`estimated-prices.pdf`, estimatedPDF.output("blob"));
+		}
+
+		// Metadata
 		zip.file(
 			"meta.json",
 			JSON.stringify(
@@ -306,6 +403,7 @@ export const handleFinanceExport = async (
 			)
 		);
 
+		// Save ZIP
 		const blob = await zip.generateAsync({ type: "blob" });
 		saveAs(blob, `expense-export_${formatTimestamp()}.zip`);
 		showNotification?.("Expense data exported successfully", "success");
@@ -467,10 +565,6 @@ export const handleQRExport = async (
 	}
 };
 
-// ============================================
-// Full App Export (Homepage Only)
-// ============================================
-
 export const handleFullAppExport = async (
 	appState: AppState,
 	showNotification?: ShowNotificationFn
@@ -609,10 +703,6 @@ To restore data:
 	}
 };
 
-// ============================================
-// Upload Functions
-// ============================================
-
 export const handleJSONUpload = async <T = unknown>(
 	file: globalThis.File,
 	onSuccess: (data: T) => void,
@@ -627,12 +717,6 @@ export const handleJSONUpload = async <T = unknown>(
 			throw new Error("Invalid JSON structure");
 		}
 
-		// Validate metadata if present
-		// const dataWithMeta = data as { meta?: { version?: string } };
-		// if (dataWithMeta.meta?.version) {
-		// 	// Future: Add version compatibility checks
-		// }
-
 		onSuccess(data);
 		showNotification?.("Data restored successfully", "success");
 	} catch (error) {
@@ -643,10 +727,6 @@ export const handleJSONUpload = async <T = unknown>(
 		onError?.(errorMessage);
 	}
 };
-
-// ============================================
-// Legacy Functions (Deprecated - Keep for backward compatibility)
-// ============================================
 
 /** @deprecated Use handleMarkdownExport instead */
 export const handleZIPExport = handleMarkdownExport;

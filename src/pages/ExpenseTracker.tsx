@@ -72,7 +72,13 @@ const ExpenseTracker = () => {
 	}, [loaded, salary, currentBalance]);
 
 	const handleDownload = () => {
-		return handleFinanceExport(finance, expensesState, showNotification);
+		return handleFinanceExport(
+			finance,
+			expensesState,
+			simulatedExpenses,
+			totalSimulatedCost,
+			showNotification
+		);
 	};
 
 	const handleUpload = async (file: File) => {
@@ -136,6 +142,7 @@ const ExpenseTracker = () => {
 				setSimulatedExpenses={setSimulatedExpenses}
 				simulatedExpenses={simulatedExpenses}
 				currentBalance={currentBalance}
+				showNotification={showNotification}
 			/>
 			<NotificationCenter notifications={notifications} />
 		</>

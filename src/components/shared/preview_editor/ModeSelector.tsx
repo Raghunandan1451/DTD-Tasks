@@ -10,7 +10,6 @@ interface ModeSelectorProps {
 	className?: string;
 }
 
-// Icon-only ModeSelector (Alternative)
 const ModeSelector = ({
 	currentMode,
 	allowedModes,
@@ -46,7 +45,7 @@ const ModeSelector = ({
 						}`}
 						type="button"
 						aria-label={modeConfig[mode].ariaLabel}
-						title={modeConfig[mode].label} // Tooltip on hover
+						title={modeConfig[mode].label}
 					>
 						<IconComponent className="h-5 w-5" />
 						{/* Responsive text - hidden on small screens */}

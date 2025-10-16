@@ -2,8 +2,75 @@ import { createSlice, PayloadAction } from "@reduxjs/toolkit";
 import { findFileByPath } from "@src/lib/utils/treeUtils";
 import { File, Folder, FileState } from "@src/features/markdown/type";
 
+const MARKDOWN_RULES_CONTENT = `# Markdown Formatting Guide
+
+Welcome to your List Manager! Here's how to format your markdown files.
+
+## Basic Formatting
+
+- **bold** - Use \`**text**\` for bold text
+- *italic* - Use \`*text*\` for italic text  
+- __underline__ - Use \`__text__\` for underlined text
+- ~~strikethrough~~ - Use \`~~text~~\` for strikethrough
+* \`code\` - Use backticks for inline code
+
+## Structure
+
+### Headings
+- \`# Large Heading\` for main titles
+- \`## Medium Heading\` for sections
+- \`### Small Heading\` for subsections
+
+### Lists
+- Use \`-\` followed by a space for bullet points
+- Example:
+  - Item 1
+  - Item 2
+  - Item 3
+
+### Blockquotes
+> Use \`> text\` to create centered, italic quotes
+> Perfect for emphasis or citations
+
+## Novel/Story Formatting
+
+### Character Dialogue
+Speaker 1: This is how you write character dialogue!
+Player_2: Names can include numbers and underscores
+Character Name: Even spaces work in speaker names
+
+**Format:** \`Speaker: dialogue text\`  
+**Note:** Speaker name must start with a capital letter
+
+### Indented Paragraphs
+~> Use \`~>\` at the start of a line for book-style indented paragraphs.
+~> This is perfect for novel or story writing.
+
+## Links
+[Link text](https://example.com) - Use \`[text](url)\` format
+
+## Code Blocks
+Use triple backticks for multi-line code:
+
+\`\`\`
+function example() {
+  return "Hello, World!";
+}
+\`\`\`
+
+---
+
+**Tip:** Combine these elements to create rich, formatted documents!
+`;
+
 const initialState: FileState = {
-	files: [],
+	files: [
+		{
+			path: "Markdown_Rules.md",
+			type: "file",
+			content: MARKDOWN_RULES_CONTENT,
+		},
+	],
 	selectedFile: null,
 	content: "",
 	loaded: false,
@@ -70,13 +137,11 @@ const markdownSlice = createSlice({
 		) => {
 			const { oldPath, newName } = action.payload;
 
-			// Find the file/folder and rename it
 			const parts = oldPath.split("/").filter(Boolean);
 			const targetName = parts.pop();
 
 			let currentLevel: (File | Folder)[] = state.files;
 
-			// Traverse to the parent folder
 			for (const part of parts) {
 				const folder = currentLevel.find(
 					(item) => item.type === "folder" && item.path === part
@@ -85,7 +150,6 @@ const markdownSlice = createSlice({
 				currentLevel = folder.children;
 			}
 
-			// Find the target file/folder
 			const item = currentLevel.find(
 				(item) => item.type && item.path === targetName
 			);
@@ -96,19 +160,15 @@ const markdownSlice = createSlice({
 		deleteFile: (state, action: PayloadAction<{ path: string }>) => {
 			const { path } = action.payload;
 
-			// Split path into parts and filter out empty strings
 			const pathParts = path.split("/").filter(Boolean);
 			if (pathParts.length === 0) return;
 
-			// The last part is the target file/folder name
 			const targetName = pathParts.pop();
 			if (!targetName) return;
 
-			// Start from the root files
 			let currentLevel: (File | Folder)[] = state.files;
 			let parentCollection: (File | Folder)[] = state.files;
 
-			// Iterate through each path part to find the parent folder
 			for (const part of pathParts) {
 				const folder = currentLevel.find(
 					(item) => item.type === "folder" && item.path.endsWith(part)
@@ -120,7 +180,6 @@ const markdownSlice = createSlice({
 				currentLevel = folder.children;
 			}
 
-			// Find the index in the parent collection
 			const deleteIndex = parentCollection.findIndex((item) =>
 				item.path.endsWith(targetName)
 			);
@@ -128,7 +187,6 @@ const markdownSlice = createSlice({
 			if (deleteIndex !== -1) {
 				parentCollection.splice(deleteIndex, 1);
 
-				// Clear selection if deleted file was selected
 				if (state.selectedFile === path) {
 					state.selectedFile = null;
 				}
@@ -141,9 +199,6 @@ const markdownSlice = createSlice({
 			const { path, content } = action.payload;
 			const segments = path.split("/").filter(Boolean);
 
-			// ========================
-			// 1. Handle Root Files
-			// ========================
 			if (segments.length === 1) {
 				state.files = state.files.map((file) =>
 					file.path === segments[0] && file.type === "file"
@@ -151,21 +206,16 @@ const markdownSlice = createSlice({
 						: file
 				);
 
-				// Update content if it's the selected file
 				if (state.selectedFile === path) {
 					state.content = content;
 				}
 				return;
 			}
 
-			// ========================
-			// 2. Handle Nested Files
-			// ========================
 			const fileName = segments.pop();
 			const newFiles = [...state.files]; // Clone root array
 			let parentArray = newFiles;
 
-			// Traverse folder structure
 			for (const segment of segments) {
 				const folderIndex = parentArray.findIndex(
 					(item) => item.path === segment && item.type === "folder"
@@ -173,21 +223,17 @@ const markdownSlice = createSlice({
 
 				if (folderIndex === -1) return; // Path invalid
 
-				// Clone folder and its children
 				const folder = parentArray[folderIndex] as Folder;
 
-				// Clone folder and its children
 				const updatedFolder: Folder = {
 					...folder,
 					children: [...folder.children],
 				};
 
-				// Update parent reference
 				parentArray[folderIndex] = updatedFolder;
 				parentArray = updatedFolder.children;
 			}
 
-			// Update target file
 			const fileIndex = parentArray.findIndex(
 				(item) => item.path === fileName && item.type === "file"
 			);
@@ -199,10 +245,8 @@ const markdownSlice = createSlice({
 					content,
 				};
 
-				// Update state with cloned structure
 				state.files = newFiles;
 
-				// Sync content if selected
 				if (state.selectedFile === path) {
 					state.content = content;
 				}
@@ -210,7 +254,6 @@ const markdownSlice = createSlice({
 		},
 		selectFile: (state, action) => {
 			const path = action.payload;
-			// Reset state first
 			state.selectedFile = null;
 			state.content = "";
 

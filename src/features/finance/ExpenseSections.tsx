@@ -9,6 +9,7 @@ import { Suspense } from "react";
 import { Loader } from "lucide-react";
 
 import SalaryForm from "@src/features/finance/base_setup/FinanceSetup";
+import { ShowNotificationFn } from "@src/lib/types/downloadHandlerTypes";
 const ExpenseList = lazy(
 	() => import("@src/features/finance/expense_list/ExpenseList")
 );
@@ -28,6 +29,7 @@ export const ExpenseSections: FC<{
 		React.SetStateAction<SimulatedExpense[]>
 	>;
 	currentBalance?: number;
+	showNotification?: ShowNotificationFn;
 }> = ({
 	viewMode,
 	allExpenses = [],
@@ -35,6 +37,7 @@ export const ExpenseSections: FC<{
 	simulatedExpenses,
 	setSimulatedExpenses,
 	currentBalance,
+	showNotification,
 }) => {
 	return (
 		<div className="flex-1 overflow-auto glassmorphic-bg p-4 scrollbar-hide">
@@ -42,7 +45,10 @@ export const ExpenseSections: FC<{
 				<Suspense
 					fallback={<Loader className="animate-spin text-gray-500" />}
 				>
-					<ExpenseList expenses={datedExpenses as ExpenseEntry[]} />
+					<ExpenseList
+						expenses={datedExpenses as ExpenseEntry[]}
+						showNotification={showNotification}
+					/>
 				</Suspense>
 			)}
 

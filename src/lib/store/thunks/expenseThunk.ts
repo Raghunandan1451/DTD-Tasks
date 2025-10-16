@@ -5,7 +5,6 @@ import { ExpenseEntry } from "@src/features/finance/type";
 import { setExpenses } from "@src/lib/store/slices/expensesSlice";
 import { RootState } from "@src/lib/store/store";
 
-// This should match what your middleware saves (entire slice state)
 interface ExpensesPersistedState {
 	expenses: ExpenseEntry[];
 	selectedDate: string;
@@ -18,7 +17,6 @@ export const hydrateExpenses = createAsyncThunk(
 		try {
 			const state = getState() as RootState;
 
-			// Prevent loading if already loaded
 			if (state.expenses.loaded) return;
 
 			const data = await getFromIndexedDB<ExpensesPersistedState>(
@@ -28,7 +26,6 @@ export const hydrateExpenses = createAsyncThunk(
 			if (data && Array.isArray(data.expenses)) {
 				dispatch(setExpenses(data.expenses));
 			} else {
-				// No data found, mark as loaded anyway
 				dispatch(setExpenses([]));
 			}
 		} catch (error) {

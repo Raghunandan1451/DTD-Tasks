@@ -8,7 +8,6 @@ type ShowNotificationFn = (
 
 interface TitleWithButtonProps {
 	heading: string;
-	// UPDATED: Now accepts either () => void or (heading: string) => void
 	onDownload:
 		| (() => Promise<void> | void)
 		| ((heading: string) => Promise<void> | void);
@@ -35,12 +34,9 @@ export const TitleWithButton: React.FC<TitleWithButtonProps> = ({
 	const handleDownloadClick = async () => {
 		setIsDownloading(true);
 		try {
-			// Check if onDownload accepts parameters by checking its length
 			if (onDownload.length === 0) {
-				// No parameters - call directly (Home page case)
 				await (onDownload as () => Promise<void> | void)();
 			} else {
-				// Expects heading parameter (other pages case)
 				await (onDownload as (heading: string) => Promise<void> | void)(
 					heading
 				);
@@ -61,7 +57,6 @@ export const TitleWithButton: React.FC<TitleWithButtonProps> = ({
 		try {
 			await onUpload(file, heading);
 			showNotification?.(`Data restored successfully!`, "success");
-			// Clear the input
 			if (fileInputRef.current) {
 				fileInputRef.current.value = "";
 			}
@@ -100,7 +95,7 @@ export const TitleWithButton: React.FC<TitleWithButtonProps> = ({
 							type="button"
 							className="btn-secondary flex-1 md:flex-initial text-sm md:text-base py-2 px-3 md:px-4"
 							onClick={handleUploadClick}
-							text={isUploading ? "Uploading..." : "Upload"}
+							text={isUploading ? "Uploading..." : "Upload JSON"}
 							disabled={isDownloading || isUploading}
 						/>
 						<input

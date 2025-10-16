@@ -18,7 +18,6 @@ const GroupFilter: React.FC<GroupFilterProps> = ({
 		onChangeGroup(value === "All" ? null : value);
 	};
 
-	// Add "All" option to the groups
 	const groupOptions = ["All", ...groups];
 
 	return (
@@ -28,7 +27,6 @@ const GroupFilter: React.FC<GroupFilterProps> = ({
 				value={selectedGroup ?? "All"}
 				onChange={handleChange}
 				options={groupOptions}
-				// placeholder="Filter by group"
 			/>
 		</div>
 	);

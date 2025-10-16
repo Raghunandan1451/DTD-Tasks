@@ -47,17 +47,14 @@ export function computeAutoUpdatedBalance(
 	const today = new Date();
 	const todayDate = today.getDate();
 
-	// Check basic requirements
 	if (!finance.salary?.amount || !finance.salary.dayOfMonth) return null;
 
-	// Only update on or after salary day
 	if (todayDate < finance.salary.dayOfMonth) return null;
 
 	const lastUpdate = finance.lastUpdatedDate
 		? new Date(finance.lastUpdatedDate)
 		: null;
 
-	// If never updated, set to 1 month
 	let monthsPassed = 1;
 
 	if (lastUpdate) {
@@ -65,7 +62,6 @@ export function computeAutoUpdatedBalance(
 		const monthDiff = today.getMonth() - lastUpdate.getMonth();
 		monthsPassed = yearDiff * 12 + monthDiff;
 
-		// If already updated this month or not enough time has passed
 		if (monthsPassed < 1) return null;
 	}
 
@@ -89,23 +85,14 @@ export function autoUpdateBalance(
 	}
 }
 
-/**
- * Get the actual salary credit date for a given month
- * Handles cases where desired day doesn't exist in the month
- */
 const getSalaryCreditDate = (
 	year: number,
 	month: number,
 	dayOfMonth: number
 ): string => {
-	// Get the last day of the month
 	const lastDayOfMonth = new Date(year, month + 1, 0).getDate();
-
-	// If the desired day exists in this month, use it
-	// Otherwise, use the last day of the month
 	const actualDay = Math.min(dayOfMonth, lastDayOfMonth);
 
-	// Create date string directly - month needs +1 because Date uses 0-based months
 	const monthStr = (month + 1).toString().padStart(2, "0");
 	const dayStr = actualDay.toString().padStart(2, "0");
 	const dateStr = `${year}-${monthStr}-${dayStr}`;
@@ -113,10 +100,6 @@ const getSalaryCreditDate = (
 	return dateStr;
 };
 
-/**
- * Auto-add salary for missed months based on salary.dayOfMonth
- * Only processes months from lastUpdatedDate onwards
- */
 export const addSalaryForMissedMonths = (
 	salary: DatedSalary,
 	expenses: ExpenseEntry[],
@@ -129,31 +112,26 @@ export const addSalaryForMissedMonths = (
 	const salariesToAdd: Array<{ date: string; amount: number; name: string }> =
 		[];
 
-	// Get the cutoff date - don't add salaries before this date
 	const lastUpdatedDate = finance.lastUpdatedDate
 		? new Date(finance.lastUpdatedDate)
 		: null;
 
-	// Check each month going back
 	for (let monthsBack = 0; monthsBack < lookbackMonths; monthsBack++) {
 		const checkYear = today.getFullYear();
 		const checkMonth = today.getMonth() - monthsBack;
 
-		// Handle year rollover
 		const actualYear = checkMonth < 0 ? checkYear - 1 : checkYear;
 		const actualMonth = checkMonth < 0 ? 12 + checkMonth : checkMonth;
 
-		// Get the salary credit date for this month
 		const salaryDateStr = getSalaryCreditDate(
 			actualYear,
 			actualMonth,
 			salary.dayOfMonth
 		);
-		const salaryCreditDate = new Date(salaryDateStr + "T12:00:00"); // Use noon to avoid timezone edge cases
+		const salaryCreditDate = new Date(salaryDateStr + "T12:00:00");
 
-		// Skip dates before lastUpdatedDate
 		if (lastUpdatedDate && salaryCreditDate < lastUpdatedDate) continue;
-		// Only add salary if the credit date has passed and no entry exists
+
 		if (salaryCreditDate <= today) {
 			const existingSalary = expenses.find(
 				(expense) =>
@@ -181,7 +159,6 @@ export const addSalaryForMissedMonths = (
 		}
 	}
 
-	// Add all missing salary entries
 	salariesToAdd.forEach(({ date, amount, name }) => {
 		dispatch(
 			addExpense({

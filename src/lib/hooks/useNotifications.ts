@@ -4,7 +4,6 @@ import {
 	NotificationHookProps,
 } from "@src/lib/types/notification";
 
-// Notification system instead of alerts
 let notificationId = 0;
 const useNotifications = (): NotificationHookProps => {
 	const [notifications, setNotifications] = useState<Notification[]>([]);

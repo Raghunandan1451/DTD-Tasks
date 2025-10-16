@@ -26,14 +26,12 @@ const BaseFinanceSetup = ({ showNotification }: BaseFinanceSetupProps) => {
 	const [day, setDay] = useState("");
 	const [balance, setBalance] = useState("");
 
-	// Check if balance has been set before (this would come from your store/localStorage)
 	const isBalanceAlreadySet =
 		currentBalance !== null &&
 		currentBalance !== undefined &&
 		currentBalance !== 0;
 
 	const handleSave = () => {
-		// For updates after initial setup, only validate salary fields
 		const fieldsToValidate = isBalanceAlreadySet
 			? { amount, day }
 			: { amount, day, balance };
@@ -45,12 +43,10 @@ const BaseFinanceSetup = ({ showNotification }: BaseFinanceSetupProps) => {
 			return;
 		}
 
-		// Always update salary
 		dispatch(
 			setSalary({ amount: parseFloat(amount), dayOfMonth: parseInt(day) })
 		);
 
-		// Only set balance if it hasn't been set before
 		if (!isBalanceAlreadySet && balance) {
 			dispatch(setCurrentBalance(parseFloat(balance)));
 			showNotification(

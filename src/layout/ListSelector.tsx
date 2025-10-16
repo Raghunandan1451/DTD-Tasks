@@ -114,7 +114,7 @@ const ListSelector: React.FC = () => {
 
 					{/* Logo/Brand */}
 					<h1 className="text-lg font-bold text-gray-800 dark:text-gray-200">
-						AIOLists
+						DTD Tasks
 					</h1>
 
 					{/* Theme Toggle */}
@@ -140,7 +140,7 @@ const ListSelector: React.FC = () => {
 					{/* Logo/Brand */}
 					<div className="flex items-center justify-between px-4 py-4 border-b border-gray-200 dark:border-gray-700">
 						<h2 className="text-xl font-bold text-gray-800 dark:text-gray-200">
-							AIOLists
+							DTD Tasks
 						</h2>
 						<button
 							onClick={closeMenu}
@@ -202,7 +202,7 @@ const ListSelector: React.FC = () => {
 			<nav className="hidden md:block glass-nav scrollbar-hide">
 				<div className="flex justify-between items-center px-2 mb-4">
 					<h2 className="text-lg font-semibold text-gray-800 dark:text-gray-200">
-						AIOLists
+						DTD Tasks
 					</h2>
 					<ThemeToggle />
 				</div>

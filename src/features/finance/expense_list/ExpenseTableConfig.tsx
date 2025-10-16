@@ -11,7 +11,7 @@ export const createExpenseColumns = (
 	{
 		key: "name",
 		label: "Name",
-		width: "flex-1", // 35% equivalent
+		width: "flex-1",
 		render: (expense, isEditing, editForm, handlers) => {
 			if (isEditing) {
 				return (
@@ -101,7 +101,7 @@ export const createExpenseColumns = (
 	{
 		key: "amount",
 		label: "Amount",
-		width: "w-32", // 13% equivalent
+		width: "w-32",
 		render: (expense, isEditing, editForm, handlers) => {
 			if (isEditing) {
 				return (
@@ -156,7 +156,7 @@ export const createExpenseColumns = (
 	{
 		key: "type",
 		label: "Type",
-		width: "w-20", // 7% equivalent
+		width: "w-20",
 		render: (expense) => (
 			<div
 				className={`text-xs font-semibold text-center px-2 py-1 rounded-full ${
@@ -172,7 +172,7 @@ export const createExpenseColumns = (
 	{
 		key: "actions",
 		label: "Actions",
-		width: "w-24", // 12% equivalent
+		width: "w-24",
 		render: (expense, isEditing, _editForm, handlers) => (
 			<ActionButtons
 				isEditing={isEditing}

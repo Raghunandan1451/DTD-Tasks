@@ -7,7 +7,7 @@ type TextareaProps = {
 	className?: string;
 	rows?: number;
 	onScroll?: () => void;
-	textareaRef?: React.RefObject<HTMLTextAreaElement | null>; // Changed to match usage
+	textareaRef?: React.RefObject<HTMLTextAreaElement | null>;
 };
 
 const Textarea = forwardRef<HTMLTextAreaElement, TextareaProps>(
@@ -23,7 +23,6 @@ const Textarea = forwardRef<HTMLTextAreaElement, TextareaProps>(
 		},
 		ref
 	) => {
-		// Use textareaRef if provided, otherwise use forwardRef's ref
 		const finalRef = textareaRef || ref;
 
 		return (

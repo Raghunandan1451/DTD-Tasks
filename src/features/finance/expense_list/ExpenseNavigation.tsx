@@ -26,7 +26,6 @@ const ExpenseNavigation: React.FC = () => {
 		const nextDay = new Date(selectedDate);
 		nextDay.setDate(nextDay.getDate() + 1);
 
-		// Only allow going to next day if it's not beyond today
 		if (nextDay <= today) {
 			dispatch(goToNextDay());
 		}

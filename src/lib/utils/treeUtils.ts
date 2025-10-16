@@ -33,9 +33,8 @@ export const handleFileSelect = (
 	item: BaseItem,
 	parentPath: string = ""
 ): void => {
-	// CORRECTED: Use proper path joining
 	const fullPath = [parentPath, item.path].filter(Boolean).join("/");
-	dispatch(selectFile(fullPath)); // Dispatch just the path string
+	dispatch(selectFile(fullPath));
 };
 
 export const handleCreateFile = (
@@ -57,7 +56,6 @@ export const handleCreateFile = (
 	const fileName = pathParts.pop()?.toString() || "";
 	const folderPath = pathParts;
 
-	// Traverse through existing folders only (don't modify files array directly)
 	let currentLevel = files;
 	const parentPath: string[] = [];
 
@@ -91,7 +89,6 @@ export const handleCreateFile = (
 			parentPath.push(folderName);
 		}
 
-		// Check for existing file only in the target directory
 		const fileExists = currentLevel.some(
 			(item) => item.type === "file" && item.path === fileName
 		);
@@ -101,7 +98,6 @@ export const handleCreateFile = (
 			return;
 		}
 
-		// Add the new file to the correct directory
 		dispatch(
 			addFile({
 				path: fileName,
@@ -163,30 +159,27 @@ export const findFileByPath = (
 	}
 
 	const pathParts = fullPath.split("/").filter(Boolean);
-	let currentFiles = files || []; // Handle undefined files array
+	let currentFiles = files || [];
 
 	for (const part of pathParts) {
-		const item = currentFiles.find((el) => el?.path === part); // Null-safe check
+		const item = currentFiles.find((el) => el?.path === part);
 
 		if (!item) return null;
 
-		// Handle final segment
 		if (part === pathParts[pathParts.length - 1]) {
 			return item.type === "file" ? item : null;
 		}
 
-		// Continue only if it's a folder with children
 		if (item.type === "folder" && item.children) {
 			currentFiles = item.children;
 		} else {
-			return null; // Path tries to traverse a file
+			return null;
 		}
 	}
 
 	return null;
 };
 
-// Sorting function (A-Z, folders first)
 export const sortFilesAlphabetically = (
 	items: (File | Folder)[]
 ): (File | Folder)[] => {

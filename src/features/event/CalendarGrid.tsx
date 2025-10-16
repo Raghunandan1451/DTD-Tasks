@@ -13,23 +13,18 @@ const CalendarGrid: React.FC<CalendarGridProps> = ({
 }) => {
 	const scrollContainerRef = useRef<HTMLDivElement>(null);
 
-	// Generate time slots for 24 hours
 	const timeSlots: TimeSlot[] = Array.from({ length: 24 }, (_, i) => ({
 		hour: i,
 		label: `${i.toString().padStart(2, "0")}:00`,
 	}));
 
-	// Auto-scroll to current hour on mount and when currentDate changes
 	useEffect(() => {
 		if (scrollContainerRef.current) {
 			const now = new Date();
 			const currentHour = now.getHours();
 
-			// Calculate the scroll position - show current hour near the top
-			// Each hour slot is 60px (h-15 = 60px), offset by 2 hours above for context
 			const scrollPosition = Math.max(0, (currentHour - 2) * 60);
 
-			// Smooth scroll to the current hour
 			scrollContainerRef.current.scrollTo({
 				top: scrollPosition,
 				behavior: "smooth",
@@ -39,7 +34,6 @@ const CalendarGrid: React.FC<CalendarGridProps> = ({
 
 	const dateColumns = getDateColumns(currentDate, viewMode);
 
-	// Get current hour for highlighting
 	const currentHour = new Date().getHours();
 
 	return (

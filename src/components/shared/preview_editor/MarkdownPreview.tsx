@@ -17,13 +17,11 @@ const MarkdownPreview: React.FC<MarkdownPreviewProps> = ({
 	const internalRef = useRef<HTMLDivElement>(null);
 	const containerRef = externalRef || internalRef;
 
-	// Fix: Wrap in useCallback or exclude from deps (containerRef is stable)
 	useEffect(() => {
 		if (enableAutoScroll && containerRef.current) {
 			const { scrollHeight, clientHeight } = containerRef.current;
 			containerRef.current.scrollTop = scrollHeight - clientHeight;
 		}
-		// containerRef is stable (doesn't change), so it's safe to omit
 		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [content, enableAutoScroll]);
 

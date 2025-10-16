@@ -44,7 +44,7 @@ export interface DeleteParams {
 export interface ColumnConfig<T> {
 	key: string;
 	label: string;
-	width: string; // flex width like "flex-[2]" or "w-32"
+	width: string;
 	render: (
 		item: T,
 		isEditing: boolean,

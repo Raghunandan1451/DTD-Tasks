@@ -1,7 +1,6 @@
 import Button from "@src/components/ui/button/Button";
 import React from "react";
 
-// Pagination component
 const PaginationControls: React.FC<{
 	currentPage: number;
 	totalPages: number;

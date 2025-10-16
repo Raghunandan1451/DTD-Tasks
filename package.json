@@ -1,5 +1,6 @@
 {
-	"name": "aio-lists",
+	"name": "dtd-tasks",
+	"description": "DTD Tasks: Your daily task and time management tool",
 	"private": true,
 	"version": "0.0.3",
 	"type": "module",

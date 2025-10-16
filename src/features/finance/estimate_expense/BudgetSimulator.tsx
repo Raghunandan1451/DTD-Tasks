@@ -20,7 +20,7 @@ const BudgetSimulator: React.FC<BudgetSimulatorProps> = ({
 	const [currentPage, setCurrentPage] = useState(1);
 	const itemsPerPage = 10;
 	const { handlers, confirmationModal } = useExpenseTable({
-		onEdit: () => {}, // Budget simulator doesn't need edit
+		onEdit: () => {},
 		onDelete: (id: string) => {
 			setSimulatedExpenses((prev) =>
 				prev.filter((item) => item.id !== id)
@@ -37,7 +37,6 @@ const BudgetSimulator: React.FC<BudgetSimulatorProps> = ({
 		};
 	}, [simulatedExpenses, currentPage]);
 
-	// Reset to first page when items change significantly
 	React.useEffect(() => {
 		if (currentPage > totalPages && totalPages > 0) {
 			setCurrentPage(1);
@@ -59,7 +58,6 @@ const BudgetSimulator: React.FC<BudgetSimulatorProps> = ({
 
 	return (
 		<>
-			{/* Add Item Form */}
 			<BudgetSimulatorForm onAddItem={handleAddItem} />
 			{simulatedExpenses.length > 0 && (
 				<PaginationControls

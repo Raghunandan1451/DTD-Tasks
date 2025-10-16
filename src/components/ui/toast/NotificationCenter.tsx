@@ -4,7 +4,6 @@ import { Notification } from "@src/lib/types/notification";
 interface NotificationCenterProps {
 	notifications: Notification[];
 }
-// Notification component (add this to your root component)
 const NotificationCenter: React.FC<NotificationCenterProps> = ({
 	notifications,
 }) => (

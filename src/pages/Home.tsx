@@ -1,7 +1,3 @@
-// ============================================
-// HOME PAGE - Smart Download with Auto-Hydration
-// ============================================
-
 import React, { useMemo, useState } from "react";
 import { useSelector, useDispatch } from "react-redux";
 import TitleWithButton from "@src/components/shared/title_with_button/TitleWithButton";
@@ -28,7 +24,6 @@ const Home: React.FC = () => {
 	const [isDownloading, setIsDownloading] = useState(false);
 	const [downloadProgress, setDownloadProgress] = useState(0);
 
-	// Check if data is already loaded in Redux
 	const isDataLoaded = useMemo(
 		() => ({
 			calendar: appState.calendar?.loaded || false,
@@ -39,7 +34,6 @@ const Home: React.FC = () => {
 		[appState]
 	);
 
-	// Calculate stats dynamically from Redux
 	const stats: StatCard[] = useMemo(
 		() => [
 			{
@@ -66,7 +60,6 @@ const Home: React.FC = () => {
 		[appState, isDataLoaded]
 	);
 
-	// Smart download: hydrate missing data before export
 	const handleDownloadAll = async () => {
 		setIsDownloading(true);
 		setDownloadProgress(0);
@@ -83,7 +76,6 @@ const Home: React.FC = () => {
 				const totalSteps = 4;
 				let currentStep = 0;
 
-				// Step 1: Load Calendar if not loaded
 				if (!isDataLoaded.calendar) {
 					showNotification("Loading calendar data...", "info");
 					await dispatch(hydrateCalendar()).unwrap();
@@ -91,7 +83,6 @@ const Home: React.FC = () => {
 				currentStep++;
 				setDownloadProgress((currentStep / totalSteps) * 100);
 
-				// Step 2: Load Finance if not loaded
 				if (!isDataLoaded.finance) {
 					showNotification("Loading finance data...", "info");
 					await dispatch(hydrateFinance()).unwrap();
@@ -99,7 +90,6 @@ const Home: React.FC = () => {
 				currentStep++;
 				setDownloadProgress((currentStep / totalSteps) * 100);
 
-				// Step 3: Load Expenses if not loaded
 				if (!isDataLoaded.expenses) {
 					showNotification("Loading expenses data...", "info");
 					await dispatch(hydrateExpenses()).unwrap();
@@ -107,7 +97,6 @@ const Home: React.FC = () => {
 				currentStep++;
 				setDownloadProgress((currentStep / totalSteps) * 100);
 
-				// Step 4: Load Files if not loaded
 				if (!isDataLoaded.fileManager) {
 					showNotification("Loading markdown files...", "info");
 					await dispatch(hydrateMarkdown()).unwrap();
@@ -115,11 +104,9 @@ const Home: React.FC = () => {
 				currentStep++;
 				setDownloadProgress((currentStep / totalSteps) * 100);
 
-				// Small delay to ensure Redux state updates
 				await new Promise((resolve) => setTimeout(resolve, 100));
 			}
 
-			// Check if there's any data to export
 			const hasData =
 				(appState.calendar?.events?.length ?? 0) > 0 ||
 				appState.finance?.salary ||
@@ -133,13 +120,11 @@ const Home: React.FC = () => {
 				return;
 			}
 
-			// Export
 			showNotification("Creating export file...", "info");
 			await handleFullAppExport(appState, showNotification);
 
 			setDownloadProgress(100);
 
-			// Reset progress after short delay
 			setTimeout(() => {
 				setDownloadProgress(0);
 				setIsDownloading(false);
@@ -152,14 +137,12 @@ const Home: React.FC = () => {
 		}
 	};
 
-	// Calculate if all data is loaded
 	const allDataLoaded =
 		isDataLoaded.calendar &&
 		isDataLoaded.finance &&
 		isDataLoaded.expenses &&
 		isDataLoaded.fileManager;
 
-	// Dynamic button text
 	const getButtonText = () => {
 		if (isDownloading) {
 			return `${
@@ -169,7 +152,6 @@ const Home: React.FC = () => {
 		return allDataLoaded ? "Download All Data" : "Load All Data";
 	};
 
-	// Calculate total items
 	const totalItems = useMemo(() => {
 		return stats.reduce((sum, stat) => {
 			if (typeof stat.value === "number") {

@@ -4,11 +4,18 @@ import { addGroup, removeGroup } from "@src/lib/store/slices/financeSlice";
 import { RootState } from "@src/lib/store/store";
 import Input from "@src/components/ui/input/Input";
 import Button from "@src/components/ui/button/Button";
+import { Trash2 } from "lucide-react";
+import { ShowNotificationFn } from "@src/lib/types/downloadHandlerTypes";
 
-const GroupManager = () => {
+const GroupManager = ({
+	showNotification,
+}: {
+	showNotification: ShowNotificationFn;
+}) => {
 	const [groupName, setGroupName] = useState<string>("");
 	const dispatch = useDispatch();
 	const groups = useSelector((state: RootState) => state.finance.groups);
+	const expenses = useSelector((state: RootState) => state.expenses.expenses);
 
 	const handleAddGroup = () => {
 		if (groupName.trim()) {
@@ -61,27 +68,43 @@ const GroupManager = () => {
 
 					<div className="max-h-75 overflow-y-auto pr-1 scrollbar-hide">
 						<ul className="space-y-2">
-							{groups.map((group) => (
-								<li
-									key={group}
-									className="flex items-center justify-between px-4 py-3 rounded-lg bg-gray-50 dark:bg-gray-800/50 shadow-sm"
-								>
-									<span className="text-gray-800 dark:text-white font-medium">
-										{group}
-									</span>
-									{group !== "Miscellaneous" && (
-										<Button
-											type="button"
-											onClick={() =>
-												dispatch(removeGroup(group))
-											}
-											className="text-red-500 hover:text-red-700 p-1 rounded transition-colors"
-										>
-											❌
-										</Button>
-									)}
-								</li>
-							))}
+							{groups.map((group) => {
+								// Check if group has any items in expenses
+								const hasItems = expenses.some(
+									(expense) => expense.group === group
+								);
+
+								return (
+									<li
+										key={group}
+										className="flex items-center justify-between px-4 py-3 rounded-lg bg-gray-50 dark:bg-gray-800/50 shadow-sm"
+									>
+										<span className="text-gray-800 dark:text-white font-medium">
+											{group}
+										</span>
+										{group !== "Miscellaneous" && (
+											<Button
+												type="button"
+												onClick={() => {
+													if (hasItems) {
+														showNotification?.(
+															`Group: ${group} contains expenses, please remove or reassign them before deletion`,
+															"error"
+														);
+													} else {
+														dispatch(
+															removeGroup(group)
+														);
+													}
+												}}
+												className="text-red-500 hover:text-red-700 p-1 rounded transition-colors"
+											>
+												<Trash2 className="w-4 h-4" />
+											</Button>
+										)}
+									</li>
+								);
+							})}
 						</ul>
 					</div>
 				</div>

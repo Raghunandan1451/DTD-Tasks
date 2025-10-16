@@ -18,7 +18,6 @@ const PreviewEditor = ({
 	placeholder = "Type your markdown here...",
 	className = "",
 }: PreviewEditorProps) => {
-	// Fix: Remove null from type
 	const textareaRef = useRef<HTMLTextAreaElement>(null);
 	const previewRef = useRef<HTMLDivElement>(null);
 	const syncingRef = useRef<"textarea" | "preview" | null>(null);
@@ -27,7 +26,6 @@ const PreviewEditor = ({
 		onChange?.(e.target.value);
 	};
 
-	// Use useCallback to memoize and satisfy dependencies
 	const handleTextareaScroll = useCallback(() => {
 		if (
 			!textareaRef.current ||

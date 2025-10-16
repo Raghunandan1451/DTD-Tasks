@@ -2,10 +2,6 @@
 import { jsPDF } from "jspdf";
 import { File } from "@src/features/markdown/type";
 
-/**
- * Generate individual PDF for a single file
- * Use this for creating PDFs in /PDF/ folder
- */
 export const generateIndividualFilePDF = (file: File): jsPDF => {
 	const doc = new jsPDF({
 		unit: "pt",
@@ -18,12 +14,9 @@ export const generateIndividualFilePDF = (file: File): jsPDF => {
 	const maxWidth = pageWidth - margin * 2;
 	let yPos = margin;
 
-	// Removed File title and separator section
-
 	doc.setFont("helvetica", "normal");
 	doc.setFontSize(10);
 
-	// Helper functions
 	const checkPageBreak = (requiredSpace: number = 30): boolean => {
 		if (yPos + requiredSpace > pageHeight - margin) {
 			doc.addPage();
@@ -67,7 +60,6 @@ export const generateIndividualFilePDF = (file: File): jsPDF => {
 		return lines.length;
 	};
 
-	// Process markdown content with full formatting
 	if (file.content && file.content.trim()) {
 		const lines = file.content.split("\n");
 		let inCodeBlock = false;
@@ -174,16 +166,81 @@ export const generateIndividualFilePDF = (file: File): jsPDF => {
 					const lineCount = addText(match[2], margin + 80, yPos);
 					yPos += lineCount * 12 + 2;
 				}
-			}
-			// Regular paragraph with inline formatting stripped
-			else if (trimmed) {
+			} else if (trimmed) {
 				const processed = trimmed
+					// Handle all four combinations
+					.replace(/\*\*_~~__([^_~*]+)__~~_\*\*/g, "$1")
+					.replace(/\*\*__~~_([^_~*]+)_~~__\*\*/g, "$1")
+
+					// Handle triple combinations
+					// Bold + Italic + Strikethrough
+					.replace(/\*\*\*~~([^~*]+)~~\*\*\*/g, "$1")
+					.replace(/\*\*_~~([^~*]+)~~_\*\*/g, "$1")
+					.replace(/~~\*\*\*([^*]+)\*\*\*~~/g, "$1")
+
+					// Bold + Italic + Underline
+					.replace(/\*\*\*__([^_*]+)__\*\*\*/g, "$1")
+					.replace(/\*\*___([^_*]+)___\*\*/g, "$1")
+					.replace(/__\*\*\*([^*]+)\*\*\*__/g, "$1")
+
+					// Bold + Underline + Strikethrough
+					.replace(/\*\*__~~([^~_*]+)~~__\*\*/g, "$1")
+					.replace(/~~\*\*__([^_*]+)__\*\*~~/g, "$1")
+
+					// Italic + Underline + Strikethrough
+					.replace(/\*__~~([^~_*]+)~~__\*/g, "$1")
+					.replace(/~~__\*([^*]+)\*__~~/g, "$1")
+
+					// Handle double combinations
+					// Bold + Italic
+					.replace(/\*\*\*([^*]+)\*\*\*/g, "$1")
+					.replace(/\*\*_([^_*]+)_\*\*/g, "$1")
+					.replace(/_\*\*([^*]+)\*\*_/g, "$1")
+
+					// Bold + Underline
+					.replace(/\*\*__([^_*]+)__\*\*/g, "$1")
+					.replace(/__\*\*([^*]+)\*\*__/g, "$1")
+
+					// Bold + Strikethrough
+					.replace(/\*\*~~([^~*]+)~~\*\*/g, "$1")
+					.replace(/~~\*\*([^*]+)\*\*~~/g, "$1")
+
+					// Bold + Inline Code
+					.replace(/\*\*`([^`*]+)`\*\*/g, "$1")
+					.replace(/`\*\*([^*]+)\*\*`/g, "$1")
+
+					// Italic + Underline
+					.replace(/\*__([^_*]+)__\*/g, "$1")
+					.replace(/__\*([^*]+)\*__/g, "$1")
+
+					// Italic + Strikethrough
+					.replace(/\*~~([^~*]+)~~\*/g, "$1")
+					.replace(/~~\*([^*]+)\*~~/g, "$1")
+
+					// Italic + Inline Code
+					.replace(/\*`([^`*]+)`\*/g, "$1")
+					.replace(/`\*([^*]+)\*`/g, "$1")
+
+					// Underline + Strikethrough
+					.replace(/__~~([^~_]+)~~__/g, "$1")
+					.replace(/~~__([^_]+)__~~/g, "$1")
+
+					// Underline + Inline Code
+					.replace(/__`([^`_]+)`__/g, "$1")
+					.replace(/`__([^_]+)__`/g, "$1")
+
+					// Strikethrough + Inline Code
+					.replace(/~~`([^`~]+)`~~/g, "$1")
+					.replace(/`~~([^~]+)~~`/g, "$1")
+
+					// Single formatting (original)
 					.replace(/\*\*([^*]+)\*\*/g, "$1") // Bold
 					.replace(/\*([^*]+)\*/g, "$1") // Italic
 					.replace(/__([^_]+)__/g, "$1") // Underline
 					.replace(/~~([^~]+)~~/g, "$1") // Strikethrough
 					.replace(/`([^`]+)`/g, "$1") // Inline code
 					.replace(/\[([^\]]+)\]\(([^)]+)\)/g, "$1 ($2)"); // Links
+
 				const lineCount = addText(processed, margin, yPos);
 				yPos += lineCount * 12 + 2;
 			} else {

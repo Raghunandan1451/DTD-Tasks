@@ -82,7 +82,6 @@ const EventForm: React.FC<EventFormProps> = ({ onSave, onCancel }) => {
 		setFormData((prev) => updateEventFormData(prev, updates));
 	};
 
-	// ADDED: Handler for content changes from PreviewEditor
 	const handleContentChange = (
 		e: React.ChangeEvent<HTMLTextAreaElement> | string
 	) => {
@@ -171,15 +170,11 @@ const EventForm: React.FC<EventFormProps> = ({ onSave, onCancel }) => {
 						))}
 					</div>
 
-					{/* REPLACED: Content Editor with PreviewEditor */}
 					<div>
-						{/* <div className="flex items-center justify-between mb-2"> */}
 						<label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
 							Content (Markdown supported)
 						</label>
-						{/* </div> */}
 
-						{/* PreviewEditor with fixed height */}
 						<div className="border border-gray-300 dark:border-gray-600 rounded-lg overflow-hidden bg-gray-50/20 dark:bg-gray-700/20">
 							<PreviewEditor
 								value={formData.content}

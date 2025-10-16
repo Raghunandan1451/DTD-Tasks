@@ -1,4 +1,4 @@
-// parseMarkdown.ts - Complete version with novel styles
+// parseMarkdown.ts - Updated with combination support
 import { createElement, ReactElement, ReactNode } from "react";
 
 interface MarkdownRule {
@@ -7,16 +7,207 @@ interface MarkdownRule {
 }
 
 const INLINE_RULES: readonly MarkdownRule[] = [
+	// Bold + Italic + Strikethrough + Underline (all four)
 	{
-		pattern: /!\[([^\]]*)\]\(([^)]+)\)/g,
-		component: (key, alt, src) =>
-			createElement("img", {
-				key,
-				alt,
-				src,
-				className: "inline max-h-64 rounded",
-			}),
+		pattern: /\*\*_~~__([^_~*]+)__~~_\*\*/g,
+		component: (key, content) =>
+			createElement(
+				"strong",
+				{ key },
+				createElement(
+					"em",
+					{},
+					createElement("s", {}, createElement("u", {}, content))
+				)
+			),
 	},
+
+	// Bold + Italic + Strikethrough
+	{
+		pattern: /\*\*\*~~([^~*]+)~~\*\*\*/g,
+		component: (key, content) =>
+			createElement(
+				"strong",
+				{ key },
+				createElement("em", {}, createElement("s", {}, content))
+			),
+	},
+	{
+		pattern: /\*\*_~~([^~*]+)~~_\*\*/g,
+		component: (key, content) =>
+			createElement(
+				"strong",
+				{ key },
+				createElement("em", {}, createElement("s", {}, content))
+			),
+	},
+
+	// Bold + Italic + Underline
+	{
+		pattern: /\*\*\*__([^_*]+)__\*\*\*/g,
+		component: (key, content) =>
+			createElement(
+				"strong",
+				{ key },
+				createElement("em", {}, createElement("u", {}, content))
+			),
+	},
+	{
+		pattern: /\*\*___([^_*]+)___\*\*/g,
+		component: (key, content) =>
+			createElement(
+				"strong",
+				{ key },
+				createElement("em", {}, createElement("u", {}, content))
+			),
+	},
+
+	// Bold + Underline + Strikethrough
+	{
+		pattern: /\*\*__~~([^~_*]+)~~__\*\*/g,
+		component: (key, content) =>
+			createElement(
+				"strong",
+				{ key },
+				createElement("u", {}, createElement("s", {}, content))
+			),
+	},
+
+	// Italic + Underline + Strikethrough
+	{
+		pattern: /\*__~~([^~_*]+)~~__\*/g,
+		component: (key, content) =>
+			createElement(
+				"em",
+				{ key },
+				createElement("u", {}, createElement("s", {}, content))
+			),
+	},
+
+	// Bold + Italic
+	{
+		pattern: /\*\*\*([^*]+)\*\*\*/g,
+		component: (key, content) =>
+			createElement("strong", { key }, createElement("em", {}, content)),
+	},
+	{
+		pattern: /\*\*_([^_*]+)_\*\*/g,
+		component: (key, content) =>
+			createElement("strong", { key }, createElement("em", {}, content)),
+	},
+
+	// Bold + Underline
+	{
+		pattern: /\*\*__([^_*]+)__\*\*/g,
+		component: (key, content) =>
+			createElement("strong", { key }, createElement("u", {}, content)),
+	},
+
+	// Bold + Strikethrough
+	{
+		pattern: /\*\*~~([^~*]+)~~\*\*/g,
+		component: (key, content) =>
+			createElement("strong", { key }, createElement("s", {}, content)),
+	},
+
+	// Bold + Code
+	{
+		pattern: /\*\*`([^`*]+)`\*\*/g,
+		component: (key, content) =>
+			createElement(
+				"strong",
+				{ key },
+				createElement(
+					"code",
+					{
+						className:
+							"px-2 py-1 rounded text-sm font-mono " +
+							"bg-gray-800/60 text-gray-100 dark:bg-gray-100/20 dark:text-gray-200",
+					},
+					content
+				)
+			),
+	},
+
+	// Italic + Underline
+	{
+		pattern: /\*__([^_*]+)__\*/g,
+		component: (key, content) =>
+			createElement("em", { key }, createElement("u", {}, content)),
+	},
+
+	// Italic + Strikethrough
+	{
+		pattern: /\*~~([^~*]+)~~\*/g,
+		component: (key, content) =>
+			createElement("em", { key }, createElement("s", {}, content)),
+	},
+
+	// Italic + Code
+	{
+		pattern: /\*`([^`*]+)`\*/g,
+		component: (key, content) =>
+			createElement(
+				"em",
+				{ key },
+				createElement(
+					"code",
+					{
+						className:
+							"px-2 py-1 rounded text-sm font-mono " +
+							"bg-gray-800/60 text-gray-100 dark:bg-gray-100/20 dark:text-gray-200",
+					},
+					content
+				)
+			),
+	},
+
+	// Underline + Strikethrough
+	{
+		pattern: /__~~([^~_]+)~~__/g,
+		component: (key, content) =>
+			createElement("u", { key }, createElement("s", {}, content)),
+	},
+
+	// Underline + Code
+	{
+		pattern: /__`([^`_]+)`__/g,
+		component: (key, content) =>
+			createElement(
+				"u",
+				{ key },
+				createElement(
+					"code",
+					{
+						className:
+							"px-2 py-1 rounded text-sm font-mono " +
+							"bg-gray-800/60 text-gray-100 dark:bg-gray-100/20 dark:text-gray-200",
+					},
+					content
+				)
+			),
+	},
+
+	// Strikethrough + Code
+	{
+		pattern: /~~`([^`~]+)`~~/g,
+		component: (key, content) =>
+			createElement(
+				"s",
+				{ key },
+				createElement(
+					"code",
+					{
+						className:
+							"px-2 py-1 rounded text-sm font-mono " +
+							"bg-gray-800/60 text-gray-100 dark:bg-gray-100/20 dark:text-gray-200",
+					},
+					content
+				)
+			),
+	},
+
+	// SINGLE FORMATTING (Original rules - must come after combinations)
 	{
 		pattern: /\[([^\]]+)\]\(([^)]+)\)/g,
 		component: (key, text, href) =>
@@ -64,6 +255,7 @@ const INLINE_RULES: readonly MarkdownRule[] = [
 	},
 ];
 
+// Rest of the code remains the same...
 function parseInline(text: string, baseKey: string = ""): ReactNode[] {
 	let processedText = text;
 	const replacements: Array<{ placeholder: string; node: ReactNode }> = [];
@@ -130,7 +322,6 @@ function tokenizeBlocks(markdown: string): BlockToken[] {
 
 	while (i < lines.length) {
 		const line = lines[i];
-
 		// Code blocks
 		if (line.trim().startsWith("```")) {
 			const codeLines: string[] = [];
@@ -181,7 +372,7 @@ function tokenizeBlocks(markdown: string): BlockToken[] {
 		}
 
 		// NOVEL DIALOGUE: "Name: Dialog text"
-		const dialogueMatch = line.match(/^([A-Z][a-zA-Z\s]+):\s+(.+)$/);
+		const dialogueMatch = line.match(/^([A-Z][a-zA-Z0-9_-\s]+):\s+(.+)$/);
 		if (dialogueMatch) {
 			tokens.push({
 				type: "dialogue",

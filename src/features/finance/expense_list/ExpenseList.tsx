@@ -19,18 +19,22 @@ import {
 import { ExpenseEntry } from "@src/features/finance/type";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import Button from "@src/components/ui/button/Button";
+import { ShowNotificationFn } from "@src/lib/types/downloadHandlerTypes";
 
 interface ExpenseListProps {
 	expenses?: ExpenseEntry[];
+	showNotification?: ShowNotificationFn;
 }
 
-const ExpenseList: FC<ExpenseListProps> = ({ expenses: propExpenses }) => {
+const ExpenseList: FC<ExpenseListProps> = ({
+	expenses: propExpenses,
+	showNotification,
+}) => {
 	const dispatch = useDispatch<AppDispatch>();
 	const [selectedGroup, setSelectedGroup] = useState<string | null>("All");
 	const [currentPage, setCurrentPage] = useState(1);
 	const itemsPerPage = 10;
 
-	// Get data from Redux using selectors
 	const dailyExpenses = useSelector(selectSelectedDateTotal); // Debits only
 	const dailyCredits = useSelector(selectSelectedDateCredits); // Credits only
 	const expenseGroups = useSelector(selectExpenseGroups);
@@ -38,21 +42,17 @@ const ExpenseList: FC<ExpenseListProps> = ({ expenses: propExpenses }) => {
 		(state: RootState) => state.expenses.selectedDate
 	);
 
-	// Get finance groups as fallback
 	const financeGroups = useSelector(
 		(state: RootState) => state.finance.groups ?? []
 	);
 
-	// Use expense groups from expenses data, fallback to finance groups
 	const availableGroups =
 		expenseGroups.length > 0 ? expenseGroups : financeGroups;
 
-	// Use filtered expenses selector
 	const filteredExpenses = useSelector((state: RootState) =>
 		selectFilteredExpensesForSelectedDate(state, selectedGroup)
 	);
 
-	// If expenses are passed as props, use them instead (with local filtering)
 	const finalExpenses = useMemo(() => {
 		if (propExpenses) {
 			const dateFiltered = propExpenses.filter(
@@ -68,7 +68,6 @@ const ExpenseList: FC<ExpenseListProps> = ({ expenses: propExpenses }) => {
 		return filteredExpenses;
 	}, [propExpenses, filteredExpenses, selectedDate, selectedGroup]);
 
-	// Calculate final daily totals
 	const finalDailyExpenses = useMemo(() => {
 		if (propExpenses) {
 			return propExpenses
@@ -93,16 +92,13 @@ const ExpenseList: FC<ExpenseListProps> = ({ expenses: propExpenses }) => {
 		return dailyCredits;
 	}, [propExpenses, selectedDate, dailyCredits]);
 
-	// Calculate net for the day (credits - expenses)
 	const dailyNet = finalDailyCredits - finalDailyExpenses;
 
-	// Calculate pagination
 	const totalPages = Math.ceil(finalExpenses.length / itemsPerPage);
 	const startIndex = (currentPage - 1) * itemsPerPage;
 	const endIndex = startIndex + itemsPerPage;
 	const paginatedExpenses = finalExpenses.slice(startIndex, endIndex);
 
-	// Reset pagination when filters change
 	useEffect(() => {
 		setCurrentPage(1);
 	}, [selectedGroup, selectedDate]);
@@ -168,6 +164,7 @@ const ExpenseList: FC<ExpenseListProps> = ({ expenses: propExpenses }) => {
 				groups={availableGroups}
 				onEdit={handleSaveEdit}
 				onDelete={handleDelete}
+				showNotification={showNotification}
 			/>
 
 			{/* Updated daily summary to show expenses, credits, and net */}

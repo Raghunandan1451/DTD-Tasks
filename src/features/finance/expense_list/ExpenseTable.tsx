@@ -5,12 +5,14 @@ import GenericTable from "@src/components/shared/table/GenericTable";
 import { createExpenseColumns } from "@src/features/finance/expense_list/ExpenseTableConfig";
 import { TableHandlers } from "@src/lib/types/table";
 import { ConfirmationModal } from "@src/components/shared/dialog/ConfirmModal";
+import { ShowNotificationFn } from "@src/lib/types/downloadHandlerTypes";
 
 interface ExpenseTableProps {
 	expenses: ExpenseEntry[];
 	groups: string[];
 	onEdit: (expense: ExpenseEntry) => void;
 	onDelete: (id: string) => void;
+	showNotification?: ShowNotificationFn;
 }
 
 const ExpenseTable: FC<ExpenseTableProps> = ({
@@ -18,16 +20,17 @@ const ExpenseTable: FC<ExpenseTableProps> = ({
 	groups,
 	onEdit,
 	onDelete,
+	showNotification,
 }) => {
 	const { editingId, editForm, editRowRef, handlers, confirmationModal } =
 		useExpenseTable({
 			onEdit,
 			onDelete,
+			showNotification,
 		});
 
 	const columns = createExpenseColumns(groups);
 
-	// Convert ExpenseTableHandlers to TableHandlers<ExpenseEntry>
 	const adaptedHandlers: TableHandlers<ExpenseEntry> = {
 		...(handlers as unknown as TableHandlers<ExpenseEntry>),
 		handleDelete: (id: string, name: string, isProtected?: boolean) =>

@@ -17,24 +17,10 @@ const DayColumn: React.FC<{
 	dateColumns,
 	onEventClick,
 }) => {
-	// Handle event click with recurring event support
 	const handleEventClick = (event: Event, e: React.MouseEvent) => {
 		e.stopPropagation();
 
-		// Check if this is a recurring event instance
-		const isRecurringInstance =
-			event.id &&
-			typeof event.id === "string" &&
-			event.id.includes("-") &&
-			event.repeatType !== "none";
-
-		if (isRecurringInstance) {
-			// For now, just call the regular onClick
-			// You can enhance this later with recurring-specific options
-			onEventClick(event, e);
-		} else {
-			onEventClick(event, e);
-		}
+		onEventClick(event, e);
 	};
 
 	return (

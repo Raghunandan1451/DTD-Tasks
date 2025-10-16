@@ -63,7 +63,6 @@ const GenericFormField = <T,>({
 		);
 	}
 
-	// Default to input type
 	return (
 		<Input
 			inputRef={inputRef}

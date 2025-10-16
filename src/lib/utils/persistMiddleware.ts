@@ -3,7 +3,6 @@ import { Middleware, Action } from "@reduxjs/toolkit";
 import { RootState } from "@src/lib/store/store";
 import { debounce } from "@src/lib/utils/debounce";
 
-// Enhanced storage configuration with expiry times
 const sliceStorageKeys: Record<string, string> = {
 	calendar: "redux_calendar_data",
 	fileManager: "redux_markdown_data",

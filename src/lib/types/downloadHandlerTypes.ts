@@ -2,10 +2,6 @@ import { File, Folder } from "@src/features/markdown/type";
 import { ExpenseEntry, FinanceState } from "@src/features/finance/type";
 import { Event } from "@src/features/event/type";
 
-// ============================================
-// Type Definitions
-// ============================================
-
 export interface FileTree {
 	path: string;
 	type: "file" | "folder";

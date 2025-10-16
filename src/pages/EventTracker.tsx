@@ -72,7 +72,6 @@ const EventTracker = () => {
 			showNotification
 		);
 	};
-	// Handle mobile detection and force daily view
 	useEffect(() => {
 		const handleResize = () => {
 			const mobile = window.innerWidth < 768;
@@ -83,13 +82,10 @@ const EventTracker = () => {
 			}
 		};
 
-		// Initial check
 		handleResize();
 
-		// Add listener
 		window.addEventListener("resize", handleResize);
 
-		// Cleanup
 		return () => window.removeEventListener("resize", handleResize);
 	}, [dispatch, viewMode]);
 

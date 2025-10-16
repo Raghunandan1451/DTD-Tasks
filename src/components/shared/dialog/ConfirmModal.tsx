@@ -1,6 +1,5 @@
 import React, { useEffect } from "react";
 
-// Types for the confirmation modal
 export interface ConfirmationOptions {
 	title?: string;
 	message: string;
@@ -10,7 +9,6 @@ export interface ConfirmationOptions {
 	itemName?: string;
 }
 
-// Reusable Confirmation Modal Component
 interface ConfirmationModalProps {
 	isOpen: boolean;
 	options: ConfirmationOptions;
