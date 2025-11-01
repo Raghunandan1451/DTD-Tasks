@@ -44,8 +44,6 @@ export function getDateColumns(
 	return columns;
 }
 
-// Fixed recurring event instance generation
-// Fixed recurring event instance generation with excludedDates support
 export function generateRecurringInstances(
 	events: Event[],
 	dateColumns: DateColumn[]
@@ -62,6 +60,27 @@ export function generateRecurringInstances(
 	startDate.setDate(startDate.getDate() - 1);
 	const endDate = new Date(latestDate);
 	endDate.setDate(endDate.getDate() + 1);
+
+	// Helper function to calculate the instance's endDate based on multi-day duration
+	const calculateInstanceEndDate = (
+		event: Event,
+		instanceStartDate: string
+	): string => {
+		// Calculate duration in days between original startDate and endDate
+		const originalStart = new Date(event.startDate);
+		const originalEnd = new Date(event.endDate);
+		const durationDays = Math.floor(
+			(originalEnd.getTime() - originalStart.getTime()) /
+				(1000 * 60 * 60 * 24)
+		);
+
+		// Apply the same duration to the instance
+		const instanceStart = new Date(instanceStartDate);
+		const instanceEnd = new Date(instanceStart);
+		instanceEnd.setDate(instanceEnd.getDate() + durationDays);
+
+		return instanceEnd.toISOString().split("T")[0];
+	};
 
 	events.forEach((event) => {
 		// Check for both new repeatType structure and legacy recurring structure
@@ -118,10 +137,14 @@ export function generateRecurringInstances(
 							// CRITICAL: Skip if this date is excluded
 							if (!excludedDates.has(dateString)) {
 								const instanceId = `${event.id}-${dateString}`;
+								const instanceEndDate =
+									calculateInstanceEndDate(event, dateString);
+
 								instances.push({
 									...event,
 									id: instanceId,
 									startDate: dateString,
+									endDate: instanceEndDate,
 								});
 							}
 						}
@@ -157,10 +180,14 @@ export function generateRecurringInstances(
 							// CRITICAL: Skip if this date is excluded
 							if (!excludedDates.has(dateString)) {
 								const instanceId = `${event.id}-${dateString}`;
+								const instanceEndDate =
+									calculateInstanceEndDate(event, dateString);
+
 								instances.push({
 									...event,
 									id: instanceId,
 									startDate: dateString,
+									endDate: instanceEndDate,
 								});
 							}
 						}
@@ -172,10 +199,16 @@ export function generateRecurringInstances(
 						// CRITICAL: Skip if this date is excluded
 						if (!excludedDates.has(dateString)) {
 							const instanceId = `${event.id}-${dateString}`;
+							const instanceEndDate = calculateInstanceEndDate(
+								event,
+								dateString
+							);
+
 							instances.push({
 								...event,
 								id: instanceId,
 								startDate: dateString,
+								endDate: instanceEndDate,
 							});
 						}
 					}
@@ -285,19 +318,19 @@ export function getEventHeight(event: Event, columnDate: string): number {
 
 	if (isEventMultiDay) {
 		if (isStartDay) {
-			// First day: from start time to midnight (24:00)
 			const duration = 24 * 60 - (startHour * 60 + startMinute);
-			return Math.max(40, (duration / 60) * 60);
+			// Subtract gap to prevent overlap (5 minutes = 10px gap)
+			return Math.max(60, duration * 2 - 10);
 		} else if (isEndDay) {
-			// Second day: from midnight to end time
 			const duration = endHour * 60 + endMinute;
-			return Math.max(40, (duration / 60) * 60);
+			return Math.max(60, duration * 2 - 10);
 		}
 	}
 
 	// Single day event
 	const duration = endHour * 60 + endMinute - (startHour * 60 + startMinute);
-	return Math.max(40, (duration / 60) * 60);
+	// Subtract 10px (5min) gap to prevent visual overlap from padding/shadows
+	return Math.max(40, duration * 2 - 10);
 }
 
 export function getEventTop(event: Event, columnDate: string): number {
@@ -317,7 +350,7 @@ export function getEventTop(event: Event, columnDate: string): number {
 	}
 
 	// First day or single day: start from actual start time
-	return startHour * 60 + startMinute * 1;
+	return startHour * 120 + startMinute * 2;
 }
 
 export function getEventsForColumn(

@@ -17,6 +17,7 @@ const ExpenseEntryForm: React.FC = () => {
 		group: "",
 		quantity: "",
 		unit: "",
+		type: "Dr",
 	});
 
 	const fields = createExpenseFormFields(groups);
@@ -54,7 +55,7 @@ const ExpenseEntryForm: React.FC = () => {
 
 	const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
 		e.preventDefault();
-		const { name, amount, group, quantity, unit } = form;
+		const { name, amount, group, quantity, unit, type } = form;
 		if (!name || !amount || !group) return;
 
 		dispatch(
@@ -64,6 +65,7 @@ const ExpenseEntryForm: React.FC = () => {
 				group,
 				quantity: parseInt(quantity, 10),
 				unit,
+				type,
 			})
 		);
 
@@ -73,6 +75,7 @@ const ExpenseEntryForm: React.FC = () => {
 			group: "",
 			quantity: "",
 			unit: "",
+			type: "Dr",
 		});
 
 		// Auto-focus the first field after successful submission

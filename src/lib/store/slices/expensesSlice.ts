@@ -62,7 +62,7 @@ const expensesSlice = createSlice({
 				...action.payload,
 				id: nanoid(),
 				date: state.selectedDate,
-				type: "Dr",
+				type: action.payload.type || "Dr",
 			});
 		},
 

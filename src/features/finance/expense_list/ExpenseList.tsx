@@ -180,7 +180,7 @@ const ExpenseList: FC<ExpenseListProps> = ({
 
 				{finalDailyCredits > 0 && (
 					<div className="text-green-600 dark:text-green-400">
-						Income:{" "}
+						Received:{" "}
 						<span className="font-medium">
 							+{finalDailyCredits.toFixed(2)}
 						</span>
@@ -189,7 +189,7 @@ const ExpenseList: FC<ExpenseListProps> = ({
 
 				{finalDailyExpenses > 0 && (
 					<div className="text-red-600 dark:text-red-400">
-						Expenses:{" "}
+						Spent:{" "}
 						<span className="font-medium">
 							-{finalDailyExpenses.toFixed(2)}
 						</span>

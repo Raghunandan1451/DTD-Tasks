@@ -6,6 +6,7 @@ interface ExpenseFormData {
 	group: string;
 	quantity: string;
 	unit: string;
+	type: "Dr" | "Cr";
 }
 
 export const createExpenseFormFields = (
@@ -49,6 +50,14 @@ export const createExpenseFormFields = (
 		placeholder: "Group",
 		width: "flex-[1]",
 		className: "min-w-[120px]",
+		validation: { required: true },
+	},
+	{
+		key: "type",
+		type: "select",
+		options: ["Dr", "Cr"], // Debit is first (default)
+		width: "flex-[0.5]",
+		className: "min-w-[80px]",
 		validation: { required: true },
 	},
 ];

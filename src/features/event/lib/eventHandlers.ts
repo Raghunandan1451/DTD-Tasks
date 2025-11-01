@@ -57,9 +57,31 @@ export const handleUpdateEvent = (
 			};
 			dispatch(addEvent(newExceptionEvent));
 		}
-	} else if (editType === "all") {
-		dispatch(updateEvent(updatedEvent));
+	} else if (editType === "all" && isRecurringInstance) {
+		// FIXED: Get the base event ID and update the base event with new data
+		const baseEventId = getBaseEventId(updatedEvent.id as string);
+		const numericBaseId =
+			typeof baseEventId === "string"
+				? parseInt(baseEventId, 10)
+				: baseEventId;
+
+		const baseEvent = events.find((e) => e.id === numericBaseId);
+		if (baseEvent) {
+			// Update the base event with changes from the instance
+			const updatedBaseEvent = {
+				...baseEvent,
+				...updatedEvent,
+				id: numericBaseId, // Keep the base event ID
+				// Preserve recurring properties from base event
+				repeatType: baseEvent.repeatType,
+				repeatLimit: baseEvent.repeatLimit,
+				recurring: baseEvent.recurring,
+				excludedDates: baseEvent.excludedDates,
+			};
+			dispatch(updateEvent(updatedBaseEvent));
+		}
 	} else {
+		// Non-recurring event or direct base event edit
 		dispatch(updateEvent(updatedEvent));
 	}
 

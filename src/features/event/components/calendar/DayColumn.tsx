@@ -33,7 +33,7 @@ const DayColumn: React.FC<{
 				{timeSlots.map((slot) => (
 					<div
 						key={`${column.dateString}-${slot.hour}`}
-						className={`h-15 border-b border-gray-100/20 dark:border-gray-700/20 relative ${
+						className={`h-30 border-b border-gray-100/20 dark:border-gray-700/20 relative ${
 							slot.hour === currentHour && column.isToday
 								? "bg-blue-50/20 dark:bg-blue-900/20"
 								: ""

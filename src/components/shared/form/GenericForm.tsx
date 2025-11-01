@@ -1,6 +1,6 @@
 import { JSX, useRef, ReactNode } from "react";
 import { FieldConfig, FormHandlers } from "@src/lib/types/form";
-import GenericFormField from "./GenericFormField";
+import GenericFormField from "@src/components/shared/form/GenericFormField";
 import Button from "@src/components/ui/button/Button";
 
 interface GenericFormProps<T> {
