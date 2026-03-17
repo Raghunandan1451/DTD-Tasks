@@ -27,19 +27,10 @@ const createICS = (events: Event[]): string => {
 	const header = `BEGIN:VCALENDAR\nVERSION:2.0\nPRODID:-//ListManager//EN\nCALSCALE:GREGORIAN`;
 	const body = events
 		.map((ev) => {
-			const start =
-				new Date(ev.startDate + "T" + ev.startTime)
-					.toISOString()
-					.replace(/[-:]/g, "")
-					.split(".")[0] + "Z";
-			const end =
-				new Date(ev.endDate + "T" + ev.endTime)
-					.toISOString()
-					.replace(/[-:]/g, "")
-					.split(".")[0] + "Z";
+			const formatDate = (date: string) => date.replace(/-/g, "");
 			return `BEGIN:VEVENT\nUID:${ev.id}@listmanager\nSUMMARY:${
 				ev.title || "Event"
-			}\nDTSTART:${start}\nDTEND:${end}\nDESCRIPTION:${
+			}\nDTSTART;VALUE=DATE:${formatDate(ev.startDate)}\nDTEND;VALUE=DATE:${formatDate(ev.endDate)}\nDESCRIPTION:${
 				ev.content || ""
 			}\nCATEGORIES:${ev.tag}\nSTATUS:CONFIRMED\nEND:VEVENT`;
 		})
@@ -60,7 +51,7 @@ const createMetadata = (section: string, dataCount: number): Metadata => {
 
 const convertToFileTree = (
 	items: (File | Folder)[],
-	basePath: string = ""
+	basePath: string = "",
 ): FileTree[] => {
 	return items.map((item) => {
 		const fullPath = basePath ? `${basePath}/${item.path}` : item.path;
@@ -84,87 +75,149 @@ const convertToFileTree = (
 const generateExpensesPDF = (expenses: ExpensesData): jsPDF => {
 	const doc = new jsPDF();
 	const pageWidth = doc.internal.pageSize.getWidth();
+	const marginLeft = 14;
+	const lineHeight = 7;
 
 	doc.setFontSize(18);
 	doc.text("Expense Report", pageWidth / 2, 20, { align: "center" });
-
 	doc.setFontSize(10);
 	doc.text(
 		`Generated: ${new Date().toLocaleDateString()}`,
 		pageWidth / 2,
 		28,
-		{ align: "center" }
+		{ align: "center" },
 	);
 
-	const expensesByDate = expenses.expenses.reduce((acc, exp) => {
-		if (!acc[exp.date]) acc[exp.date] = [];
-		acc[exp.date].push(exp);
-		return acc;
-	}, {} as Record<string, typeof expenses.expenses>);
+	// Group by month first, then by date within month
+	const expensesByMonth = expenses.expenses.reduce(
+		(acc, exp) => {
+			const monthKey = exp.date.substring(0, 7); // "YYYY-MM"
+			if (!acc[monthKey]) acc[monthKey] = {};
+			if (!acc[monthKey][exp.date]) acc[monthKey][exp.date] = [];
+			acc[monthKey][exp.date].push(exp);
+			return acc;
+		},
+		{} as Record<string, Record<string, typeof expenses.expenses>>,
+	);
 
 	let yPos = 40;
-	const lineHeight = 7;
-	const marginLeft = 14;
 
-	const sortedDates = Object.keys(expensesByDate).sort(
-		(a, b) => new Date(b).getTime() - new Date(a).getTime()
+	const sortedMonths = Object.keys(expensesByMonth).sort(
+		(a, b) => new Date(b).getTime() - new Date(a).getTime(),
 	);
 
-	sortedDates.forEach((date) => {
-		const exps = expensesByDate[date];
+	sortedMonths.forEach((monthKey) => {
+		const monthDates = expensesByMonth[monthKey];
 
-		// Page break check
-		if (yPos > 260) {
+		// Page break check for month header
+		if (yPos > 250) {
 			doc.addPage();
 			yPos = 20;
 		}
 
-		// --- Date Section Header ---
-		doc.setFontSize(12);
+		// Month header
+		const monthLabel = new Date(monthKey + "-01").toLocaleDateString(
+			"en-US",
+			{ month: "long", year: "numeric" },
+		);
+		doc.setFontSize(14);
 		doc.setFont("helvetica", "bold");
-		doc.text(new Date(date).toLocaleDateString(), marginLeft, yPos);
-		yPos += 6;
+		doc.setFillColor(240, 240, 240);
+		doc.rect(marginLeft - 2, yPos - 5, pageWidth - 24, 10, "F");
+		doc.text(monthLabel, marginLeft, yPos);
+		yPos += 10;
 
-		// --- Table Header ---
-		doc.setFontSize(9);
-		doc.setFont("helvetica", "bold");
-		doc.text("Name", marginLeft, yPos);
-		doc.text("Group", marginLeft + 50, yPos);
-		doc.text("Qty", marginLeft + 100, yPos);
-		doc.text("Amount", marginLeft + 130, yPos);
-		doc.text("Type", marginLeft + 165, yPos);
+		const sortedDates = Object.keys(monthDates).sort(
+			(a, b) => new Date(b).getTime() - new Date(a).getTime(),
+		);
 
-		yPos += 3;
-		doc.line(marginLeft, yPos, pageWidth - marginLeft, yPos);
-		yPos += 3;
+		let monthDebit = 0;
+		let monthCredit = 0;
 
-		// --- Table Rows ---
-		doc.setFont("helvetica", "normal");
-		exps.forEach((exp) => {
-			if (yPos > 270) {
+		sortedDates.forEach((date) => {
+			const exps = monthDates[date];
+
+			if (yPos > 260) {
 				doc.addPage();
 				yPos = 20;
 			}
 
-			const qty = exp.quantity
-				? `${exp.quantity} ${exp.unit || ""}`
-				: "-";
-			const amount =
-				exp.type === "Cr" ? `+${exp.amount}` : `-${exp.amount}`;
+			// Date subheader
+			doc.setFontSize(11);
+			doc.setFont("helvetica", "bold");
+			doc.text(
+				new Date(date).toLocaleDateString("en-US", {
+					weekday: "short",
+					month: "short",
+					day: "numeric",
+				}),
+				marginLeft + 4,
+				yPos,
+			);
+			yPos += 6;
 
-			doc.text(exp.name.substring(0, 25), marginLeft, yPos);
-			doc.text(exp.group.substring(0, 20), marginLeft + 50, yPos);
-			doc.text(qty, marginLeft + 100, yPos);
-			doc.text(amount, marginLeft + 130, yPos);
-			doc.text(exp.type || "Dr", marginLeft + 165, yPos);
+			// Table header
+			doc.setFontSize(9);
+			doc.setFont("helvetica", "bold");
+			doc.text("Name", marginLeft + 4, yPos);
+			doc.text("Group", marginLeft + 54, yPos);
+			doc.text("Qty", marginLeft + 104, yPos);
+			doc.text("Amount", marginLeft + 134, yPos);
+			doc.text("Type", marginLeft + 164, yPos);
+			yPos += 3;
+			doc.line(marginLeft + 4, yPos, pageWidth - marginLeft, yPos);
+			yPos += 3;
 
-			yPos += lineHeight;
+			// Rows
+			doc.setFont("helvetica", "normal");
+			exps.forEach((exp) => {
+				if (yPos > 270) {
+					doc.addPage();
+					yPos = 20;
+				}
+				const qty = exp.quantity
+					? `${exp.quantity} ${exp.unit || ""}`
+					: "-";
+				const amount =
+					exp.type === "Cr" ? `+${exp.amount}` : `-${exp.amount}`;
+
+				if (exp.type === "Cr") monthCredit += exp.amount;
+				else monthDebit += exp.amount;
+
+				doc.text(exp.name.substring(0, 25), marginLeft + 4, yPos);
+				doc.text(exp.group.substring(0, 20), marginLeft + 54, yPos);
+				doc.text(qty, marginLeft + 104, yPos);
+				doc.text(amount, marginLeft + 134, yPos);
+				doc.text(exp.type || "Dr", marginLeft + 164, yPos);
+				yPos += lineHeight;
+			});
+
+			yPos += 4;
 		});
 
-		yPos += 6; // gap between date tables
+		// Monthly summary box
+		if (yPos > 255) {
+			doc.addPage();
+			yPos = 20;
+		}
+
+		doc.setFontSize(9);
+		doc.setFont("helvetica", "bold");
+		doc.setFillColor(250, 250, 250);
+		doc.rect(marginLeft, yPos, pageWidth - 28, 22, "FD");
+		yPos += 6;
+		doc.text(`${monthLabel} Summary`, marginLeft + 4, yPos);
+		yPos += 6;
+		doc.setFont("helvetica", "normal");
+		doc.text(
+			`Credits: +${monthCredit.toFixed(2)}   Debits: -${monthDebit.toFixed(2)}   Net: ${(monthCredit - monthDebit).toFixed(2)}`,
+			marginLeft + 4,
+			yPos,
+		);
+		yPos += 14;
 	});
 
-	// --- Summary Section ---
+	// Overall summary
 	const totalDebit = expenses.expenses
 		.filter((e) => e.type !== "Cr")
 		.reduce((sum, e) => sum + e.amount, 0);
@@ -177,17 +230,24 @@ const generateExpensesPDF = (expenses: ExpensesData): jsPDF => {
 		yPos = 20;
 	}
 
-	yPos += 10;
+	yPos += 4;
+	doc.setFontSize(11);
 	doc.setFont("helvetica", "bold");
-	doc.text("Summary", marginLeft, yPos);
+	doc.setFillColor(230, 230, 230);
+	doc.rect(marginLeft - 2, yPos - 5, pageWidth - 24, 30, "F");
+	doc.text("Overall Summary", marginLeft, yPos);
 	yPos += lineHeight;
 	doc.setFont("helvetica", "normal");
-	doc.text(`Total Credits: ${totalCredit.toFixed(2)}`, marginLeft + 10, yPos);
+	doc.text(`Total Credits: +${totalCredit.toFixed(2)}`, marginLeft + 4, yPos);
 	yPos += lineHeight;
-	doc.text(`Total Debits: ${totalDebit.toFixed(2)}`, marginLeft + 10, yPos);
+	doc.text(`Total Debits: -${totalDebit.toFixed(2)}`, marginLeft + 4, yPos);
 	yPos += lineHeight;
 	doc.setFont("helvetica", "bold");
-	doc.text(`Net: ${totalCredit - totalDebit}`, marginLeft + 10, yPos);
+	doc.text(
+		`Net Balance: ${(totalCredit - totalDebit).toFixed(2)}`,
+		marginLeft + 4,
+		yPos,
+	);
 
 	return doc;
 };
@@ -224,7 +284,7 @@ export const generateEstimatedPDF = ({
 		`Generated: ${new Date().toLocaleDateString()}`,
 		pageWidth / 2,
 		yPos,
-		{ align: "center" }
+		{ align: "center" },
 	);
 
 	yPos += 15;
@@ -287,7 +347,7 @@ export const generateEstimatedPDF = ({
 	doc.text(
 		`Total Estimated Price: ${totalEstimatedPrice?.toFixed(2)}`,
 		marginLeft + 10,
-		yPos
+		yPos,
 	);
 
 	return doc;
@@ -295,7 +355,7 @@ export const generateEstimatedPDF = ({
 
 export const handleCalendarExport = async (
 	calendarData: CalendarData,
-	showNotification?: ShowNotificationFn
+	showNotification?: ShowNotificationFn,
 ): Promise<void> => {
 	const events = calendarData?.events || [];
 
@@ -317,7 +377,7 @@ export const handleCalendarExport = async (
 		// Add weekly screenshot
 		const screenshot = await generateWeeklyCalendarScreenshot(
 			events,
-			calendarData.currentDate
+			calendarData.currentDate,
 		);
 		if (screenshot) {
 			zip.file("weekly-schedule.png", screenshot);
@@ -335,8 +395,8 @@ export const handleCalendarExport = async (
 					exportedAt: new Date().toISOString(),
 				},
 				null,
-				2
-			)
+				2,
+			),
 		);
 
 		const blob = await zip.generateAsync({ type: "blob" });
@@ -354,7 +414,7 @@ export const handleFinanceExport = async (
 	expensesData: ExpensesData,
 	simulatedData?: SimulatedExpense[],
 	totalSimulatedCost?: number,
-	showNotification?: ShowNotificationFn
+	showNotification?: ShowNotificationFn,
 ): Promise<void> => {
 	if (
 		!financeData &&
@@ -377,7 +437,7 @@ export const handleFinanceExport = async (
 		if (expensesData?.expenses?.length) {
 			zip.file(
 				"expenses-data.json",
-				JSON.stringify(expensesData, null, 2)
+				JSON.stringify(expensesData, null, 2),
 			);
 
 			const expensesPDF = generateExpensesPDF(expensesData);
@@ -399,8 +459,8 @@ export const handleFinanceExport = async (
 			JSON.stringify(
 				createMetadata("Finance", expensesData?.expenses?.length || 0),
 				null,
-				2
-			)
+				2,
+			),
 		);
 
 		// Save ZIP
@@ -415,7 +475,7 @@ export const handleFinanceExport = async (
 
 export const handleMarkdownExport = async (
 	files: (File | Folder)[],
-	showNotification?: ShowNotificationFn
+	showNotification?: ShowNotificationFn,
 ): Promise<void> => {
 	try {
 		if (!files || files.length === 0) {
@@ -441,7 +501,7 @@ export const handleMarkdownExport = async (
 
 		const convertToFileTree = (
 			items: (File | Folder)[],
-			basePath: string = ""
+			basePath: string = "",
 		): FileTree[] => {
 			return items.map((item) => {
 				const fullPath = basePath
@@ -468,7 +528,7 @@ export const handleMarkdownExport = async (
 
 		const processFileTree = (
 			items: FileTree[],
-			currentPath: string = ""
+			currentPath: string = "",
 		): void => {
 			items.forEach((item) => {
 				const fullPath = currentPath
@@ -503,7 +563,7 @@ export const handleMarkdownExport = async (
 					// Use output with proper encoding
 					pdfFolder.file(
 						pdfPath,
-						individualPDF.output("arraybuffer")
+						individualPDF.output("arraybuffer"),
 					);
 				}
 			});
@@ -527,7 +587,11 @@ export const handleMarkdownExport = async (
 
 		zip.file(
 			"meta.json",
-			JSON.stringify(createMetadata("FileManager", files.length), null, 2)
+			JSON.stringify(
+				createMetadata("FileManager", files.length),
+				null,
+				2,
+			),
 		);
 
 		const blob = await zip.generateAsync({ type: "blob" });
@@ -542,7 +606,7 @@ export const handleMarkdownExport = async (
 
 export const handleQRExport = async (
 	canvas: HTMLCanvasElement | null,
-	showNotification?: ShowNotificationFn
+	showNotification?: ShowNotificationFn,
 ): Promise<void> => {
 	if (!canvas) {
 		showNotification?.("QR Code not generated yet", "error");
@@ -555,7 +619,7 @@ export const handleQRExport = async (
 				saveAs(blob, `qr-code_${formatTimestamp()}.png`);
 				showNotification?.(
 					"QR Code downloaded successfully",
-					"success"
+					"success",
 				);
 			}
 		});
@@ -567,7 +631,7 @@ export const handleQRExport = async (
 
 export const handleFullAppExport = async (
 	appState: AppState,
-	showNotification?: ShowNotificationFn
+	showNotification?: ShowNotificationFn,
 ): Promise<void> => {
 	try {
 		const zip = new JSZip();
@@ -581,17 +645,17 @@ export const handleFullAppExport = async (
 
 			calendarFolder?.file(
 				"calendar-data.json",
-				JSON.stringify(appState.calendar, null, 2)
+				JSON.stringify(appState.calendar, null, 2),
 			);
 			calendarFolder?.file(
 				"calendar.ics",
-				createICS(appState.calendar.events)
+				createICS(appState.calendar.events),
 			);
 
 			// Add weekly screenshot
 			const screenshot = await generateWeeklyCalendarScreenshot(
 				appState.calendar.events,
-				appState.calendar.currentDate
+				appState.calendar.currentDate,
 			);
 			if (screenshot) {
 				calendarFolder?.file("weekly-schedule.png", screenshot);
@@ -608,7 +672,7 @@ export const handleFullAppExport = async (
 			if (appState.finance) {
 				financeFolder?.file(
 					"finance-data.json",
-					JSON.stringify(appState.finance, null, 2)
+					JSON.stringify(appState.finance, null, 2),
 				);
 				totalItems++;
 			}
@@ -616,14 +680,14 @@ export const handleFullAppExport = async (
 			if (appState.expenses?.expenses?.length) {
 				financeFolder?.file(
 					"expenses-data.json",
-					JSON.stringify(appState.expenses, null, 2)
+					JSON.stringify(appState.expenses, null, 2),
 				);
 
 				// Generate tabular PDF
 				const expensesPDF = generateExpensesPDF(appState.expenses);
 				financeFolder?.file(
 					"expenses-report.pdf",
-					expensesPDF.output("blob")
+					expensesPDF.output("blob"),
 				);
 
 				totalItems += appState.expenses.expenses.length;
@@ -638,7 +702,7 @@ export const handleFullAppExport = async (
 
 			const processFiles = (
 				items: FileTree[],
-				currentPath: string = ""
+				currentPath: string = "",
 			): void => {
 				items.forEach((item) => {
 					const fullPath = currentPath
@@ -660,7 +724,7 @@ export const handleFullAppExport = async (
 			processFiles(fileTree);
 			fileManagerFolder?.file(
 				"file-manager-data.json",
-				JSON.stringify(appState.fileManager, null, 2)
+				JSON.stringify(appState.fileManager, null, 2),
 			);
 		}
 
@@ -674,7 +738,7 @@ export const handleFullAppExport = async (
 		// Global Metadata
 		zip.file(
 			"meta.json",
-			JSON.stringify(createMetadata("AllData", totalItems), null, 2)
+			JSON.stringify(createMetadata("AllData", totalItems), null, 2),
 		);
 		zip.file(
 			"README.txt",
@@ -691,7 +755,7 @@ To restore data:
 1. Go to the specific page (Calendar/Finance/Markdown)
 2. Click "Import" and select the corresponding JSON file
 3. QR codes must be regenerated manually
-`
+`,
 		);
 
 		const blob = await zip.generateAsync({ type: "blob" });
@@ -707,7 +771,7 @@ export const handleJSONUpload = async <T = unknown>(
 	file: globalThis.File,
 	onSuccess: (data: T) => void,
 	onError?: (error: string) => void,
-	showNotification?: ShowNotificationFn
+	showNotification?: ShowNotificationFn,
 ): Promise<void> => {
 	try {
 		const text = await file.text();

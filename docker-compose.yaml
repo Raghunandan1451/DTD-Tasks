@@ -1,10 +1,6 @@
-version: "3.8"
-
 services:
     app:
-        build:
-            context: .
-            dockerfile: Dockerfile
+        build: .
         environment:
             - NODE_ENV=development
         ports:
@@ -13,3 +9,6 @@ services:
             - .:/app
             - /app/node_modules
         command: yarn dev
+
+volumes:
+    node_modules:

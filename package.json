@@ -2,7 +2,7 @@
 	"name": "dtd-tasks",
 	"description": "DTD Tasks: Your daily task and time management tool",
 	"private": true,
-	"version": "0.0.3",
+	"version": "1.0.0",
 	"type": "module",
 	"scripts": {
 		"dev": "vite",

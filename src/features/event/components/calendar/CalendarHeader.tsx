@@ -4,10 +4,6 @@ const CalendarHeader: React.FC<{ dateColumns: DateColumn[] }> = ({
 	dateColumns,
 }) => (
 	<div className="flex border-b border-gray-200/30 dark:border-gray-700/30 bg-white/10 dark:bg-gray-800/10 backdrop-blur-sm z-10">
-		{/* Time axis header */}
-		<div className="w-16 h-16 bg-gray-50/20 dark:bg-gray-900/20 border-r border-gray-200/30 dark:border-gray-700/30"></div>
-
-		{/* Date headers */}
 		<div className="flex-1 overflow-hidden">
 			<div className="flex">
 				{dateColumns.map((column) => (
@@ -43,4 +39,5 @@ const CalendarHeader: React.FC<{ dateColumns: DateColumn[] }> = ({
 		</div>
 	</div>
 );
+
 export default CalendarHeader;

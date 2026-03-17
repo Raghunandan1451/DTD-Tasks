@@ -7,8 +7,6 @@ export interface Event {
 	tag: string;
 	startDate: string;
 	endDate: string;
-	startTime: string;
-	endTime: string;
 	color: string;
 	repeatType: RepeatType;
 	repeatLimit: number;
@@ -25,11 +23,6 @@ export interface Event {
 
 // Helper type for creating new events
 export type EventInput = Omit<Event, "id">;
-
-export interface TimeSlot {
-	hour: number;
-	label: string;
-}
 
 export interface DateColumn {
 	date: Date;
@@ -61,8 +54,6 @@ export interface EventFormData {
 	tag: string;
 	startDate: string;
 	endDate: string;
-	startTime: string;
-	endTime: string;
 	color: string;
 	repeatType: RepeatType;
 	repeatLimit: number;
@@ -72,7 +63,7 @@ export type EventFormDataForValidation = EventFormData &
 	Record<string, unknown>;
 
 export interface FormField<
-	K extends keyof EventFormData = keyof EventFormData
+	K extends keyof EventFormData = keyof EventFormData,
 > {
 	id: string;
 	label: string;
@@ -88,7 +79,7 @@ export interface FormField<
 	disabled?: (formData: EventFormData) => boolean;
 	onChange?: (
 		value: EventFormData[K],
-		formData: EventFormData
+		formData: EventFormData,
 	) => Partial<EventFormData>;
 }
 

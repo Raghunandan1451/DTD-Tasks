@@ -10,7 +10,7 @@ interface ExpenseFormData {
 }
 
 export const createExpenseFormFields = (
-	groups: string[]
+	groups: string[],
 ): FieldConfig<ExpenseFormData>[] => [
 	{
 		key: "name",
@@ -30,8 +30,8 @@ export const createExpenseFormFields = (
 	},
 	{
 		key: "unit",
-		type: "select",
-		options: ["pc(s)", "kg", "lt", "g", "ml"],
+		type: "input",
+		placeholder: "Unit",
 		width: "flex-[1]",
 		className: "min-w-[100px]",
 	},

@@ -1,7 +1,7 @@
 import "@testing-library/jest-dom";
 import { render, screen, fireEvent } from "@testing-library/react";
 import { describe, it, expect, vi, Mock, beforeEach } from "vitest";
-import QRGenerator from "@src/pages/QRGenerator";
+import QRGenerator from "@src/features/qr_generator/QRGenerator";
 import { useDispatch, useSelector } from "react-redux";
 import * as downloadHandler from "@src/lib/utils/downloadHandler";
 import { updateSettings } from "@src/lib/store/slices/qrSettingSlice";
@@ -11,9 +11,8 @@ import { updateSettings } from "@src/lib/store/slices/qrSettingSlice";
 const showNotificationMock = vi.fn();
 
 vi.mock("react-redux", async () => {
-	const actual = await vi.importActual<typeof import("react-redux")>(
-		"react-redux"
-	);
+	const actual =
+		await vi.importActual<typeof import("react-redux")>("react-redux");
 	return {
 		...actual,
 		useSelector: vi.fn(),
@@ -72,7 +71,7 @@ describe("QRGenerator", () => {
 					fgColor: "#000000",
 					selectedIcon: "",
 				},
-			})
+			}),
 		);
 
 		(useDispatch as unknown as Mock).mockReturnValue(mockDispatch);
@@ -81,7 +80,7 @@ describe("QRGenerator", () => {
 	it("renders input, button, settings panel and notifications", () => {
 		render(<QRGenerator />);
 		expect(
-			screen.getByPlaceholderText("Enter URL or Text")
+			screen.getByPlaceholderText("Enter URL or Text"),
 		).toBeInTheDocument();
 		expect(screen.getByText("Generate")).toBeInTheDocument();
 		expect(screen.getByText("Download Image")).toBeInTheDocument();
@@ -93,7 +92,7 @@ describe("QRGenerator", () => {
 		render(<QRGenerator />);
 
 		const input = screen.getByPlaceholderText(
-			"Enter URL or Text"
+			"Enter URL or Text",
 		) as HTMLInputElement;
 		fireEvent.change(input, { target: { value: "https://newsite.com" } });
 
@@ -103,7 +102,7 @@ describe("QRGenerator", () => {
 		fireEvent.click(generateBtn);
 
 		expect(mockDispatch).toHaveBeenCalledWith(
-			updateSettings({ qrData: "https://newsite.com" })
+			updateSettings({ qrData: "https://newsite.com" }),
 		);
 	});
 
@@ -115,7 +114,7 @@ describe("QRGenerator", () => {
 
 		expect(showNotificationMock).toHaveBeenCalledWith(
 			"Please enter a valid input",
-			"error"
+			"error",
 		);
 	});
 

@@ -13,9 +13,6 @@ import {
 } from "@src/features/event/type";
 import {
 	getCurrentDate,
-	getCurrentTime,
-	addMinutes,
-	isValidTimeRange,
 	updateEventFormData,
 } from "@src/features/event/lib/utils";
 import { useFormValidation } from "@src/features/event/lib/hooks";
@@ -40,8 +37,6 @@ const EventForm: React.FC<EventFormProps> = ({ onSave, onCancel }) => {
 		tag: TAGS[0].name,
 		startDate: getCurrentDate(),
 		endDate: getCurrentDate(),
-		startTime: getCurrentTime(),
-		endTime: addMinutes(getCurrentTime(), 30),
 		color: TAGS[0].color,
 		repeatType: "none",
 		repeatLimit: 0,
@@ -49,28 +44,26 @@ const EventForm: React.FC<EventFormProps> = ({ onSave, onCancel }) => {
 
 	const { errors, validate } = useFormValidation(
 		formData as EventFormDataForValidation,
-		EVENT_VALIDATION_RULES
+		EVENT_VALIDATION_RULES,
 	);
 
 	const updateField = (
 		field: keyof EventFormData,
-		value: string | number
+		value: string | number,
 	): void => {
 		setFormData((prev) => ({ ...prev, [field]: value }));
 	};
 
 	const handleFieldChange = (
 		field: EventFormField,
-		value: string | number
+		value: string | number,
 	): void => {
 		let updates: Partial<EventFormData> = { [field.key]: value };
 
-		// Handle custom onChange logic
 		if (field.onChange) {
 			updates = { ...updates, ...field.onChange(value, formData) };
 		}
 
-		// Auto-adjust end date when start date changes
 		if (field.key === "startDate") {
 			const startDate = new Date(value as string);
 			const endDate = new Date(formData.endDate);
@@ -83,7 +76,7 @@ const EventForm: React.FC<EventFormProps> = ({ onSave, onCancel }) => {
 	};
 
 	const handleContentChange = (
-		e: React.ChangeEvent<HTMLTextAreaElement> | string
+		e: React.ChangeEvent<HTMLTextAreaElement> | string,
 	) => {
 		const value = typeof e === "string" ? e : e.target.value;
 		updateField("content", value);
@@ -96,22 +89,10 @@ const EventForm: React.FC<EventFormProps> = ({ onSave, onCancel }) => {
 			return;
 		}
 
-		if (
-			!isValidTimeRange(
-				formData.startDate,
-				formData.startTime,
-				formData.endDate,
-				formData.endTime
-			)
-		) {
-			showNotification("End time must be after start time.", "error");
-			return;
-		}
-
 		onSave(formData);
 		showNotification(
 			`Event "${formData.title}" created successfully!`,
-			"success"
+			"success",
 		);
 	};
 
@@ -157,8 +138,8 @@ const EventForm: React.FC<EventFormProps> = ({ onSave, onCancel }) => {
 						))}
 					</div>
 
-					{/* Row 2: Start Date/Time, End Date/Time */}
-					<div className="grid grid-cols-4 gap-3 mb-4">
+					{/* Row 2: Start Date, End Date */}
+					<div className="grid grid-cols-2 gap-3 mb-4">
 						{row2Fields.map((field) => (
 							<FormField
 								key={field.id}

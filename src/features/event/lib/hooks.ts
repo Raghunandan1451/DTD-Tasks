@@ -1,7 +1,5 @@
 import { useState, useMemo } from "react";
 import {
-	// DateColumn,
-	// Event,
 	EventFormData,
 	FormField,
 	UseEventModalProps,
@@ -9,11 +7,8 @@ import {
 	ValidationRules,
 } from "@src/features/event/type";
 import { TAGS, REPEAT_OPTIONS } from "@src/features/event/constants";
-import {
-	validateForm,
-	getBaseEventId,
-	pad,
-} from "@src/features/event/lib/utils";
+import { validateForm, getBaseEventId } from "@src/features/event/lib/utils";
+import { useConfirmationModal } from "@src/lib/hooks/useConfirmDialog";
 
 const todayISO = new Date().toISOString().split("T")[0];
 
@@ -82,57 +77,16 @@ export const useFormConfig = () => {
 				row: 2,
 			},
 			{
-				id: "startTime",
-				label: "Start Time",
-				type: "time",
-				key: "startTime",
-				iconName: "clock",
-				span: 1,
-				row: 2,
-				onChange: (
-					value: string | number,
-					formData: EventFormData
-				): Partial<EventFormData> => {
-					const timeValue = value as string;
-					const start = new Date(
-						`${formData.startDate}T${timeValue}`
-					);
-					const end = new Date(
-						`${formData.endDate}T${formData.endTime}`
-					);
-
-					const updates: Partial<EventFormData> = {
-						startTime: timeValue,
-					};
-
-					if (!formData.endTime || end <= start) {
-						const autoEnd = new Date(start.getTime() + 30 * 60000);
-						updates.endTime = `${pad(autoEnd.getHours())}:${pad(
-							autoEnd.getMinutes()
-						)}`;
-					}
-
-					return updates;
-				},
-			},
-			{
 				id: "endDate",
 				label: "End Date",
 				type: "date",
 				key: "endDate",
-				span: 1,
-				row: 2,
-			},
-			{
-				id: "endTime",
-				label: "End Time",
-				type: "time",
-				key: "endTime",
+				iconName: "calendar",
 				span: 1,
 				row: 2,
 			},
 		],
-		[]
+		[],
 	);
 
 	return { formFields };
@@ -151,17 +105,15 @@ export const useEventModal = ({
 		"edit" | "delete" | null
 	>(null);
 
-	// FIXED: Check if this is a recurring instance by looking at ID format
-	// and finding the base event
+	const confirmationModal = useConfirmationModal();
+
 	const isRecurringInstanceId =
 		typeof event.id === "string" && event.id.includes("-");
 
-	// Get base event ID from instance ID
 	const baseEventId = isRecurringInstanceId
 		? getBaseEventId(event.id as string)
 		: event.id;
 
-	// Find the actual base event from Redux store
 	const actualBaseEvent = isRecurringInstanceId
 		? allEvents.find((e) => {
 				const numericId =
@@ -169,10 +121,9 @@ export const useEventModal = ({
 						? parseInt(baseEventId, 10)
 						: baseEventId;
 				return e.id === numericId;
-		  })
+			})
 		: undefined;
 
-	// This is a recurring instance if we found a base event with repeatType
 	const isRecurringInstance =
 		isRecurringInstanceId &&
 		actualBaseEvent &&
@@ -192,39 +143,55 @@ export const useEventModal = ({
 		setPendingAction(null);
 	};
 
-	const handleDelete = () => {
+	const handleDelete = async () => {
 		if (isRecurringInstance && !showRecurringOptions) {
 			setPendingAction("delete");
 			setShowRecurringOptions(true);
 			return;
 		}
 
-		if (confirm("Are you sure you want to delete this event?")) {
+		const confirmed = await confirmationModal.confirm({
+			title: "Delete Event",
+			message: "Are you sure you want to delete this event?",
+			itemName: event.title,
+			confirmText: "Delete",
+			cancelText: "Cancel",
+			type: "danger",
+		});
+
+		if (confirmed) {
 			onDelete(event.id);
 			setShowRecurringOptions(false);
 			setPendingAction(null);
 		}
 	};
 
-	const handleRecurringAction = (actionType: "single" | "all") => {
+	const handleRecurringAction = async (actionType: "single" | "all") => {
+		// Hide RecurringOptionsModal immediately on selection
+		setShowRecurringOptions(false);
+
 		if (pendingAction === "edit") {
 			onUpdate(editData, actionType);
 			setIsEditing(false);
+			setPendingAction(null);
 		} else if (pendingAction === "delete") {
-			if (
-				confirm(
-					`Are you sure you want to delete ${
-						actionType === "single"
-							? "this occurrence"
-							: "all occurrences"
-					} of this event?`
-				)
-			) {
+			const confirmed = await confirmationModal.confirm({
+				title: "Delete Recurring Event",
+				message: `Are you sure you want to delete ${
+					actionType === "single"
+						? "this occurrence"
+						: "all occurrences"
+				} of this event?`,
+				itemName: event.title,
+				confirmText: "Delete",
+				cancelText: "Cancel",
+				type: "danger",
+			});
+
+			if (confirmed) {
 				if (actionType === "single") {
-					// For single deletion, pass the instance ID
 					onDelete(event.id, "single");
 				} else {
-					// For all deletions, pass the base event ID
 					const numericBaseId =
 						typeof baseEventId === "string"
 							? parseInt(baseEventId, 10)
@@ -232,10 +199,9 @@ export const useEventModal = ({
 					onDelete(numericBaseId, "all");
 				}
 			}
-		}
 
-		setShowRecurringOptions(false);
-		setPendingAction(null);
+			setPendingAction(null);
+		}
 	};
 
 	const handleCancel = () => {
@@ -282,6 +248,7 @@ export const useEventModal = ({
 		pendingAction,
 		isRecurringInstance,
 		actualBaseEvent,
+		confirmationModal,
 		setIsEditing,
 		handleSave,
 		handleDelete,
@@ -296,7 +263,7 @@ export const useEventModal = ({
 
 export const useFormValidation = <T extends Record<string, unknown>>(
 	data: T,
-	rules: ValidationRules
+	rules: ValidationRules,
 ) => {
 	const [errors, setErrors] = useState<ValidationErrors>({});
 

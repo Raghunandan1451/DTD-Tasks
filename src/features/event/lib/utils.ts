@@ -11,7 +11,7 @@ import { AppDispatch } from "@src/lib/store/store";
 // Generate date columns for daily or weekly view
 export function getDateColumns(
 	currentDate: Date,
-	viewMode: "daily" | "weekly"
+	viewMode: "daily" | "weekly",
 ) {
 	const columns: DateColumn[] = [];
 
@@ -46,67 +46,66 @@ export function getDateColumns(
 
 export function generateRecurringInstances(
 	events: Event[],
-	dateColumns: DateColumn[]
+	dateColumns: DateColumn[],
 ): Event[] {
 	const instances: Event[] = [];
 
-	// Get the date range we need to consider (visible dates + some buffer)
 	const visibleDates = dateColumns.map((col) => col.dateString);
 	const earliestDate = visibleDates[0];
 	const latestDate = visibleDates[visibleDates.length - 1];
 
-	// Add buffer for multi-day events
 	const startDate = new Date(earliestDate);
 	startDate.setDate(startDate.getDate() - 1);
 	const endDate = new Date(latestDate);
 	endDate.setDate(endDate.getDate() + 1);
 
-	// Helper function to calculate the instance's endDate based on multi-day duration
 	const calculateInstanceEndDate = (
 		event: Event,
-		instanceStartDate: string
+		instanceStartDate: string,
 	): string => {
-		// Calculate duration in days between original startDate and endDate
 		const originalStart = new Date(event.startDate);
 		const originalEnd = new Date(event.endDate);
 		const durationDays = Math.floor(
 			(originalEnd.getTime() - originalStart.getTime()) /
-				(1000 * 60 * 60 * 24)
+				(1000 * 60 * 60 * 24),
 		);
-
-		// Apply the same duration to the instance
 		const instanceStart = new Date(instanceStartDate);
 		const instanceEnd = new Date(instanceStart);
 		instanceEnd.setDate(instanceEnd.getDate() + durationDays);
-
 		return instanceEnd.toISOString().split("T")[0];
 	};
 
 	events.forEach((event) => {
-		// Check for both new repeatType structure and legacy recurring structure
 		const repeatType = event.repeatType || event.recurring?.type;
 		const repeatLimit = event.repeatLimit;
 		const recurringConfig = event.recurring;
 
 		if (!repeatType || repeatType === "none") {
-			// Non-recurring event - add as is
 			instances.push(event);
 			return;
 		}
 
-		// CRITICAL: Get excluded dates for this event
 		const excludedDates = new Set(event.excludedDates || []);
-
 		const baseDate = new Date(event.startDate);
 		let occurrenceCount = 0;
-		const maxOccurrences = repeatLimit || 1000;
 
-		// Generate instances within the visible range
+		const hasLimit = repeatLimit && repeatLimit > 0;
+
 		const generateInstances = (baseDate: Date, type: string) => {
 			const currentDate = new Date(baseDate);
 			const interval = recurringConfig?.interval || 1;
 
-			// For weekly events with specific days
+			const maxOccurrences = hasLimit
+				? repeatLimit
+				: type === "daily"
+					? 30
+					: type === "weekly"
+						? 12
+						: type === "monthly"
+							? 12
+							: 30;
+
+			// Weekly with specific days of week
 			if (
 				type === "weekly" &&
 				recurringConfig?.daysOfWeek &&
@@ -118,7 +117,7 @@ export function generateRecurringInstances(
 				while (occurrenceCount < maxOccurrences) {
 					const weekStart = new Date(baseDate);
 					weekStart.setDate(
-						baseDate.getDate() + weekCount * 7 * interval
+						baseDate.getDate() + weekCount * 7 * interval,
 					);
 
 					for (const dayOfWeek of daysOfWeek) {
@@ -133,18 +132,15 @@ export function generateRecurringInstances(
 							const dateString = eventDate
 								.toISOString()
 								.split("T")[0];
-
-							// CRITICAL: Skip if this date is excluded
 							if (!excludedDates.has(dateString)) {
-								const instanceId = `${event.id}-${dateString}`;
-								const instanceEndDate =
-									calculateInstanceEndDate(event, dateString);
-
 								instances.push({
 									...event,
-									id: instanceId,
+									id: `${event.id}-${dateString}`,
 									startDate: dateString,
-									endDate: instanceEndDate,
+									endDate: calculateInstanceEndDate(
+										event,
+										dateString,
+									),
 								});
 							}
 						}
@@ -157,7 +153,7 @@ export function generateRecurringInstances(
 					const checkDate = new Date(weekStart);
 					checkDate.setDate(weekStart.getDate() + 7);
 					if (
-						checkDate > endDate &&
+						checkDate > endDate ||
 						occurrenceCount >= maxOccurrences
 					) {
 						break;
@@ -166,56 +162,27 @@ export function generateRecurringInstances(
 				return;
 			}
 
-			// Handle other repeat types (daily, weekly without specific days, monthly)
+			// Daily, simple weekly, monthly
 			while (occurrenceCount < maxOccurrences) {
 				const dateString = currentDate.toISOString().split("T")[0];
 
-				// For monthly events with specific day of month
-				if (type === "monthly" && recurringConfig?.dayOfMonth) {
-					if (currentDate.getDate() === recurringConfig.dayOfMonth) {
-						if (
-							currentDate >= startDate &&
-							currentDate <= endDate
-						) {
-							// CRITICAL: Skip if this date is excluded
-							if (!excludedDates.has(dateString)) {
-								const instanceId = `${event.id}-${dateString}`;
-								const instanceEndDate =
-									calculateInstanceEndDate(event, dateString);
-
-								instances.push({
-									...event,
-									id: instanceId,
-									startDate: dateString,
-									endDate: instanceEndDate,
-								});
-							}
-						}
-						occurrenceCount++;
-					}
-				} else {
-					// For daily and simple weekly events
-					if (currentDate >= startDate && currentDate <= endDate) {
-						// CRITICAL: Skip if this date is excluded
-						if (!excludedDates.has(dateString)) {
-							const instanceId = `${event.id}-${dateString}`;
-							const instanceEndDate = calculateInstanceEndDate(
+				if (currentDate >= startDate && currentDate <= endDate) {
+					if (!excludedDates.has(dateString)) {
+						instances.push({
+							...event,
+							id: `${event.id}-${dateString}`,
+							startDate: dateString,
+							endDate: calculateInstanceEndDate(
 								event,
-								dateString
-							);
-
-							instances.push({
-								...event,
-								id: instanceId,
-								startDate: dateString,
-								endDate: instanceEndDate,
-							});
-						}
+								dateString,
+							),
+						});
 					}
-					occurrenceCount++;
 				}
 
-				// Move to next occurrence based on repeat type
+				occurrenceCount++;
+
+				// Advance to next occurrence
 				switch (type) {
 					case "daily": {
 						currentDate.setDate(currentDate.getDate() + interval);
@@ -223,26 +190,26 @@ export function generateRecurringInstances(
 					}
 					case "weekly": {
 						currentDate.setDate(
-							currentDate.getDate() + 7 * interval
+							currentDate.getDate() + 7 * interval,
 						);
 						break;
 					}
 					case "monthly": {
 						const originalDay = currentDate.getDate();
 						currentDate.setMonth(currentDate.getMonth() + interval);
-
 						if (recurringConfig?.dayOfMonth) {
 							currentDate.setDate(
 								Math.min(
 									recurringConfig.dayOfMonth,
-									getLastDayOfMonth(currentDate)
-								)
+									getLastDayOfMonth(currentDate),
+								),
 							);
 						} else {
-							const lastDayOfMonth =
-								getLastDayOfMonth(currentDate);
 							currentDate.setDate(
-								Math.min(originalDay, lastDayOfMonth)
+								Math.min(
+									originalDay,
+									getLastDayOfMonth(currentDate),
+								),
 							);
 						}
 						break;
@@ -250,7 +217,7 @@ export function generateRecurringInstances(
 				}
 
 				if (
-					currentDate > endDate &&
+					currentDate > endDate ||
 					occurrenceCount >= maxOccurrences
 				) {
 					break;
@@ -278,98 +245,33 @@ export function getBaseEventId(instanceId: string): string {
 		: instanceId;
 }
 
-// Helpers
-export function isMultiDayEvent(event: Event): boolean {
-	const startHour = parseInt(event.startTime.split(":")[0]);
-	const endHour = parseInt(event.endTime.split(":")[0]);
-	const startMinute = parseInt(event.startTime.split(":")[1]);
-	const endMinute = parseInt(event.endTime.split(":")[1]);
-
-	const startTotalMinutes = startHour * 60 + startMinute;
-	const endTotalMinutes = endHour * 60 + endMinute;
-
-	return endTotalMinutes < startTotalMinutes;
-}
-
-export function getNextDayString(dateString: string): string {
-	const date = new Date(dateString);
-	date.setDate(date.getDate() + 1);
-	return date.toISOString().split("T")[0];
-}
-
 export function getPreviousDayString(dateString: string): string {
 	const date = new Date(dateString);
 	date.setDate(date.getDate() - 1);
 	return date.toISOString().split("T")[0];
 }
 
-export function getEventHeight(event: Event, columnDate: string): number {
-	const startHour = parseInt(event.startTime.split(":")[0]);
-	const startMinute = parseInt(event.startTime.split(":")[1]);
-	const endHour = parseInt(event.endTime.split(":")[0]);
-	const endMinute = parseInt(event.endTime.split(":")[1]);
-
-	const isEventMultiDay = isMultiDayEvent(event);
-	const isStartDay = event.startDate === columnDate;
-	const isEndDay =
-		!isStartDay &&
-		isEventMultiDay &&
-		getNextDayString(event.startDate) === columnDate;
-
-	if (isEventMultiDay) {
-		if (isStartDay) {
-			const duration = 24 * 60 - (startHour * 60 + startMinute);
-			// Subtract gap to prevent overlap (5 minutes = 10px gap)
-			return Math.max(60, duration * 2 - 10);
-		} else if (isEndDay) {
-			const duration = endHour * 60 + endMinute;
-			return Math.max(60, duration * 2 - 10);
-		}
-	}
-
-	// Single day event
-	const duration = endHour * 60 + endMinute - (startHour * 60 + startMinute);
-	// Subtract 10px (5min) gap to prevent visual overlap from padding/shadows
-	return Math.max(40, duration * 2 - 10);
-}
-
-export function getEventTop(event: Event, columnDate: string): number {
-	const startHour = parseInt(event.startTime.split(":")[0]);
-	const startMinute = parseInt(event.startTime.split(":")[1]);
-
-	const isEventMultiDay = isMultiDayEvent(event);
-	const isStartDay = event.startDate === columnDate;
-	const isEndDay =
-		!isStartDay &&
-		isEventMultiDay &&
-		getNextDayString(event.startDate) === columnDate;
-
-	if (isEventMultiDay && isEndDay) {
-		// Second day: start from top (midnight)
-		return 0;
-	}
-
-	// First day or single day: start from actual start time
-	return startHour * 120 + startMinute * 2;
-}
-
 export function getEventsForColumn(
 	columnDate: string,
 	events: Event[],
-	dateColumns: DateColumn[]
+	dateColumns: DateColumn[],
 ): Event[] {
-	// First generate all expanded instances for this set of events
 	const instances = generateRecurringInstances(events, dateColumns);
 
 	return instances.filter((event: Event) => {
-		// Include events that start on this day
-		if (event.startDate === columnDate) {
-			return true;
-		}
+		// Always show events that start on this day
+		if (event.startDate === columnDate) return true;
 
-		// Include multi-day events that started the previous day and end on this day
-		const previousDay = getPreviousDayString(columnDate);
-		if (event.startDate === previousDay && isMultiDayEvent(event)) {
+		// Only show as multi-day continuation if it's NOT a recurring instance
+		// (recurring instances each have their own startDate)
+		const isRecurringInstance =
+			typeof event.id === "string" && event.id.includes("-");
+
+		if (
+			!isRecurringInstance &&
+			event.startDate < columnDate &&
+			event.endDate >= columnDate
+		) {
 			return true;
 		}
 
@@ -428,7 +330,7 @@ export function getRecurringIndicator(event: Event): string {
 }
 export const validateForm = (
 	data: Record<string, unknown>,
-	rules: ValidationRules
+	rules: ValidationRules,
 ): ValidationErrors => {
 	const errors: ValidationErrors = {};
 
@@ -476,38 +378,12 @@ export const validateForm = (
 	return errors;
 };
 
-// utils/dateTime.ts
-export const pad = (n: number): string => n.toString().padStart(2, "0");
-
 export const getCurrentDate = (): string =>
 	new Date().toISOString().split("T")[0];
 
-export const getCurrentTime = (): string => {
-	const now = new Date();
-	return `${pad(now.getHours())}:${pad(now.getMinutes())}`;
-};
-
-export const addMinutes = (time: string, minutes: number): string => {
-	const [hours, mins] = time.split(":").map(Number);
-	const date = new Date();
-	date.setHours(hours, mins + minutes);
-	return `${pad(date.getHours())}:${pad(date.getMinutes())}`;
-};
-
-export const isValidTimeRange = (
-	startDate: string,
-	startTime: string,
-	endDate: string,
-	endTime: string
-): boolean => {
-	const start = new Date(`${startDate}T${startTime}`);
-	const end = new Date(`${endDate}T${endTime}`);
-	return end > start;
-};
-
 export function updateEventFormData(
 	currentData: EventFormData,
-	updates: Partial<EventFormData>
+	updates: Partial<EventFormData>,
 ): EventFormData {
 	const result: EventFormData = { ...currentData };
 
@@ -517,8 +393,6 @@ export function updateEventFormData(
 	if (updates.tag !== undefined) result.tag = updates.tag;
 	if (updates.startDate !== undefined) result.startDate = updates.startDate;
 	if (updates.endDate !== undefined) result.endDate = updates.endDate;
-	if (updates.startTime !== undefined) result.startTime = updates.startTime;
-	if (updates.endTime !== undefined) result.endTime = updates.endTime;
 	if (updates.color !== undefined) result.color = updates.color;
 	if (updates.repeatType !== undefined)
 		result.repeatType = updates.repeatType;
@@ -551,7 +425,7 @@ export const navigateDate = (
 	dispatch: AppDispatch,
 	currentDate: string,
 	viewMode: "daily" | "weekly",
-	direction: "prev" | "next"
+	direction: "prev" | "next",
 ) => {
 	const newDate = new Date(currentDate);
 	if (viewMode === "weekly") {
@@ -564,7 +438,7 @@ export const navigateDate = (
 
 export const getDateRange = (
 	currentDate: string,
-	viewMode: "daily" | "weekly"
+	viewMode: "daily" | "weekly",
 ) => {
 	const baseDate = new Date(currentDate);
 
@@ -634,7 +508,7 @@ export const convertOklchToHex = (oklchString: string): string => {
 const oklchToRgb = (
 	l: number,
 	c: number,
-	h: number
+	h: number,
 ): { r: number; g: number; b: number } => {
 	// Convert OKLCH to OKLAB
 	const hRad = (h * Math.PI) / 180;
@@ -744,17 +618,17 @@ export const normalizeElementColors = (element: HTMLElement): void => {
 	}
 	if (element.style.backgroundColor) {
 		element.style.backgroundColor = normalizeColorToHex(
-			element.style.backgroundColor
+			element.style.backgroundColor,
 		);
 	}
 	if (element.style.borderColor) {
 		element.style.borderColor = normalizeColorToHex(
-			element.style.borderColor
+			element.style.borderColor,
 		);
 	}
 	if (element.style.borderLeftColor) {
 		element.style.borderLeftColor = normalizeColorToHex(
-			element.style.borderLeftColor
+			element.style.borderLeftColor,
 		);
 	}
 
@@ -805,7 +679,7 @@ import { domToBlob } from "modern-screenshot";
 
 export const generateWeeklyCalendarScreenshot = async (
 	events: Event[],
-	currentDate: string
+	currentDate: string,
 ): Promise<Blob | null> => {
 	try {
 		const container = document.createElement("div");
@@ -832,8 +706,6 @@ export const generateWeeklyCalendarScreenshot = async (
 			return day;
 		});
 
-		// Simple markdown formatter for event content
-		// Simple markdown formatter for event content
 		const formatContent = (content: string): string => {
 			if (!content) return "";
 
@@ -848,7 +720,7 @@ export const generateWeeklyCalendarScreenshot = async (
 			// Inline code: `code` - PROCESS SECOND, use inline styling
 			html = html.replace(
 				/`([^`]+)`/g,
-				'<code style="background:#f5f5f5; padding:2px 4px; border-radius:3px; font-family:monospace; font-size:11px;">$1</code>'
+				'<code style="background:#f5f5f5; padding:2px 4px; border-radius:3px; font-family:monospace; font-size:11px;">$1</code>',
 			);
 
 			// Handle lines: split and process
@@ -882,7 +754,7 @@ export const generateWeeklyCalendarScreenshot = async (
 						inBlockquote = false;
 					}
 					processedLines.push(
-						`<h3 style="font-size: 14px; font-weight: 700; color: #333; margin: 12px 0 6px 0; line-height: 1.4;">${h3Match[1]}</h3>`
+						`<h3 style="font-size: 14px; font-weight: 700; color: #333; margin: 12px 0 6px 0; line-height: 1.4;">${h3Match[1]}</h3>`,
 					);
 				} else if (h2Match) {
 					if (inList) {
@@ -894,7 +766,7 @@ export const generateWeeklyCalendarScreenshot = async (
 						inBlockquote = false;
 					}
 					processedLines.push(
-						`<h2 style="font-size: 16px; font-weight: 700; color: #333; margin: 14px 0 8px 0; line-height: 1.3;">${h2Match[1]}</h2>`
+						`<h2 style="font-size: 16px; font-weight: 700; color: #333; margin: 14px 0 8px 0; line-height: 1.3;">${h2Match[1]}</h2>`,
 					);
 				} else if (h1Match) {
 					if (inList) {
@@ -906,7 +778,7 @@ export const generateWeeklyCalendarScreenshot = async (
 						inBlockquote = false;
 					}
 					processedLines.push(
-						`<h1 style="font-size: 18px; font-weight: 700; color: #333; margin: 16px 0 10px 0; line-height: 1.2;">${h1Match[1]}</h1>`
+						`<h1 style="font-size: 18px; font-weight: 700; color: #333; margin: 16px 0 10px 0; line-height: 1.2;">${h1Match[1]}</h1>`,
 					);
 				} else if (blockquoteMatch) {
 					// Close list if open
@@ -917,12 +789,12 @@ export const generateWeeklyCalendarScreenshot = async (
 					// Start blockquote if not already started
 					if (!inBlockquote) {
 						processedLines.push(
-							'<blockquote style="border-left: 4px solid #667eea; padding-left: 12px; margin: 8px 0; color: #555; font-style: italic; background: #f9f9f9; padding: 8px 12px; border-radius: 4px;">'
+							'<blockquote style="border-left: 4px solid #667eea; padding-left: 12px; margin: 8px 0; color: #555; font-style: italic; background: #f9f9f9; padding: 8px 12px; border-radius: 4px;">',
 						);
 						inBlockquote = true;
 					}
 					processedLines.push(
-						`<div style="line-height: 1.6;">${blockquoteMatch[1]}</div>`
+						`<div style="line-height: 1.6;">${blockquoteMatch[1]}</div>`,
 					);
 				} else if (listMatch) {
 					// Close blockquote if open
@@ -933,12 +805,12 @@ export const generateWeeklyCalendarScreenshot = async (
 					// Start list if not already started
 					if (!inList) {
 						processedLines.push(
-							'<ul style="padding-left: 20px; list-style-type: disc; margin: 4px 0;">'
+							'<ul style="padding-left: 20px; list-style-type: disc; margin: 4px 0;">',
 						);
 						inList = true;
 					}
 					processedLines.push(
-						`<li style="line-height: 1.6; margin-bottom: 4px;">${listMatch[1]}</li>`
+						`<li style="line-height: 1.6; margin-bottom: 4px;">${listMatch[1]}</li>`,
 					);
 				} else {
 					// Close list or blockquote if open
@@ -973,7 +845,7 @@ export const generateWeeklyCalendarScreenshot = async (
 			// Italic: *text* (single asterisk, not part of **)
 			html = html.replace(
 				/(?<!\*)\*(?!\*)([^*]+?)\*(?!\*)/g,
-				"<em>$1</em>"
+				"<em>$1</em>",
 			);
 
 			// Underline: __text__
@@ -989,8 +861,6 @@ export const generateWeeklyCalendarScreenshot = async (
 		interface DayEvent extends Event {
 			isStart: boolean;
 			isEnd: boolean;
-			displayStartTime: string;
-			displayEndTime: string;
 		}
 
 		const eventsByDay = new Map<number, DayEvent[]>();
@@ -1000,10 +870,10 @@ export const generateWeeklyCalendarScreenshot = async (
 
 		events.forEach((ev) => {
 			const startDayIndex = weekDays.findIndex(
-				(d) => d.toISOString().split("T")[0] === ev.startDate
+				(d) => d.toISOString().split("T")[0] === ev.startDate,
 			);
 			const endDayIndex = weekDays.findIndex(
-				(d) => d.toISOString().split("T")[0] === ev.endDate
+				(d) => d.toISOString().split("T")[0] === ev.endDate,
 			);
 
 			// Skip if event doesn't appear in this week
@@ -1021,8 +891,6 @@ export const generateWeeklyCalendarScreenshot = async (
 						...ev,
 						isStart: true,
 						isEnd: true,
-						displayStartTime: ev.startTime,
-						displayEndTime: ev.endTime,
 					});
 				}
 			} else {
@@ -1039,8 +907,6 @@ export const generateWeeklyCalendarScreenshot = async (
 						...ev,
 						isStart: isFirstDay,
 						isEnd: isLastDay,
-						displayStartTime: ev.startTime,
-						displayEndTime: ev.endTime,
 					});
 				}
 			}
@@ -1048,11 +914,7 @@ export const generateWeeklyCalendarScreenshot = async (
 
 		// Sort events by start time within each day
 		eventsByDay.forEach((dayEvents) => {
-			dayEvents.sort((a, b) => {
-				const aTime = a.displayStartTime.replace(":", "");
-				const bTime = b.displayStartTime.replace(":", "");
-				return aTime.localeCompare(bTime);
-			});
+			dayEvents.sort((a, b) => a.title.localeCompare(b.title));
 		});
 
 		// Generate HTML for each day column
@@ -1066,7 +928,7 @@ export const generateWeeklyCalendarScreenshot = async (
 						? dayEvents
 								.map((ev) => {
 									const hexColor = normalizeColorToHex(
-										ev.color
+										ev.color,
 									);
 									const isMultiDay = !ev.isStart || !ev.isEnd;
 
@@ -1094,15 +956,11 @@ export const generateWeeklyCalendarScreenshot = async (
 										<div style="font-weight: 700; font-size: 14px; color: #1a1a1a; margin-bottom: 6px; line-height: 1.3;">
 											${ev.title}
 										</div>
-										<div style="font-size: 12px; color: #4a4a4a; font-weight: 600; margin-bottom: 6px; display: flex; align-items: center; gap: 4px;">
-											<span style="font-size: 14px;">🕐</span>
-											${ev.displayStartTime} - ${ev.displayEndTime}
-										</div>
 										${
 											ev.content
 												? `<div style="font-size: 12px; color: #2a2a2a; line-height: 1.6; margin-top: 8px; padding-top: 8px; border-top: 2px solid ${hexColor}40; font-weight: 500;">${formatContent(
-														ev.content
-												  )}</div>`
+														ev.content,
+													)}</div>`
 												: ""
 										}
 										${positionIndicator}
@@ -1146,10 +1004,10 @@ export const generateWeeklyCalendarScreenshot = async (
 							day: "numeric",
 							year: "numeric",
 						})} - ${weekDays[6].toLocaleDateString("en-US", {
-			month: "short",
-			day: "numeric",
-			year: "numeric",
-		})}
+							month: "short",
+							day: "numeric",
+							year: "numeric",
+						})}
 					</p>
 				</div>
 				<div style="padding: 20px; display: grid; grid-template-columns: repeat(7, 1fr); gap: 12px;">

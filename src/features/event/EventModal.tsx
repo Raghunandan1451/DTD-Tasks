@@ -5,6 +5,7 @@ import { EventDetails } from "@src/features/event/components/modal/EventDetails"
 import { ContentSection } from "@src/features/event/components/modal/ContentSection";
 import { RecurringOptionsModal } from "@src/features/event/components/modal/RecurringOptionsModal";
 import { useEventModal } from "@src/features/event/lib/hooks";
+import { ConfirmationModal } from "@src/components/shared/dialog/ConfirmModal";
 
 interface EventModalProps {
 	event: Event;
@@ -37,6 +38,7 @@ const EventModal: React.FC<EventModalProps> = ({
 		handleDateTimeChange,
 		handleTitleChange,
 		handleContentChange,
+		confirmationModal,
 	} = useEventModal({
 		event,
 		onUpdate,
@@ -92,6 +94,13 @@ const EventModal: React.FC<EventModalProps> = ({
 					}}
 				/>
 			)}
+
+			<ConfirmationModal
+				isOpen={confirmationModal.isOpen}
+				options={confirmationModal.options}
+				onConfirm={confirmationModal.handleConfirm}
+				onCancel={confirmationModal.handleCancel}
+			/>
 		</>
 	);
 };

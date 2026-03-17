@@ -3,7 +3,7 @@ import { Provider } from "react-redux";
 import { configureStore } from "@reduxjs/toolkit";
 import fileManagerReducer from "@src/lib/store/slices/markdownSlice"; // example paths
 import qrReducer from "@src/lib/store/slices/qrSettingSlice";
-import MarkdownEditor from "@src/pages/FileManager";
+import MarkdownEditor from "@src/features/markdown/FileManager";
 import * as downloadHandler from "@src/lib/utils/downloadHandler";
 import { vi, describe, it, beforeEach, expect } from "vitest";
 import "@testing-library/jest-dom";
@@ -73,7 +73,7 @@ describe("MarkdownEditor", () => {
 		render(
 			<Provider store={store}>
 				<MarkdownEditor />
-			</Provider>
+			</Provider>,
 		);
 
 		expect(screen.getByText("Export as ZIP")).toBeInTheDocument();

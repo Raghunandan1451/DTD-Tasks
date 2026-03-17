@@ -28,6 +28,4 @@ export const EVENT_VALIDATION_RULES: ValidationRules = {
 	],
 	startDate: [{ required: true, message: "Start date is required" }],
 	endDate: [{ required: true, message: "End date is required" }],
-	startTime: [{ required: true, message: "Start time is required" }],
-	endTime: [{ required: true, message: "End time is required" }],
 };

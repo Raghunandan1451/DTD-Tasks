@@ -2,11 +2,11 @@ import { RouterProvider, createBrowserRouter } from "react-router-dom";
 import { FC, lazy } from "react";
 
 import Layout from "@src/layout/Layout";
-import Home from "@src/pages/Home";
-const QRGenerator = lazy(() => import("@src/pages/QRGenerator"));
-const FileManager = lazy(() => import("@src/pages/FileManager"));
-const ExpenseTracker = lazy(() => import("@src/pages/ExpenseTracker"));
-const EventTracker = lazy(() => import("@src/pages/EventTracker"));
+import Home from "@src/features/home";
+const QRGenerator = lazy(() => import("@src/features/qr_generator"));
+const FileManager = lazy(() => import("@src/features/markdown"));
+const ExpenseTracker = lazy(() => import("@src/features/finance"));
+const EventTracker = lazy(() => import("@src/features/event"));
 
 import { ThemeProvider } from "@src/lib/context/ThemeContext";
 import withSuspense from "@src/lib/hoc/withSuspense";
