@@ -28,7 +28,7 @@ const CalendarEvent: React.FC<{
 	return (
 		<div
 			key={event.id}
-			className={`relative shadow-sm cursor-pointer hover:shadow-md transition-shadow backdrop-blur-sm ${borderRadius} ${opacity} ${
+			className={`relative min-w-0 shadow-sm cursor-pointer hover:shadow-md transition-shadow backdrop-blur-sm ${borderRadius} ${opacity} ${
 				isRecurringInstance ? "border-l-2 border-l-green-400" : ""
 			}`}
 			style={{

@@ -13,24 +13,18 @@ const CalendarGrid: React.FC<CalendarGridProps> = ({
 	const dateColumns = getDateColumns(currentDate, viewMode);
 
 	return (
-		<div className="backdrop-blur-sm rounded-bl-xl border border-gray-200/30 dark:border-gray-700/30 overflow-hidden">
-			<div className="flex flex-col h-full">
-				<CalendarHeader dateColumns={dateColumns} />
-				<div className="flex flex-1 overflow-y-auto scrollbar-hide">
-					<div className="flex-1">
-						<div className="flex min-w-full">
-							{dateColumns.map((column) => (
-								<DayColumn
-									key={column.dateString}
-									column={column}
-									events={events}
-									dateColumns={dateColumns}
-									onEventClick={onEventClick}
-								/>
-							))}
-						</div>
-					</div>
-				</div>
+		<div className="backdrop-blur-sm rounded-bl-xl border border-gray-200/30 dark:border-gray-700/30 overflow-hidden flex flex-col h-full">
+			<CalendarHeader dateColumns={dateColumns} />
+			<div className="flex flex-1 overflow-y-auto scrollbar-hide min-h-0">
+				{dateColumns.map((column) => (
+					<DayColumn
+						key={column.dateString}
+						column={column}
+						events={events}
+						dateColumns={dateColumns}
+						onEventClick={onEventClick}
+					/>
+				))}
 			</div>
 		</div>
 	);

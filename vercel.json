@@ -1,20 +1,3 @@
 {
-	"routes": [
-		{
-			"src": "/",
-			"dest": "/"
-		},
-		{
-			"src": "/finance",
-			"dest": "/"
-		},
-		{
-			"src": "/qrgen",
-			"dest": "/"
-		},
-		{
-			"src": "/markdown",
-			"dest": "/"
-		}
-	]
+	"rewrites": [{ "source": "/(.*)", "destination": "/index.html" }]
 }
