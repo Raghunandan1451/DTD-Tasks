@@ -1,9 +1,8 @@
 import { FC } from "react";
 import { ExpenseEntry } from "@src/features/finance/type";
-import useExpenseTable from "@src/lib/hooks/useExpenseTable";
+import useExpenseTable from "@src/features/finance/hooks/useExpenseTable";
 import GenericTable from "@src/components/shared/table/GenericTable";
 import { createExpenseColumns } from "@src/features/finance/expense_list/ExpenseTableConfig";
-import { TableHandlers } from "@src/lib/types/table";
 import { ConfirmationModal } from "@src/components/shared/dialog/ConfirmModal";
 import { ShowNotificationFn } from "@src/lib/types/downloadHandlerTypes";
 
@@ -14,6 +13,24 @@ interface ExpenseTableProps {
 	onDelete: (id: string) => void;
 	showNotification?: ShowNotificationFn;
 }
+
+const sortExpenses = (expenses: ExpenseEntry[]): ExpenseEntry[] => {
+	return [...expenses].sort((a, b) => {
+		if (a.type === "Cr" && b.type !== "Cr") return -1;
+		if (a.type !== "Cr" && b.type === "Cr") return 1;
+		return 0;
+	});
+};
+
+const getRowClassName = (expense: ExpenseEntry, isEditing: boolean): string => {
+	if (isEditing) {
+		return "bg-blue-500/20 dark:bg-blue-500/15 backdrop-blur-md";
+	}
+	if (expense.type === "Cr") {
+		return "bg-green-500/10 dark:bg-green-500/5";
+	}
+	return "";
+};
 
 const ExpenseTable: FC<ExpenseTableProps> = ({
 	expenses,
@@ -31,33 +48,6 @@ const ExpenseTable: FC<ExpenseTableProps> = ({
 
 	const columns = createExpenseColumns(groups);
 
-	const adaptedHandlers: TableHandlers<ExpenseEntry> = {
-		...(handlers as unknown as TableHandlers<ExpenseEntry>),
-		handleDelete: (id: string, name: string, isProtected?: boolean) =>
-			handlers.handleDelete(id, name, isProtected || false),
-	};
-
-	const sortExpenses = (expenses: ExpenseEntry[]): ExpenseEntry[] => {
-		return [...expenses].sort((a, b) => {
-			if (a.type === "Cr" && b.type !== "Cr") return -1;
-			if (a.type !== "Cr" && b.type === "Cr") return 1;
-			return 0;
-		});
-	};
-
-	const getRowClassName = (
-		expense: ExpenseEntry,
-		isEditing: boolean
-	): string => {
-		if (isEditing) {
-			return "bg-blue-500/20 dark:bg-blue-500/15 backdrop-blur-md";
-		}
-		if (expense.type === "Cr") {
-			return "bg-green-500/10 dark:bg-green-500/5";
-		}
-		return "";
-	};
-
 	return (
 		<>
 			<GenericTable
@@ -66,7 +56,7 @@ const ExpenseTable: FC<ExpenseTableProps> = ({
 				editingId={editingId}
 				editForm={editForm}
 				editRowRef={editRowRef}
-				handlers={adaptedHandlers}
+				handlers={handlers}
 				getRowId={(expense) => expense.id}
 				getRowClassName={getRowClassName}
 				sortData={sortExpenses}

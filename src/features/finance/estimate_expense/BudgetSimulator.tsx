@@ -3,7 +3,7 @@ import { SimulatedExpense } from "@src/features/finance/type";
 import BudgetSimulatorForm from "@src/features/finance/estimate_expense/BudgetSimulatorForm";
 import BudgetSimulatorTable from "@src/features/finance/estimate_expense/BudgetSimulatorTable";
 import PaginationControls from "@src/features/finance/estimate_expense/PaginationControls";
-import useExpenseTable from "@src/lib/hooks/useExpenseTable";
+import useExpenseTable from "@src/features/finance/hooks/useExpenseTable";
 import { ConfirmationModal } from "@src/components/shared/dialog/ConfirmModal";
 
 interface BudgetSimulatorProps {
@@ -23,7 +23,7 @@ const BudgetSimulator: React.FC<BudgetSimulatorProps> = ({
 		onEdit: () => {},
 		onDelete: (id: string) => {
 			setSimulatedExpenses((prev) =>
-				prev.filter((item) => item.id !== id)
+				prev.filter((item) => item.id !== id),
 			);
 		},
 	});

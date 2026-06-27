@@ -11,15 +11,29 @@
 
 	--gradient-accent2-light: 237 24 24;
 	--gradient-accent2-dark: 190 30 44;
-
-	--tooltip-bg: rgba(255, 255, 255, 0.95);
-	--tooltip-text: #374151;
-	--tooltip-label: #6b7280;
-
-	--cursor-fill: rgba(0, 0, 0, 0.1);
 }
 
 @custom-variant dark (&.dark, .dark &);
+
+/* Plain runtime CSS variables -- meant to be reassigned per .dark,
+   NOT Tailwind design tokens, so they don't belong in @theme. */
+:root {
+	--tooltip-bg: rgba(255, 255, 255, 0.95);
+	--tooltip-text: #374151;
+	--tooltip-label: #6b7280;
+	--cursor-fill: rgba(0, 0, 0, 0.1);
+	--brush-bg: rgb(249, 250, 251);
+	--brush-border: rgb(107 114 128 / 0.5);
+}
+
+.dark {
+	--tooltip-bg: rgba(31, 41, 55, 0.95);
+	--tooltip-text: #e5e7eb;
+	--tooltip-label: #9ca3af;
+	--cursor-fill: rgba(255, 255, 255, 0.1);
+	--brush-bg: rgb(255 255 255 / 0.06);
+	--brush-border: rgb(255 255 255 / 0.2);
+}
 
 @import "../src/styles/base.css";
 @import "../src/styles/components.css";

@@ -8,7 +8,7 @@ const selectInitialBalance = (state: RootState) => state.finance.currentBalance;
 export const selectExpensesForSelectedDate = createSelector(
 	[selectExpenses, selectSelectedDate],
 	(expenses, selectedDate) =>
-		expenses.filter((expense) => expense.date === selectedDate)
+		expenses.filter((expense) => expense.date === selectedDate),
 );
 
 export const selectSelectedDateTotal = createSelector(
@@ -16,7 +16,7 @@ export const selectSelectedDateTotal = createSelector(
 	(expenses) =>
 		expenses
 			.filter((expense) => expense.type !== "Cr") // Exclude credits
-			.reduce((total, expense) => total + expense.amount, 0)
+			.reduce((total, expense) => total + expense.amount, 0),
 );
 
 export const selectSelectedDateCredits = createSelector(
@@ -24,7 +24,7 @@ export const selectSelectedDateCredits = createSelector(
 	(expenses) =>
 		expenses
 			.filter((expense) => expense.type === "Cr")
-			.reduce((total, expense) => total + expense.amount, 0)
+			.reduce((total, expense) => total + expense.amount, 0),
 );
 
 export const selectTotalAllCredits = createSelector(
@@ -32,7 +32,7 @@ export const selectTotalAllCredits = createSelector(
 	(expenses) =>
 		expenses
 			.filter((expense) => expense.type === "Cr")
-			.reduce((total, expense) => total + expense.amount, 0)
+			.reduce((total, expense) => total + expense.amount, 0),
 );
 
 export const selectTotalAllExpenses = createSelector(
@@ -40,13 +40,13 @@ export const selectTotalAllExpenses = createSelector(
 	(expenses) =>
 		expenses
 			.filter((expense) => expense.type !== "Cr")
-			.reduce((total, expense) => total + expense.amount, 0)
+			.reduce((total, expense) => total + expense.amount, 0),
 );
 
 export const selectCalculatedBalance = createSelector(
 	[selectInitialBalance, selectTotalAllCredits, selectTotalAllExpenses],
 	(initialBalance, totalCredits, totalExpenses) =>
-		initialBalance + totalCredits - totalExpenses
+		initialBalance + totalCredits - totalExpenses,
 );
 
 export const selectFilteredExpensesForSelectedDate = createSelector(
@@ -57,17 +57,30 @@ export const selectFilteredExpensesForSelectedDate = createSelector(
 	(expenses, groupFilter) => {
 		if (!groupFilter || groupFilter === "All") return expenses;
 		return expenses.filter((expense) => expense.group === groupFilter);
-	}
+	},
 );
 
+/**
+ * Distinct, non-"Salary" group names actually present in expenses,
+ * for building filter dropdowns. Guards against non-string or blank
+ * `group` values (e.g. from an unvalidated JSON import, or an
+ * orphaned reference left behind after a group was deleted via
+ * GroupManager's removeGroup) so a filter dropdown never renders a
+ * blank/undefined option.
+ */
 export const selectExpenseGroups = createSelector(
 	[selectExpenses],
 	(expenses) => {
 		const groups = new Set(
 			expenses
-				.filter((expense) => expense.group !== "Salary") // Exclude Salary group from filters
 				.map((expense) => expense.group)
+				.filter(
+					(group): group is string =>
+						typeof group === "string" &&
+						group.trim().length > 0 &&
+						group !== "Salary",
+				),
 		);
 		return Array.from(groups).sort();
-	}
+	},
 );
