@@ -13,6 +13,7 @@ import { Expense } from "@src/features/finance/type";
 import { useBalanceTrendData } from "@src/features/finance/hooks/useBalanceTrendData";
 import { createChangeOnlyDot } from "@src/features/finance/expense_graph/ChangeOnlyDot";
 import BalanceTrendTooltip from "@src/features/finance/expense_graph/BalanceTrendTooltip";
+import BalanceTrendRangeFilter from "@src/features/finance/expense_graph/BalanceTrendRangeFilter";
 import ThemedBrush from "@src/features/finance/expense_graph/ThemedBrush";
 
 interface BalanceTrendChartProps {
@@ -20,7 +21,7 @@ interface BalanceTrendChartProps {
 	initialBalance: number;
 }
 
-const VISIBLE_DAY_COUNT = 45;
+const VISIBLE_DAY_COUNT = 30;
 
 const formatCurrency = (val: number) => val.toLocaleString();
 const formatDate = (dateStr: string) => new Date(dateStr).toLocaleDateString();
@@ -35,7 +36,7 @@ const BalanceTrendChart: React.FC<BalanceTrendChartProps> = ({
 		setRange,
 		lineColor,
 		yDomain,
-		changeDateTicks,
+		dateAxisTicks,
 		significantDates,
 	} = useBalanceTrendData(expenses, initialBalance, VISIBLE_DAY_COUNT);
 
@@ -51,6 +52,11 @@ const BalanceTrendChart: React.FC<BalanceTrendChartProps> = ({
 					<TrendingUp className="w-5 h-5" />
 					Balance Trend (Start: {formatCurrency(initialBalance)})
 				</h4>
+				<BalanceTrendRangeFilter
+					balanceData={balanceData}
+					range={range}
+					onRangeChange={setRange}
+				/>
 			</div>
 
 			<ResponsiveContainer width="100%" height={430}>
@@ -58,7 +64,7 @@ const BalanceTrendChart: React.FC<BalanceTrendChartProps> = ({
 					<XAxis
 						dataKey="date"
 						tickFormatter={formatDate}
-						ticks={changeDateTicks}
+						ticks={dateAxisTicks}
 						minTickGap={24}
 					/>
 					<YAxis

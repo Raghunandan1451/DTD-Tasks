@@ -2,8 +2,9 @@ import { useMemo } from "react";
 import { Expense } from "@src/features/finance/type";
 import { buildBalanceTrendForAllTime } from "@src/features/finance/lib/balanceTrend";
 import { computePaddedDomain } from "@src/features/finance/lib/chartDomain";
-import { useVisibleRange } from "@src/features/finance/hooks/useVisibleRange";
+import { useVisibleDateRange } from "@src/features/finance/hooks/useVisibleDateRange";
 import { summarizeFlatRuns } from "@src/features/finance/lib/summarizeFlatRuns";
+import { regularIntervalTicks } from "@src/features/finance/lib/regularIntervalTicks";
 
 const MIN_FLAT_RUN_TO_SUMMARIZE = 3;
 
@@ -43,10 +44,11 @@ export const useBalanceTrendData = (
 		[dailyBalanceData],
 	);
 
-	const [range, setRange] = useVisibleRange(
-		balanceData.length,
-		visibleDayCount,
-	);
+	// Defaults to the last `visibleDayCount` REAL calendar days, not the
+	// last N entries -- summarizeFlatRuns can shrink a long flat run down
+	// to 2 points, so "last N entries" of balanceData would no longer
+	// mean "last N days" once summarization kicks in.
+	const [range, setRange] = useVisibleDateRange(balanceData, visibleDayCount);
 
 	const visibleData = useMemo(
 		() => balanceData.slice(range.startIndex, range.endIndex + 1),
@@ -62,11 +64,9 @@ export const useBalanceTrendData = (
 		return computePaddedDomain([...visibleBalances, initialBalance]);
 	}, [visibleData, initialBalance]);
 
-	// Dates where the balance actually moved, plus the first/last day as
-	// range anchors. Used both to thin which X-axis dates get a tick +
-	// label, and to decide which points get a visible dot on the line --
-	// a flat no-activity stretch doesn't need a label or a dot for every
-	// single day, just the days where something changed.
+	// Dots render on dates the balance actually changed, plus the
+	// first/last day -- separate from X-axis tick LABELS below, which
+	// now use a fixed ~6-day interval instead.
 	const significantDates = useMemo(() => {
 		const changedDates = balanceData
 			.filter((point) => point.netChange !== 0 || point.summarizedRange)
@@ -81,13 +81,12 @@ export const useBalanceTrendData = (
 		return dates;
 	}, [balanceData]);
 
-	const changeDateTicks = useMemo(
-		// Recharts expects ticks in the same order as the data.
-		() =>
-			balanceData
-				.map((point) => point.date)
-				.filter((date) => significantDates.has(date)),
-		[balanceData, significantDates],
+	// Ticks at a regular ~6-day interval rather than only at change
+	// points, computed over the VISIBLE window so they adapt when the
+	// user zooms via the brush or a date-range preset.
+	const dateAxisTicks = useMemo(
+		() => regularIntervalTicks(visibleData),
+		[visibleData],
 	);
 
 	return {
@@ -96,7 +95,7 @@ export const useBalanceTrendData = (
 		setRange,
 		lineColor,
 		yDomain,
-		changeDateTicks,
+		dateAxisTicks,
 		significantDates,
 	};
 };
