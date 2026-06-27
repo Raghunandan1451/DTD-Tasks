@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useMemo, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { RootState } from "@src/lib/store/store";
 import { addExpenseToSelectedDate } from "@src/lib/store/slices/expensesSlice";
@@ -7,6 +7,7 @@ import { createExpenseFormFields, ExpenseFormData } from "./ExpenseFormConfig";
 import { FormHandlers } from "@src/lib/types/form";
 import { useFormEnterNavigation } from "@src/lib/hooks/useFormEnterNavigation";
 import { useResetAndRefocus } from "@src/lib/hooks/useResetAndRefocus";
+import { filterSelectableGroups } from "@src/features/finance/lib/groupFilters";
 
 const BLANK_FORM: ExpenseFormData = {
 	name: "",
@@ -18,11 +19,18 @@ const BLANK_FORM: ExpenseFormData = {
 };
 
 const ExpenseEntryForm: React.FC = () => {
+	// Filtered the same way selectExpenseGroups filters for the Edit
+	// picker (excludes "Salary" and any blank/invalid entries), so both
+	// pickers show the same list and help pick the correct group.
 	const groups = useSelector((state: RootState) => state.finance.groups);
+	const selectableGroups = useMemo(
+		() => filterSelectableGroups(groups),
+		[groups],
+	);
 	const dispatch = useDispatch();
 
 	const [form, setForm] = useState<ExpenseFormData>(BLANK_FORM);
-	const fields = createExpenseFormFields(groups);
+	const fields = createExpenseFormFields(selectableGroups);
 	const handleKeyDown = useFormEnterNavigation();
 	const { firstFieldRef, resetAndRefocus } = useResetAndRefocus(BLANK_FORM);
 

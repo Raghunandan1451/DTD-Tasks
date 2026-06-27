@@ -9,22 +9,27 @@ import { ShowNotificationFn } from "@src/lib/types/downloadHandlerTypes";
  */
 export const useConfirmedDelete = (
 	onDelete: (id: string) => void,
-	showNotification?: ShowNotificationFn
+	showNotification?: ShowNotificationFn,
 ) => {
 	const confirmationModal = useConfirmationModal();
 
-	const handleDelete = async (id: string, name: string, isProtected?: boolean) => {
+	const handleDelete = async (
+		id: string,
+		name: string,
+		isProtected?: boolean,
+	) => {
 		if (isProtected) {
 			showNotification?.(
 				"Auto-generated salary entries cannot be deleted. Update your salary settings instead.",
-				"info"
+				"info",
 			);
 			return;
 		}
 
 		const confirmed = await confirmationModal.confirm({
 			title: "Delete Expense",
-			message: "Are you sure you want to delete this expense? This action cannot be undone.",
+			message:
+				"Are you sure you want to delete this expense? This action cannot be undone.",
 			itemName: name,
 			confirmText: "Delete",
 			cancelText: "Cancel",
@@ -38,7 +43,8 @@ export const useConfirmedDelete = (
 	const handleRemoveItem = async (id: string, name?: string) => {
 		const confirmed = await confirmationModal.confirm({
 			title: "Remove Item",
-			message: "Are you sure you want to remove this item from the simulation?",
+			message:
+				"Are you sure you want to remove this item from the simulation?",
 			itemName: name,
 			confirmText: "Remove",
 			cancelText: "Cancel",

@@ -1,33 +1,21 @@
 import React from "react";
-import EditDeletePair from "@src/features/markdown/EditDeletePair";
 import { File } from "lucide-react";
 
 interface FileItemProps {
 	path: string;
 	isSelected: boolean;
 	onSelect: () => void;
-	onDelete: () => void;
-	onRename: () => void;
 }
 
-const FileItem: React.FC<FileItemProps> = ({
-	path,
-	isSelected,
-	onSelect,
-	onDelete,
-	onRename,
-}) => (
+const FileItem: React.FC<FileItemProps> = ({ path, isSelected, onSelect }) => (
 	<div
-		className={`flex justify-between cursor-pointer group p-1 rounded-md ${
-			isSelected ? "active" : ""
+		className={`flex items-center cursor-pointer p-1 rounded-md hover:bg-white/10 dark:hover:bg-black/10 transition ${
+			isSelected ? "bg-blue-500/20 dark:bg-blue-400/20" : ""
 		}`}
 		onClick={onSelect}
 	>
-		<span className="flex items-center ">
-			<File size={16} className="text-blue-500" />
-			<span className="ml-2 truncate">{path}</span>
-		</span>
-		<EditDeletePair onDelete={onDelete} onEdit={onRename} />
+		<File size={16} className="text-blue-500 shrink-0" />
+		<span className="ml-2">{path}</span>
 	</div>
 );
 

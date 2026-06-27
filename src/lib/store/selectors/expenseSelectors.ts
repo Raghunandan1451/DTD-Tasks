@@ -1,5 +1,6 @@
 import { createSelector } from "@reduxjs/toolkit";
 import { RootState } from "@src/lib/store/store";
+import { isSelectableGroup } from "@src/features/finance/lib/groupFilters";
 
 const selectExpenses = (state: RootState) => state.expenses.expenses;
 const selectSelectedDate = (state: RootState) => state.expenses.selectedDate;
@@ -15,7 +16,7 @@ export const selectSelectedDateTotal = createSelector(
 	[selectExpensesForSelectedDate],
 	(expenses) =>
 		expenses
-			.filter((expense) => expense.type !== "Cr") // Exclude credits
+			.filter((expense) => expense.type !== "Cr")
 			.reduce((total, expense) => total + expense.amount, 0),
 );
 
@@ -72,14 +73,7 @@ export const selectExpenseGroups = createSelector(
 	[selectExpenses],
 	(expenses) => {
 		const groups = new Set(
-			expenses
-				.map((expense) => expense.group)
-				.filter(
-					(group): group is string =>
-						typeof group === "string" &&
-						group.trim().length > 0 &&
-						group !== "Salary",
-				),
+			expenses.map((expense) => expense.group).filter(isSelectableGroup),
 		);
 		return Array.from(groups).sort();
 	},
