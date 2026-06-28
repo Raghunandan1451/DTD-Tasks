@@ -31,7 +31,7 @@ export const CATEGORY_CHART_COLORS_RGB: ReadonlyArray<
 export const getCategoryColor = (index: number): string =>
 	CATEGORY_CHART_COLORS[index % CATEGORY_CHART_COLORS.length];
 
-export const getCategoryColorRgb = (
-	index: number
-): readonly [number, number, number] =>
-	CATEGORY_CHART_COLORS_RGB[index % CATEGORY_CHART_COLORS_RGB.length];
+// export const getCategoryColorRgb = (
+// 	index: number
+// ): readonly [number, number, number] =>
+// 	CATEGORY_CHART_COLORS_RGB[index % CATEGORY_CHART_COLORS_RGB.length];

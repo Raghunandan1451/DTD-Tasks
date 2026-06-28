@@ -1,4 +1,8 @@
-import { formatISODate, parseISODate, generateDateRange } from "@src/lib/utils/isoDate";
+import {
+	formatISODate,
+	parseISODate,
+	generateDateRange,
+} from "@src/lib/utils/isoDate";
 import type { ExpenseEntry, Expense } from "@src/features/finance/type";
 
 export interface BalanceTrendPoint {
@@ -9,7 +13,10 @@ export interface BalanceTrendPoint {
 	netChange: number;
 }
 
-type TrendableExpense = Pick<Expense | ExpenseEntry, "date" | "amount" | "type">;
+type TrendableExpense = Pick<
+	Expense | ExpenseEntry,
+	"date" | "amount" | "type"
+>;
 
 /**
  * Builds a daily balance-trend series for a given date range.
@@ -17,10 +24,10 @@ type TrendableExpense = Pick<Expense | ExpenseEntry, "date" | "amount" | "type">
  * drawBalanceTrendChart, which previously reimplemented this
  * independently as buildBalanceTrendData.
  */
-export const buildBalanceTrend = (
+const buildBalanceTrend = (
 	expenses: TrendableExpense[],
 	initialBalance: number,
-	range: { start: Date; end: Date }
+	range: { start: Date; end: Date },
 ): BalanceTrendPoint[] => {
 	const dateRange = generateDateRange(range.start, range.end);
 
@@ -63,7 +70,7 @@ export const buildBalanceTrend = (
 export const buildBalanceTrendForAllTime = (
 	expenses: TrendableExpense[],
 	initialBalance: number,
-	fallbackDayCount: number
+	fallbackDayCount: number,
 ): BalanceTrendPoint[] => {
 	const today = new Date();
 	const dates = expenses.map((expense) => parseISODate(expense.date));
@@ -74,12 +81,14 @@ export const buildBalanceTrendForAllTime = (
 			: new Date(
 					today.getFullYear(),
 					today.getMonth(),
-					today.getDate() - (fallbackDayCount - 1)
+					today.getDate() - (fallbackDayCount - 1),
 				);
 
 	const end =
 		dates.length > 0
-			? new Date(Math.max(today.getTime(), ...dates.map((d) => d.getTime())))
+			? new Date(
+					Math.max(today.getTime(), ...dates.map((d) => d.getTime())),
+				)
 			: today;
 
 	return buildBalanceTrend(expenses, initialBalance, { start, end });

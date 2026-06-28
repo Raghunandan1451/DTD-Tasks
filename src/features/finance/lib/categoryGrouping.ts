@@ -14,7 +14,7 @@ const FALLBACK_GROUP_LABEL = "Uncategorized";
  * the type system says `group: string`. This is the single place that
  * normalizes that risk so every chart doesn't need its own guard.
  */
-export const normalizeGroupLabel = (value: unknown): string => {
+const normalizeGroupLabel = (value: unknown): string => {
 	if (typeof value === "string" && value.trim().length > 0) {
 		return value;
 	}
