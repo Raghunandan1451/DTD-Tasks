@@ -18,17 +18,6 @@
 		"noFallthroughCasesInSwitch": true,
 		"noEmit": true
 	},
-	"include": [
-		"src",
-		"tests",
-		"vite.config.ts",
-		"dev_only/ShoppingPage.test.tsx",
-		"dev_only/TodoPage.test.tsx",
-		"dev_only/useHandleTableKeyEvent.test.ts",
-		"dev_only/useTableContext.test.tsx",
-		"dev_only/useTableContext.ts",
-		"dev_only/useHandleTableKeyEvent.ts",
-		"dev_only/TableContext.tsx"
-	],
+	"include": ["src", "tests", "vite.config.ts"],
 	"exclude": ["dist", "node_modules"]
 }

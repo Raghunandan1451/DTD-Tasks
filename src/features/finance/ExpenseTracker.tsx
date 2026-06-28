@@ -1,31 +1,24 @@
-import { useDispatch, useSelector } from "react-redux";
-import { AppDispatch, RootState } from "@src/lib/store/store";
+import { useSelector } from "react-redux";
+import { RootState } from "@src/lib/store/store";
 import { useEffect, useState } from "react";
 import ExpenseSummary from "@src/features/finance/ExpenseSummary";
 import TitleWithButton from "@src/components/shared/title_with_button/TitleWithButton";
 import { ExpenseSections } from "@src/features/finance/ExpenseSections";
 import { ViewMode, SimulatedExpense } from "@src/features/finance/type";
-import { hydrateFinance } from "@src/lib/store/thunks/financeThunk";
-import { hydrateExpenses } from "@src/lib/store/thunks/expenseThunk";
 import {
 	selectExpensesForSelectedDate,
 	selectCalculatedBalance,
 	selectTotalAllExpenses,
 } from "@src/lib/store/selectors/expenseSelectors";
-import { addSalaryForMissedMonths } from "@src/lib/utils/finance";
-import {
-	handleFinanceExport,
-	handleJSONUpload,
-} from "@src/lib/utils/downloadHandler";
-import { setFinanceState } from "@src/lib/store/slices/financeSlice";
-import { setExpenses } from "@src/lib/store/slices/expensesSlice";
+import { handleFinanceExport } from "@src/lib/utils/downloadHandler";
 import useNotifications from "@src/lib/hooks/useNotifications";
 import NotificationCenter from "@src/components/ui/toast/NotificationCenter";
-import type { FinanceState } from "@src/features/finance/type";
-import type { ExpensesData } from "@src/lib/types/downloadHandlerTypes";
+import type { FinanceExportReportScope } from "@src/lib/utils/downloadHandler";
+import { useFinanceHydration } from "@src/features/finance/hooks/useFinanceHydration";
+import { useFinanceUploadHandler } from "@src/features/finance/hooks/useFinanceUploadHandler";
+import DownloadOptionsModal from "@src/features/finance/components/DownloadOptionsModal";
 
 const ExpenseTracker = () => {
-	const dispatch = useDispatch<AppDispatch>();
 	const { notifications, showNotification } = useNotifications();
 
 	const finance = useSelector((state: RootState) => state.finance);
@@ -43,27 +36,17 @@ const ExpenseTracker = () => {
 	const [simulatedExpenses, setSimulatedExpenses] = useState<
 		SimulatedExpense[]
 	>([]);
+	const [showDownloadOptions, setShowDownloadOptions] = useState(false);
+	const [isExportingReports, setIsExportingReports] = useState(false);
 
 	const totalSimulatedCost = simulatedExpenses.reduce(
 		(sum, item) => sum + item.amount,
-		0
+		0,
 	);
 	const projectedBalance = calculatedBalance - totalSimulatedCost;
 
-	useEffect(() => {
-		if (!loaded) {
-			dispatch(hydrateFinance());
-		}
-		if (!expensesLoaded) {
-			dispatch(hydrateExpenses());
-		}
-	}, [dispatch, loaded, expensesLoaded]);
-
-	useEffect(() => {
-		if (loaded && expensesLoaded && salary) {
-			addSalaryForMissedMonths(salary, expenses, dispatch, finance, 6);
-		}
-	}, [loaded, expensesLoaded, salary, expenses, dispatch, finance]);
+	useFinanceHydration(finance, expenses, expensesLoaded);
+	const handleUpload = useFinanceUploadHandler(showNotification);
 
 	useEffect(() => {
 		if (loaded && salary && currentBalance) {
@@ -71,50 +54,22 @@ const ExpenseTracker = () => {
 		}
 	}, [loaded, salary, currentBalance]);
 
-	const handleDownload = () => {
-		return handleFinanceExport(
-			finance,
-			expensesState,
-			simulatedExpenses,
-			totalSimulatedCost,
-			showNotification
-		);
-	};
-
-	const handleUpload = async (file: File) => {
-		const fileName = file.name.toLowerCase();
-
-		if (fileName.includes("finance")) {
-			return handleJSONUpload<FinanceState>(
-				file,
-				(data) => {
-					dispatch(setFinanceState(data));
-					showNotification(
-						"Finance data restored successfully",
-						"success"
-					);
-				},
-				(error) => showNotification(error, "error"),
-				showNotification
+	const handleDownloadSelection = async (
+		reportScope: FinanceExportReportScope,
+	) => {
+		setIsExportingReports(true);
+		try {
+			await handleFinanceExport(
+				finance,
+				expensesState,
+				simulatedExpenses,
+				totalSimulatedCost,
+				showNotification,
+				reportScope,
 			);
-		} else if (fileName.includes("expense")) {
-			return handleJSONUpload<ExpensesData>(
-				file,
-				(data) => {
-					dispatch(setExpenses(data.expenses));
-					showNotification(
-						"Expenses data restored successfully",
-						"success"
-					);
-				},
-				(error) => showNotification(error, "error"),
-				showNotification
-			);
-		} else {
-			showNotification(
-				"Please select a finance or expense JSON file",
-				"error"
-			);
+			setShowDownloadOptions(false);
+		} finally {
+			setIsExportingReports(false);
 		}
 	};
 
@@ -123,7 +78,7 @@ const ExpenseTracker = () => {
 			<TitleWithButton
 				heading="Expense Tracker"
 				buttonText="Download"
-				onDownload={handleDownload}
+				onDownload={() => setShowDownloadOptions(true)}
 				onUpload={handleUpload}
 				showUpload={true}
 				showNotification={showNotification}
@@ -144,6 +99,13 @@ const ExpenseTracker = () => {
 				currentBalance={currentBalance}
 				showNotification={showNotification}
 			/>
+			{showDownloadOptions && (
+				<DownloadOptionsModal
+					isExporting={isExportingReports}
+					onSelect={handleDownloadSelection}
+					onCancel={() => setShowDownloadOptions(false)}
+				/>
+			)}
 			<NotificationCenter notifications={notifications} />
 		</>
 	);

@@ -18,7 +18,7 @@ interface BaseFinanceSetupProps {
 }
 
 const BaseFinanceSetup = ({ showNotification }: BaseFinanceSetupProps) => {
-	const { salary, currentBalance, loaded } = useSelector(
+	const { salary, currentBalance, loaded, manualOverride } = useSelector(
 		(state: RootState) => state.finance
 	);
 	const dispatch = useDispatch<AppDispatch>();
@@ -27,9 +27,10 @@ const BaseFinanceSetup = ({ showNotification }: BaseFinanceSetupProps) => {
 	const [balance, setBalance] = useState("");
 
 	const isBalanceAlreadySet =
-		currentBalance !== null &&
-		currentBalance !== undefined &&
-		currentBalance !== 0;
+		manualOverride ||
+		(currentBalance !== null &&
+			currentBalance !== undefined &&
+			currentBalance !== 0);
 
 	const handleSave = () => {
 		const fieldsToValidate = isBalanceAlreadySet

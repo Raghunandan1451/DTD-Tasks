@@ -2,10 +2,8 @@ import React, { useState, useMemo } from "react";
 import { useSelector, useDispatch } from "react-redux";
 import {
 	handleToggleFolder,
-	handleFileSelect,
+	handleFileToggleSelect,
 	handleCreateFile,
-	handleDeleteFile,
-	handleRenameFile,
 	sortFilesAlphabetically,
 } from "@src/lib/utils/treeUtils";
 import NotificationCenter from "@src/components/ui/toast/NotificationCenter";
@@ -13,39 +11,44 @@ import { RootState } from "@src/lib/store/store";
 
 import FileItem from "@src/features/markdown/FileItem";
 import FolderItem from "@src/features/markdown/FolderItem";
-
 import CreateFileFolder from "@src/features/markdown/CreateFileFolder";
-import EditFileFolder from "@src/features/markdown/EditFileFolder";
 import useNotifications from "@src/lib/hooks/useNotifications";
 import { File, Folder } from "@src/features/markdown/type";
+
+export interface SelectedItem {
+	fullPath: string;
+	name: string;
+	type: "file" | "folder";
+}
 
 interface TreeViewProps {
 	showInput: boolean;
 	setShowInput: (value: boolean) => void;
+	selectedItem: SelectedItem | null;
+	setSelectedItem: (item: SelectedItem | null) => void;
 }
 
-const TreeView: React.FC<TreeViewProps> = ({ showInput, setShowInput }) => {
+const TreeView: React.FC<TreeViewProps> = ({
+	showInput,
+	setShowInput,
+	selectedItem,
+	setSelectedItem,
+}) => {
 	const dispatch = useDispatch();
 	const { files, selectedFile } = useSelector(
-		(state: RootState) => state.fileManager
+		(state: RootState) => state.fileManager,
 	);
 	const [expandedFolders, setExpandedFolders] = useState<Set<string>>(
-		new Set()
+		new Set(),
 	);
 	const { notifications, showNotification } = useNotifications();
-	const [renameTarget, setRenameTarget] = useState<{
-		fullPath: string;
-		name: string;
-	} | null>(null); // Track the file/folder to rename}
-	const [renameValue, setRenameValue] = useState(""); // Value for the new name
-	const [showRenameInput, setShowRenameInput] = useState(false);
-	const [newFilePath, setNewFilePath] = useState(""); // Value for the new name
+	const [newFilePath, setNewFilePath] = useState("");
 
 	const flattenedItems = useMemo(() => {
 		const processItems = (
 			items: (File | Folder)[],
 			depth = 0,
-			parentPath = ""
+			parentPath = "",
 		): (File | Folder)[] => {
 			const sorted: (File | Folder)[] = sortFilesAlphabetically(items);
 			return sorted.flatMap((item) => {
@@ -62,71 +65,57 @@ const TreeView: React.FC<TreeViewProps> = ({ showInput, setShowInput }) => {
 		return processItems(files);
 	}, [files, expandedFolders]);
 
+	// Toggle selection for an item (file or folder). Selecting the same
+	// item again deselects it. Selecting a file also opens/closes it in
+	// the editor; selecting a folder does not expand/collapse it - the
+	// chevron handles that separately so you can select a folder without
+	// being forced to open it.
+	const handleSelect = (item: File | Folder) => {
+		const fullPath = item.fullPath ?? "";
+		const isSame = selectedItem?.fullPath === fullPath;
+
+		if (item.type === "file") {
+			handleFileToggleSelect(dispatch, fullPath, selectedFile ?? null);
+		}
+
+		setSelectedItem(
+			isSame ? null : { fullPath, name: item.path, type: item.type },
+		);
+	};
+
 	return (
-		<div className="overflow-y-auto flex-1 min-h-0 scrollbar-hide w-60">
+		<div className="overflow-x-auto overflow-y-auto flex-1 min-h-0 scrollbar-hide">
 			{flattenedItems.map((item) => (
 				<div
 					key={item.fullPath}
-					style={{ paddingLeft: `${item.depth ?? 0 * 1.5}rem` }}
+					className="whitespace-nowrap"
+					style={{ paddingLeft: `${(item.depth ?? 0) * 1.5}rem` }}
 				>
 					{item.type === "folder" ? (
 						<FolderItem
 							path={item.path}
 							isExpanded={expandedFolders.has(
-								item.fullPath ?? ""
+								item.fullPath ?? "",
 							)}
-							onToggle={() =>
+							isSelected={
+								selectedItem?.fullPath === item.fullPath
+							}
+							onToggleExpand={() =>
 								handleToggleFolder(
 									expandedFolders,
 									setExpandedFolders,
-									item.fullPath ?? ""
-								)
-							}
-							onDelete={() =>
-								handleDeleteFile(
-									dispatch,
 									item.fullPath ?? "",
-									showNotification
 								)
 							}
-							onRename={() => {
-								setRenameTarget({
-									fullPath: item.fullPath ?? "",
-									name: item.path,
-								});
-								setRenameValue(item.path);
-								setShowRenameInput(true);
-							}}
+							onSelect={() => handleSelect(item)}
 						/>
 					) : (
 						<FileItem
 							path={item.path}
-							isSelected={selectedFile === item.fullPath}
-							onSelect={() =>
-								handleFileSelect(
-									dispatch,
-									item,
-									item.fullPath
-										?.split("/")
-										.slice(0, -1)
-										.join("/")
-								)
+							isSelected={
+								selectedItem?.fullPath === item.fullPath
 							}
-							onDelete={() =>
-								handleDeleteFile(
-									dispatch,
-									item.fullPath ?? "",
-									showNotification
-								)
-							}
-							onRename={() => {
-								setRenameTarget({
-									fullPath: item.fullPath ?? "",
-									name: item.path,
-								});
-								setRenameValue(item.path);
-								setShowRenameInput(true);
-							}}
+							onSelect={() => handleSelect(item)}
 						/>
 					)}
 				</div>
@@ -142,29 +131,11 @@ const TreeView: React.FC<TreeViewProps> = ({ showInput, setShowInput }) => {
 							dispatch,
 							files,
 							showNotification,
-							newFilePath
+							newFilePath,
 						),
 						setShowInput(false),
 						setNewFilePath("")
 					)}
-				/>
-			)}
-
-			{showRenameInput && renameTarget && (
-				<EditFileFolder
-					renameValue={renameValue.replace(/\.md$/, "")}
-					setRenameValue={setRenameValue}
-					setShowRenameInput={setShowRenameInput}
-					onEdit={() => {
-						handleRenameFile(
-							dispatch,
-							renameTarget.fullPath,
-							renameValue,
-							showNotification
-						);
-						setShowRenameInput(false);
-						setRenameValue("");
-					}}
 				/>
 			)}
 

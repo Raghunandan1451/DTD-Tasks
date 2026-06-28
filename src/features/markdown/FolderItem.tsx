@@ -1,36 +1,42 @@
 import { ChevronDown, ChevronRight, Folder } from "lucide-react";
-import EditDeletePair from "@src/features/markdown/EditDeletePair";
 
 interface FolderItemProps {
 	path: string;
 	isExpanded: boolean;
-	onToggle: () => void;
-	onDelete: () => void;
-	onRename: () => void;
+	isSelected: boolean;
+	onToggleExpand: () => void;
+	onSelect: () => void;
 }
 
 const FolderItem: React.FC<FolderItemProps> = ({
 	path,
 	isExpanded,
-	onToggle,
-	onDelete,
-	onRename,
+	isSelected,
+	onToggleExpand,
+	onSelect,
 }) => {
 	return (
 		<div
-			className="flex justify-between cursor-pointer group p-1 rounded-md hover:bg-white/10 dark:hover:bg-black/10 transition"
-			onClick={onToggle}
+			className={`flex items-center cursor-pointer p-1 rounded-md hover:bg-white/10 dark:hover:bg-black/10 transition ${
+				isSelected ? "bg-blue-500/20 dark:bg-blue-400/20" : ""
+			}`}
+			onClick={onSelect}
 		>
-			<span className="flex items-center">
+			<span
+				className="flex items-center shrink-0"
+				onClick={(e) => {
+					e.stopPropagation();
+					onToggleExpand();
+				}}
+			>
 				{isExpanded ? (
 					<ChevronDown size={16} data-testid="chevron-down" />
 				) : (
 					<ChevronRight size={16} data-testid="chevron-right" />
 				)}
-				<Folder size={16} className="text-yellow-500" />
-				<span className="ml-2 truncate">{path}</span>
 			</span>
-			<EditDeletePair onDelete={onDelete} onEdit={onRename} />
+			<Folder size={16} className="text-yellow-500 shrink-0 ml-0.5" />
+			<span className="ml-2">{path}</span>
 		</div>
 	);
 };

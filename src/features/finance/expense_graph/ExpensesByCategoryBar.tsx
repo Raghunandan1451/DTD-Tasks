@@ -10,130 +10,101 @@ import {
 } from "recharts";
 import { Calendar } from "lucide-react";
 import { DateFilter, Expense } from "@src/features/finance/type";
-import Button from "@src/components/ui/button/Button";
+import {
+	groupExpensesByCategory,
+	withPercentages,
+} from "@src/features/finance/lib/categoryGrouping";
+import { getCategoryColor } from "@src/features/finance/lib/chartConstants";
+import { filterExpensesByDateRange } from "@src/features/finance/lib/dateFilters";
+import CategoryColumnTick from "@src/features/finance/expense_graph/CategoryColumnTick";
+import PercentageBarLabel from "@src/features/finance/expense_graph/PercentageBarLabel";
+import DateFilterPills from "@src/features/finance/expense_graph/DateFilterPills";
 
-const chartColors = [
-	"#3b82f6",
-	"#10b981",
-	"#f59e0b",
-	"#ef4444",
-	"#8b5cf6",
-	"#ec4899",
-	"#06b6d4",
-	"#84cc16",
-];
+const formatCurrency = (val: number) => val.toLocaleString();
+const MIN_COLUMN_WIDTH = 90;
 
 const ExpensesByCategoryBar: React.FC<{ expenses: Expense[] }> = ({
 	expenses,
 }) => {
 	const [filter, setFilter] = useState<DateFilter>("weekly");
 
-	const formatCurrency = (val: number) => val.toLocaleString();
-
 	const data = useMemo(() => {
-		const now = new Date();
-		const filtered = expenses.filter((e) => {
-			const d = new Date(e.date);
-			switch (filter) {
-				case "today": {
-					return d.toDateString() === now.toDateString();
-				}
-				case "yesterday": {
-					const y = new Date(now);
-					y.setDate(now.getDate() - 1);
-					return d.toDateString() === y.toDateString();
-				}
-				case "weekly": {
-					const weekAgo = new Date(now);
-					weekAgo.setDate(now.getDate() - 7);
-					return d >= weekAgo;
-				}
-				case "monthly": {
-					const monthAgo = new Date(now);
-					monthAgo.setMonth(now.getMonth() - 1);
-					return d >= monthAgo;
-				}
-				case "yearly": {
-					const yearAgo = new Date(now);
-					yearAgo.setFullYear(now.getFullYear() - 1);
-					return d >= yearAgo;
-				}
-				default:
-					return true;
-			}
-		});
-
-		const grouped = filtered
-			.filter((e) => e.type === "Dr")
-			.reduce((acc: Record<string, number>, e) => {
-				acc[e.group] = (acc[e.group] || 0) + e.amount;
-				return acc;
-			}, {});
-		return Object.entries(grouped).map(([group, amount]) => ({
-			group,
-			amount,
-		}));
+		const filtered = filterExpensesByDateRange(expenses, filter);
+		return withPercentages(groupExpensesByCategory(filtered));
 	}, [expenses, filter]);
 
+	// Each category needs a minimum column width to stay readable --
+	// rather than squeeze N columns into a fixed container, the chart
+	// grows wider and scrolls horizontally once there are more
+	// categories than comfortably fit.
+	const chartWidth = Math.max(data.length * MIN_COLUMN_WIDTH, 320);
+	const maxLabelLength = data.length > 6 ? 8 : 14;
+
 	return (
-		<div className="rounded-2xl p-6 backdrop-blur-xl border shadow-lg bg-white/20 dark:bg-black/20">
+		<div className="rounded-lg p-6 backdrop-blur-xl border shadow-lg bg-white/20 dark:bg-black/20">
 			<div className="flex justify-between items-center mb-4 flex-wrap gap-3">
 				<h4 className="text-lg font-semibold flex items-center gap-2 text-gray-800 dark:text-white">
 					<Calendar className="w-5 h-5" />
 					Expenses by Category
 				</h4>
-				<div className="flex gap-2 overflow-x-auto scrollbar-hide">
-					{(
-						[
-							"today",
-							"yesterday",
-							"weekly",
-							"monthly",
-							"yearly",
-						] as DateFilter[]
-					).map((opt) => (
-						<Button
-							key={opt}
-							onClick={() => setFilter(opt)}
-							className={`px-3 py-1 rounded-md text-sm whitespace-nowrap ${
-								filter === opt
-									? "bg-blue-500 text-white"
-									: "bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-200"
-							}`}
-						>
-							{opt}
-						</Button>
-					))}
-				</div>
+				<DateFilterPills value={filter} onChange={setFilter} />
 			</div>
 
-			<ResponsiveContainer width="100%" height={380}>
-				<BarChart data={data}>
-					<XAxis dataKey="group" />
-					<YAxis tickFormatter={formatCurrency} />
-					<Tooltip
-						formatter={(v: number) => formatCurrency(v)}
-						contentStyle={{
-							backgroundColor: "var(--tooltip-bg)",
-							borderRadius: "8px",
-							border: "none",
-							color: "var(--tooltip-text)",
-						}}
-						itemStyle={{ color: "var(--tooltip-text)" }}
-						labelStyle={{ color: "var(--tooltip-label)" }}
-						cursor={{ fill: "var(--cursor-fill)" }}
-					/>
-
-					<Bar dataKey="amount" radius={[4, 4, 0, 0]}>
-						{data.map((_, i) => (
-							<Cell
-								key={i}
-								fill={chartColors[i % chartColors.length]}
-							/>
-						))}
-					</Bar>
-				</BarChart>
-			</ResponsiveContainer>
+			<div className="overflow-x-auto scrollbar-hide">
+				<ResponsiveContainer
+					width="100%"
+					minWidth={chartWidth}
+					height={360}
+				>
+					<BarChart
+						data={data}
+						margin={{ top: 24, right: 12, bottom: 8, left: 8 }}
+					>
+						<XAxis
+							dataKey="group"
+							interval={0}
+							tickLine={false}
+							tick={
+								<CategoryColumnTick
+									maxLabelLength={maxLabelLength}
+								/>
+							}
+						/>
+						<YAxis tickFormatter={formatCurrency} width={64} />
+						<Tooltip
+							formatter={(v, _name, item) => {
+								const amount =
+									typeof v === "number" ? v : Number(v) || 0;
+								const percentage = item?.payload?.percentage as
+									| number
+									| undefined;
+								return [
+									`${formatCurrency(amount)}${percentage !== undefined ? ` (${percentage.toFixed(1)}%)` : ""}`,
+									"Amount",
+								];
+							}}
+							contentStyle={{
+								backgroundColor: "var(--tooltip-bg)",
+								borderRadius: "8px",
+								border: "none",
+								color: "var(--tooltip-text)",
+							}}
+							itemStyle={{ color: "var(--tooltip-text)" }}
+							labelStyle={{ color: "var(--tooltip-label)" }}
+							cursor={{ fill: "var(--cursor-fill)" }}
+						/>
+						<Bar
+							dataKey="amount"
+							radius={[4, 4, 0, 0]}
+							label={<PercentageBarLabel />}
+						>
+							{data.map((_, i) => (
+								<Cell key={i} fill={getCategoryColor(i)} />
+							))}
+						</Bar>
+					</BarChart>
+				</ResponsiveContainer>
+			</div>
 		</div>
 	);
 };

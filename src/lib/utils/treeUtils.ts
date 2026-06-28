@@ -8,7 +8,7 @@ import {
 	renameFile,
 } from "@src/lib/store/slices/markdownSlice";
 
-import { File, Folder, BaseItem } from "@src/features/markdown/type";
+import { File, Folder } from "@src/features/markdown/type";
 
 type NotificationType = "success" | "error" | "info";
 
@@ -17,7 +17,7 @@ type ShowNotificationFunc = (message: string, type: NotificationType) => void;
 export const handleToggleFolder = (
 	expandedFolders: Set<string>,
 	setExpandedFolders: (newExpanded: Set<string>) => void,
-	path: string
+	path: string,
 ): void => {
 	const newExpanded = new Set(expandedFolders);
 	if (newExpanded.has(path)) {
@@ -28,20 +28,26 @@ export const handleToggleFolder = (
 	setExpandedFolders(newExpanded);
 };
 
-export const handleFileSelect = (
+/**
+ * Toggles file selection in the tree. Selecting the currently selected
+ * file again deselects it - selectFile(null) resets selectedFile/content
+ * back to null/"" inside the reducer (it does this unconditionally
+ * before the typeof guard runs), so no separate "deselect" action or
+ * reducer change is needed.
+ */
+export const handleFileToggleSelect = (
 	dispatch: Dispatch<Action>,
-	item: BaseItem,
-	parentPath: string = ""
+	fullPath: string,
+	currentSelectedFile: string | null,
 ): void => {
-	const fullPath = [parentPath, item.path].filter(Boolean).join("/");
-	dispatch(selectFile(fullPath));
+	dispatch(selectFile(currentSelectedFile === fullPath ? null : fullPath));
 };
 
 export const handleCreateFile = (
 	dispatch: Dispatch<Action>,
 	files: (File | Folder)[],
 	showNotification: ShowNotificationFunc,
-	newFilePath: string
+	newFilePath: string,
 ): void => {
 	if (!newFilePath.trim()) {
 		showNotification("Please enter a file name", "error");
@@ -63,7 +69,7 @@ export const handleCreateFile = (
 		for (const folderName of folderPath) {
 			const folder = currentLevel.find(
 				(item): item is Folder =>
-					item.type === "folder" && item.path === folderName
+					item.type === "folder" && item.path === folderName,
 			);
 
 			if (!folder) {
@@ -78,7 +84,7 @@ export const handleCreateFile = (
 					addFolder({
 						parentPath: parentPath.join("/"),
 						folder: newFolder,
-					})
+					}),
 				);
 
 				currentLevel = newFolder.children;
@@ -90,7 +96,7 @@ export const handleCreateFile = (
 		}
 
 		const fileExists = currentLevel.some(
-			(item) => item.type === "file" && item.path === fileName
+			(item) => item.type === "file" && item.path === fileName,
 		);
 
 		if (fileExists) {
@@ -103,7 +109,7 @@ export const handleCreateFile = (
 				path: fileName,
 				content: "",
 				parentPath: parentPath.join("/"),
-			})
+			}),
 		);
 
 		showNotification("File created successfully!", "success");
@@ -116,7 +122,7 @@ export const handleCreateFile = (
 export const handleDeleteFile = (
 	dispatch: Dispatch<Action>,
 	fullPath: string,
-	showNotification: ShowNotificationFunc
+	showNotification: ShowNotificationFunc,
 ): void => {
 	if (fullPath) {
 		dispatch(deleteFile({ path: fullPath }));
@@ -128,7 +134,7 @@ export const handleRenameFile = (
 	dispatch: Dispatch<Action>,
 	path: string,
 	newName: string,
-	showNotification: ShowNotificationFunc
+	showNotification: ShowNotificationFunc,
 ): void => {
 	if (!newName) {
 		showNotification("Please enter a valid name", "error");
@@ -150,7 +156,7 @@ export const handleRenameFile = (
 
 export const findFileByPath = (
 	files: (File | Folder)[],
-	fullPath: string
+	fullPath: string,
 ): File | null => {
 	// Add error handling for invalid inputs
 	if (!fullPath || typeof fullPath !== "string") {
@@ -181,7 +187,7 @@ export const findFileByPath = (
 };
 
 export const sortFilesAlphabetically = (
-	items: (File | Folder)[]
+	items: (File | Folder)[],
 ): (File | Folder)[] => {
 	return [...items].sort((a, b) => {
 		// Folders first

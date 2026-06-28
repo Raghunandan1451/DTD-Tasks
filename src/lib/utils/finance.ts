@@ -14,11 +14,11 @@ interface FinanceFormValues {
 	day: string;
 	balance?: string;
 }
-export const validateFinanceSetup = ({
-	amount,
-	day,
-	balance,
-}: FinanceFormValues): { success: boolean; message: string } => {
+export const validateFinanceSetup = (
+	values: FinanceFormValues
+): { success: boolean; message: string } => {
+	const { amount, day, balance } = values;
+
 	if (!amount || parseFloat(amount) <= 0) {
 		return {
 			success: false,
@@ -34,7 +34,12 @@ export const validateFinanceSetup = ({
 		};
 	}
 
-	if (!balance || isNaN(parseFloat(balance))) {
+	if (
+		"balance" in values &&
+		(balance === undefined ||
+			balance.trim() === "" ||
+			Number.isNaN(Number(balance)))
+	) {
 		return { success: false, message: "Current balance is required." };
 	}
 

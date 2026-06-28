@@ -1,56 +1,44 @@
-import React, { useState, useRef } from "react";
+import React, { useMemo, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { RootState } from "@src/lib/store/store";
 import { addExpenseToSelectedDate } from "@src/lib/store/slices/expensesSlice";
 import GenericForm from "@src/components/shared/form/GenericForm";
 import { createExpenseFormFields, ExpenseFormData } from "./ExpenseFormConfig";
 import { FormHandlers } from "@src/lib/types/form";
+import { useFormEnterNavigation } from "@src/lib/hooks/useFormEnterNavigation";
+import { useResetAndRefocus } from "@src/lib/hooks/useResetAndRefocus";
+import { filterSelectableGroups } from "@src/features/finance/lib/groupFilters";
+
+const BLANK_FORM: ExpenseFormData = {
+	name: "",
+	amount: "",
+	group: "",
+	quantity: "",
+	unit: "",
+	type: "Dr",
+};
 
 const ExpenseEntryForm: React.FC = () => {
+	// Filtered the same way selectExpenseGroups filters for the Edit
+	// picker (excludes "Salary" and any blank/invalid entries), so both
+	// pickers show the same list and help pick the correct group.
 	const groups = useSelector((state: RootState) => state.finance.groups);
-	const nameInputRef = useRef<HTMLInputElement | null>(null);
+	const selectableGroups = useMemo(
+		() => filterSelectableGroups(groups),
+		[groups],
+	);
 	const dispatch = useDispatch();
 
-	const [form, setForm] = useState<ExpenseFormData>({
-		name: "",
-		amount: "",
-		group: "",
-		quantity: "",
-		unit: "",
-		type: "Dr",
-	});
-
-	const fields = createExpenseFormFields(groups);
+	const [form, setForm] = useState<ExpenseFormData>(BLANK_FORM);
+	const fields = createExpenseFormFields(selectableGroups);
+	const handleKeyDown = useFormEnterNavigation();
+	const { firstFieldRef, resetAndRefocus } = useResetAndRefocus(BLANK_FORM);
 
 	const handleChange = (
 		field: keyof ExpenseFormData,
-		value: string | number
+		value: string | number,
 	) => {
 		setForm((prev) => ({ ...prev, [field]: value }));
-	};
-
-	const handleKeyDown = (e: React.KeyboardEvent<HTMLElement>) => {
-		if (e.key === "Enter") {
-			e.preventDefault();
-			const container = e.currentTarget.closest("form");
-			if (!container) return;
-
-			const inputs = Array.from(
-				container.querySelectorAll<HTMLElement>("input, select, button")
-			).filter((el) => !el.hasAttribute("disabled"));
-
-			const idx = inputs.indexOf(e.currentTarget as HTMLElement);
-
-			if (e.shiftKey) {
-				if (idx > 0) {
-					inputs[idx - 1].focus();
-				}
-			} else {
-				if (idx > -1 && idx < inputs.length - 1) {
-					inputs[idx + 1].focus();
-				}
-			}
-		}
 	};
 
 	const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
@@ -66,24 +54,10 @@ const ExpenseEntryForm: React.FC = () => {
 				quantity: parseInt(quantity, 10),
 				unit,
 				type,
-			})
+			}),
 		);
 
-		setForm({
-			name: "",
-			amount: "",
-			group: "",
-			quantity: "",
-			unit: "",
-			type: "Dr",
-		});
-
-		// Auto-focus the first field after successful submission
-		setTimeout(() => {
-			if (nameInputRef.current) {
-				nameInputRef.current.focus();
-			}
-		}, 50);
+		resetAndRefocus(setForm);
 	};
 
 	const handlers: FormHandlers<ExpenseFormData> = {
@@ -98,7 +72,7 @@ const ExpenseEntryForm: React.FC = () => {
 			formData={form}
 			handlers={handlers}
 			submitButton={{ text: "Add" }}
-			firstFieldRef={(el) => (nameInputRef.current = el)}
+			firstFieldRef={(el) => (firstFieldRef.current = el)}
 			autoFocusFirst
 		/>
 	);
