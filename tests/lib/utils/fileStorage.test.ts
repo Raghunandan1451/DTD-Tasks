@@ -20,12 +20,11 @@ vi.mock("idb", () => ({
 }));
 vi.mock("file-saver", () => ({ saveAs: saveAsMock }));
 
-import {
-	chooseOutputDirectory,
-} from "@src/lib/utils/fileStorage/outputDirectory";
+import { chooseOutputDirectory } from "@src/lib/utils/fileStorage/outputDirectory";
 import { getAppData, saveAppData } from "@src/lib/utils/fileStorage/appData";
 import {
 	readMarkdownTree,
+	readOutputBlobs,
 	readOutputFile,
 	readOutputFiles,
 	writeOutputFile,
@@ -196,6 +195,26 @@ describe("file storage", () => {
 		).rejects.toThrow("Invalid output file path.");
 	});
 
+	it("uses OPFS for output when the folder picker is unavailable", async () => {
+		const opfsRoot = new MemoryDirectoryHandle("OPFS");
+		Reflect.deleteProperty(window, "showDirectoryPicker");
+		Object.defineProperty(navigator, "storage", {
+			configurable: true,
+			value: { getDirectory: async () => opfsRoot },
+		});
+
+		await writeOutputFile("Markdown/notes.pdf", "generated PDF content");
+		const files = await readOutputBlobs("Markdown", (name) =>
+			name.endsWith(".pdf"),
+		);
+
+		expect(files).toHaveLength(1);
+		expect(files[0].path).toBe("Markdown/notes.pdf");
+		await expect(files[0].content.text()).resolves.toBe(
+			"generated PDF content",
+		);
+	});
+
 	it("migrates existing mobile data to OPFS and uses it as primary storage", async () => {
 		const legacyData = { events: [{ id: "legacy" }] };
 		const updatedData = { events: [{ id: "updated" }] };
@@ -235,6 +254,7 @@ describe("file storage", () => {
 				},
 			},
 		});
+		Reflect.deleteProperty(window, "showDirectoryPicker");
 
 		await writeOutputFile(
 			"Expenses/2026/10/expenses-2026-10.json",
@@ -252,6 +272,6 @@ describe("file storage", () => {
 				content: '{"month":"2026-10"}',
 			},
 		]);
-		expect(saveAsMock).toHaveBeenCalledTimes(1);
+		expect(saveAsMock).not.toHaveBeenCalled();
 	});
 });

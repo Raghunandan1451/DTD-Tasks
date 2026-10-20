@@ -29,6 +29,8 @@ import {
 	writeOutputFile,
 } from "@src/lib/utils/fileStorage/outputFiles";
 import { hasOutputDirectory } from "@src/lib/utils/fileStorage/outputDirectory";
+import { supportsOutputDirectoryPicker } from "@src/lib/utils/fileStorage/outputDirectory";
+import { downloadOutputArchive } from "@src/lib/utils/fileStorage/outputTransfer";
 
 const isFinanceState = (value: unknown): value is FinanceState => {
 	if (typeof value !== "object" || value === null) return false;
@@ -92,6 +94,53 @@ const ExpenseTracker = () => {
 	const [outputHydrated, setOutputHydrated] = useState(false);
 	const budgetCategories =
 		finance.budgetCategories ?? DEFAULT_BUDGET_CATEGORIES;
+
+	const handleDownload = async () => {
+		const downloaded = await downloadOutputArchive(
+			["Expenses"],
+			"Expenses.zip",
+		);
+		showNotification(
+			downloaded
+				? "Expense JSON and PDF files are ready to download."
+				: "No expense files are available to download yet.",
+			downloaded ? "success" : "info",
+		);
+	};
+	const handleUpload = async (file: File) => {
+		const parsed: unknown = JSON.parse(await file.text());
+		if (typeof parsed !== "object" || parsed === null) {
+			throw new Error("Choose a valid finance JSON file.");
+		}
+		const data = parsed as Record<string, unknown>;
+		const importedFinance = "finance" in data
+			? data.finance
+			: isFinanceState(parsed)
+				? parsed
+				: null;
+		const importedExpenses = "expenses" in data ? data.expenses : null;
+		if (
+			importedFinance === null &&
+			importedExpenses === null
+		) {
+			throw new Error("Choose a valid finance JSON file.");
+		}
+		if (importedFinance !== null) {
+			if (!isFinanceState(importedFinance)) {
+				throw new Error("Finance JSON contains invalid settings.");
+			}
+			dispatch(setFinanceState(importedFinance));
+		}
+		if (importedExpenses !== null) {
+			if (
+				!Array.isArray(importedExpenses) ||
+				!importedExpenses.every(isExpenseEntry)
+			) {
+				throw new Error("Finance JSON contains invalid expenses.");
+			}
+			dispatch(setExpenses(importedExpenses));
+		}
+	};
 
 	useFinanceHydration(finance, expenses, expensesLoaded);
 
@@ -294,7 +343,18 @@ const ExpenseTracker = () => {
 
 	return (
 		<>
-			<TitleWithButton heading="Expense Tracker" />
+			<TitleWithButton
+				heading="Expense Tracker"
+				onDownload={
+					supportsOutputDirectoryPicker()
+						? undefined
+						: handleDownload
+				}
+				buttonText="Download"
+				onUpload={handleUpload}
+				showUpload={!supportsOutputDirectoryPicker()}
+				showNotification={showNotification}
+			/>
 			<ExpenseSummary
 				balance={calculatedBalance}
 				expenses={totalAllExpenses}

@@ -60,4 +60,22 @@ describe("TitleWithButton Component", () => {
 
 		expect(mockOnRefresh).toHaveBeenCalledTimes(1);
 	});
+
+	it("renders JSON upload controls only when enabled", () => {
+		const { container } = render(
+			<TitleWithButton
+				heading="Event Tracker"
+				onUpload={vi.fn()}
+				showUpload
+			/>,
+		);
+
+		expect(
+			screen.getByRole("button", { name: "Upload JSON" }),
+		).toBeInTheDocument();
+		expect(container.querySelector('input[type="file"]')).toHaveAttribute(
+			"accept",
+			".json",
+		);
+	});
 });

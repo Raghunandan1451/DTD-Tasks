@@ -1,12 +1,12 @@
-import { saveAs } from "file-saver";
 import type { File, Folder } from "@src/features/markdown/type";
-import { deleteFromIndexedDB, getFromIndexedDB, saveToIndexedDB } from "./database";
-import { getOutputRootDirectory } from "./outputDirectory";
 import {
-	isMobileStorage,
-	readBlobAsText,
-	readTextFile,
-} from "./appData";
+	deleteFromIndexedDB,
+	getFromIndexedDB,
+	saveToIndexedDB,
+} from "./database";
+import { getOutputRootDirectory } from "./outputDirectory";
+import { readBlobAsText, readTextFile } from "./appData";
+import { usesOPFSOutputStorage } from "./outputDirectory";
 
 const OUTPUT_FALLBACK_PREFIX = "output_file:";
 const OUTPUT_FALLBACK_MANIFEST_KEY = "output_file_manifest";
@@ -49,7 +49,6 @@ const saveFallbackOutputFile = async (
 
 	await saveToIndexedDB(fileKey, content);
 	await updateFallbackManifest(relativePath, true);
-	saveAs(content, relativePath.split(/[\\/]/).pop() ?? "download");
 	return true;
 };
 
@@ -121,12 +120,11 @@ export const writeOutputFile = async (
 			throw error;
 		}
 
-		if (isMobileStorage()) {
+		if (usesOPFSOutputStorage()) {
 			await removeFallbackOutputFile(relativePath);
-			saveAs(nextBlob, fileName);
 		}
 	} catch (error) {
-		if (!isMobileStorage()) throw error;
+		if (!usesOPFSOutputStorage()) throw error;
 		console.error(
 			"OPFS output write failed; using IndexedDB fallback:",
 			error,
@@ -141,9 +139,9 @@ export const readOutputFile = async (
 	try {
 		const { directory, fileName } = await getFileDirectory(relativePath);
 		const content = await readTextFile(directory, fileName);
-		if (content !== null || !isMobileStorage()) return content;
+		if (content !== null || !usesOPFSOutputStorage()) return content;
 	} catch (error) {
-		if (!isMobileStorage()) throw error;
+		if (!usesOPFSOutputStorage()) throw error;
 		console.error(
 			"OPFS output read failed; checking IndexedDB fallback:",
 			error,
@@ -160,7 +158,7 @@ export const deleteOutputFile = async (relativePath: string): Promise<void> => {
 		const { directory, fileName } = await getFileDirectory(relativePath);
 		await directory.removeEntry(fileName);
 	} catch (error) {
-		if (!isMobileStorage()) {
+		if (!usesOPFSOutputStorage()) {
 			if (
 				error instanceof DOMException &&
 				error.name === "NotFoundError"
@@ -178,7 +176,7 @@ export const deleteOutputFile = async (relativePath: string): Promise<void> => {
 			);
 		}
 	}
-	if (isMobileStorage()) {
+	if (usesOPFSOutputStorage()) {
 		await removeFallbackOutputFile(relativePath);
 	}
 };
@@ -220,7 +218,7 @@ export const readOutputFiles = async (
 
 		storedFiles = await scan(directory, segments.join("/"));
 	} catch (error) {
-		if (!isMobileStorage()) {
+		if (!usesOPFSOutputStorage()) {
 			if (
 				error instanceof DOMException &&
 				error.name === "NotFoundError"
@@ -239,7 +237,7 @@ export const readOutputFiles = async (
 		}
 	}
 
-	if (!isMobileStorage()) return storedFiles;
+	if (!usesOPFSOutputStorage()) return storedFiles;
 	const manifest = await getFallbackManifest();
 	const storedPaths = new Set(storedFiles.map(({ path }) => path));
 	for (const path of manifest) {
@@ -290,4 +288,70 @@ export const readMarkdownTree = async (): Promise<(File | Folder)[]> => {
 		});
 	}
 	return tree;
+};
+
+export const readOutputBlobs = async (
+	relativeDirectory: string,
+	isMatchingFile: (name: string) => boolean,
+): Promise<Array<{ path: string; content: Blob }>> => {
+	const segments = validatePathSegments(relativeDirectory);
+	const storedFiles: Array<{ path: string; content: Blob }> = [];
+	try {
+		let directory = await getOutputRootDirectory();
+		for (const segment of segments) {
+			directory = await directory.getDirectoryHandle(segment);
+		}
+		for await (const [name, handle] of (
+			directory as IterableDirectoryHandle
+		).entries()) {
+			const path = `${segments.join("/")}/${name}`;
+			if (handle.kind === "directory") {
+				const childFiles = await readOutputBlobs(path, isMatchingFile);
+				storedFiles.push(...childFiles);
+			} else if (isMatchingFile(name)) {
+				storedFiles.push({
+					path,
+					content: await (handle as FileSystemFileHandle).getFile(),
+				});
+			}
+		}
+	} catch (error) {
+		if (!usesOPFSOutputStorage()) {
+			if (
+				error instanceof DOMException &&
+				error.name === "NotFoundError"
+			) {
+				return [];
+			}
+			throw error;
+		}
+		if (
+			!(error instanceof DOMException && error.name === "NotFoundError")
+		) {
+			console.error(
+				"OPFS output scan failed; using IndexedDB fallback:",
+				error,
+			);
+		}
+	}
+
+	if (!usesOPFSOutputStorage()) return storedFiles;
+	const manifest = await getFallbackManifest();
+	const storedPaths = new Set(storedFiles.map(({ path }) => path));
+	for (const path of manifest) {
+		const normalizedPath = path.replace(/\\/g, "/");
+		if (
+			!normalizedPath.startsWith(`${segments.join("/")}/`) ||
+			!isMatchingFile(normalizedPath.split("/").pop() ?? "") ||
+			storedPaths.has(normalizedPath)
+		) {
+			continue;
+		}
+		const fallback = await getFromIndexedDB<Blob>(
+			`${OUTPUT_FALLBACK_PREFIX}${normalizedPath}`,
+		);
+		if (fallback)
+			storedFiles.push({ path: normalizedPath, content: fallback });
+	}
+	return storedFiles;
 };

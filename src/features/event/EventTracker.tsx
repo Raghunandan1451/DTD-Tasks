@@ -33,6 +33,10 @@ import {
 	writeOutputFile,
 } from "@src/lib/utils/fileStorage/outputFiles";
 import { hasOutputDirectory } from "@src/lib/utils/fileStorage/outputDirectory";
+import {
+	supportsOutputDirectoryPicker,
+} from "@src/lib/utils/fileStorage/outputDirectory";
+import { downloadOutputArchive } from "@src/lib/utils/fileStorage/outputTransfer";
 
 const isEvent = (value: unknown): value is Event =>
 	typeof value === "object" &&
@@ -227,6 +231,49 @@ const EventTracker = () => {
 	]);
 
 	const dateRange = getDateRange(currentDate, viewMode);
+	const handleDownload = async () => {
+		const downloaded = await downloadOutputArchive(
+			["Events"],
+			"Events.zip",
+		);
+		showNotification(
+			downloaded
+				? "Event JSON and image files are ready to download."
+				: "No event files are available to download yet.",
+			downloaded ? "success" : "info",
+		);
+	};
+	const handleUpload = async (file: File) => {
+		const parsed: unknown = JSON.parse(await file.text());
+		if (
+			typeof parsed !== "object" ||
+			parsed === null ||
+			!("events" in parsed) ||
+			!Array.isArray(parsed.events) ||
+			!parsed.events.every(isEvent)
+		) {
+			throw new Error("Choose a valid calendar JSON file.");
+		}
+		dispatch(
+			setCalendarState({
+				events: parsed.events,
+				currentDate:
+					"currentDate" in parsed &&
+					typeof parsed.currentDate === "string"
+						? parsed.currentDate
+						: calendarState.currentDate,
+				viewMode:
+					"viewMode" in parsed &&
+					(parsed.viewMode === "daily" ||
+						parsed.viewMode === "weekly")
+						? parsed.viewMode
+						: calendarState.viewMode,
+				selectedEvent: null,
+				showAddForm: false,
+			}),
+		);
+	};
+
 	useEffect(() => {
 		const handleResize = () => {
 			const mobile = window.innerWidth < 768;
@@ -246,7 +293,18 @@ const EventTracker = () => {
 
 	return (
 		<>
-			<TitleWithButton heading="Event Tracker" />
+			<TitleWithButton
+				heading="Event Tracker"
+				onDownload={
+					supportsOutputDirectoryPicker()
+						? undefined
+						: handleDownload
+				}
+				buttonText="Download"
+				onUpload={handleUpload}
+				showUpload={!supportsOutputDirectoryPicker()}
+				showNotification={showNotification}
+			/>
 
 			<ControlBar
 				dateLabel={dateRange.label}

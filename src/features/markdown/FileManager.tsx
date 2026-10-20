@@ -18,6 +18,9 @@ import {
 	writeOutputFile,
 } from "@src/lib/utils/fileStorage/outputFiles";
 import { hasOutputDirectory } from "@src/lib/utils/fileStorage/outputDirectory";
+import { supportsOutputDirectoryPicker } from "@src/lib/utils/fileStorage/outputDirectory";
+import { downloadOutputArchive } from "@src/lib/utils/fileStorage/outputTransfer";
+import { parseMarkdownJSON } from "@src/features/markdown/lib/markdownTransfer";
 
 const getMarkdownPaths = (
 	items: (File | Folder)[],
@@ -25,7 +28,8 @@ const getMarkdownPaths = (
 ): Array<{ path: string; file: File }> =>
 	items.flatMap((item) => {
 		const path = parentPath ? `${parentPath}/${item.path}` : item.path;
-		if (item.type === "folder") return getMarkdownPaths(item.children, path);
+		if (item.type === "folder")
+			return getMarkdownPaths(item.children, path);
 		if (!item.path.toLowerCase().endsWith(".md")) return [];
 		return [{ path, file: item }];
 	});
@@ -33,7 +37,7 @@ const getMarkdownPaths = (
 const FileManager: React.FC = () => {
 	const dispatch = useDispatch<AppDispatch>();
 	const { files, loaded, selectedFile } = useSelector(
-		(state: RootState) => state.fileManager
+		(state: RootState) => state.fileManager,
 	);
 	const { notifications, showNotification } = useNotifications();
 	const [outputLoaded, setOutputLoaded] = useState(false);
@@ -60,9 +64,7 @@ const FileManager: React.FC = () => {
 			const savedPaths = new Set<string>();
 			for (const { path } of getMarkdownPaths(savedFiles)) {
 				savedPaths.add(`Markdown/${path}`);
-				savedPaths.add(
-					`Markdown/${path.replace(/\.md$/i, ".pdf")}`,
-				);
+				savedPaths.add(`Markdown/${path.replace(/\.md$/i, ".pdf")}`);
 			}
 			previousOutputPaths.current = savedPaths;
 
@@ -137,6 +139,36 @@ const FileManager: React.FC = () => {
 		}
 	};
 
+	const handleDownload = async () => {
+		await writeOutputFile(
+			"Markdown/file-manager-data.json",
+			JSON.stringify({ files }, null, 2),
+		);
+		const downloaded = await downloadOutputArchive(
+			["Markdown"],
+			"Markdown.zip",
+		);
+		showNotification(
+			downloaded
+				? "Markdown files are ready to download."
+				: "No Markdown files are available to download yet.",
+			downloaded ? "success" : "info",
+		);
+	};
+
+	const handleUpload = async (file: globalThis.File) => {
+		const parsed: unknown = JSON.parse(await file.text());
+		const importedFiles = parseMarkdownJSON(parsed);
+		dispatch(
+			setFileState({
+				files: importedFiles,
+				selectedFile: null,
+				content: "",
+				loaded: true,
+			}),
+		);
+	};
+
 	useEffect(() => {
 		if (!loaded || !outputLoaded) return;
 		const timeout = window.setTimeout(() => {
@@ -165,6 +197,10 @@ const FileManager: React.FC = () => {
 						),
 					]);
 				}
+				await writeOutputFile(
+					"Markdown/file-manager-data.json",
+					JSON.stringify({ files }, null, 2),
+				);
 				previousOutputPaths.current = currentPaths;
 			}).catch((error: unknown) => {
 				console.error("Failed to save Markdown files:", error);
@@ -184,8 +220,23 @@ const FileManager: React.FC = () => {
 			<div className="h-full text-white flex flex-col">
 				<TitleWithButton
 					heading="Markdown Editor"
-					onRefresh={refreshMarkdownFiles}
-					isRefreshing={isRefreshing}
+					onDownload={
+						supportsOutputDirectoryPicker()
+							? undefined
+							: handleDownload
+					}
+					buttonText="Download"
+					onUpload={handleUpload}
+					showUpload={!supportsOutputDirectoryPicker()}
+					onRefresh={
+						supportsOutputDirectoryPicker()
+							? refreshMarkdownFiles
+							: undefined
+					}
+					isRefreshing={
+						supportsOutputDirectoryPicker() && isRefreshing
+					}
+					showNotification={showNotification}
 				/>
 				<div className="flex flex-1 min-h-0 border border-white/20 dark:border-white/10">
 					<FileTree />

@@ -1,9 +1,18 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { handleQRExport } from "@src/lib/utils/downloadHandler/qrExport";
 import { saveAs } from "file-saver";
+import { writeOutputFile } from "@src/lib/utils/fileStorage/outputFiles";
 
 vi.mock("file-saver", () => ({
 	saveAs: vi.fn(),
+}));
+
+vi.mock("@src/lib/utils/fileStorage/outputDirectory", () => ({
+	usesOPFSOutputStorage: () => true,
+}));
+
+vi.mock("@src/lib/utils/fileStorage/outputFiles", () => ({
+	writeOutputFile: vi.fn(async () => undefined),
 }));
 
 describe("handleQRExport", () => {
@@ -34,6 +43,10 @@ describe("handleQRExport", () => {
 		expect(saveAs).toHaveBeenCalledWith(
 			image,
 			expect.stringMatching(/^qr-code_.+\.png$/),
+		);
+		expect(writeOutputFile).toHaveBeenCalledWith(
+			"QR/qr-code.png",
+			image,
 		);
 		expect(showNotification).toHaveBeenCalledWith(
 			"QR Code downloaded successfully",

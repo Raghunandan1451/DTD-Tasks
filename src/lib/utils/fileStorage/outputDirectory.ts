@@ -1,9 +1,5 @@
 import { getFromIndexedDB, saveToIndexedDB } from "./database";
-import {
-	APP_DIRECTORY_NAME,
-	getOPFSDirectory,
-	isMobileStorage,
-} from "./appData";
+import { APP_DIRECTORY_NAME, getOPFSDirectory } from "./appData";
 
 const OUTPUT_DIRECTORY_KEY = "selected_output_directory";
 
@@ -37,17 +33,27 @@ export const chooseOutputDirectory = async (): Promise<string> => {
 			mode: "readwrite",
 		});
 		if (permission !== "granted") {
-			throw new Error("Write access to the selected folder was not granted.");
+			throw new Error(
+				"Write access to the selected folder was not granted.",
+			);
 		}
 	}
 	await saveToIndexedDB(OUTPUT_DIRECTORY_KEY, directory);
 	return directory.name;
 };
 
+export const supportsOutputDirectoryPicker = (): boolean =>
+	typeof window !== "undefined" && "showDirectoryPicker" in window;
+
+export const usesOPFSOutputStorage = (): boolean =>
+	!supportsOutputDirectoryPicker();
+
 export const getSelectedOutputDirectoryName = async (): Promise<
 	string | null
 > => {
-	if (isMobileStorage()) return "On-device storage (OPFS)";
+	if (usesOPFSOutputStorage()) {
+		return "On-device storage";
+	}
 	const directory =
 		await getFromIndexedDB<WritableDirectoryHandle>(OUTPUT_DIRECTORY_KEY);
 	if (!directory) return null;
@@ -55,7 +61,7 @@ export const getSelectedOutputDirectoryName = async (): Promise<
 };
 
 export const hasOutputDirectory = async (): Promise<boolean> => {
-	if (isMobileStorage()) return true;
+	if (usesOPFSOutputStorage()) return true;
 	return Boolean(
 		await getFromIndexedDB<WritableDirectoryHandle>(OUTPUT_DIRECTORY_KEY),
 	);
@@ -63,15 +69,21 @@ export const hasOutputDirectory = async (): Promise<boolean> => {
 
 export const getOutputRootDirectory =
 	async (): Promise<FileSystemDirectoryHandle> => {
-		if (isMobileStorage()) {
+		if (usesOPFSOutputStorage()) {
 			const root = await getOPFSDirectory();
-			return root.getDirectoryHandle(APP_DIRECTORY_NAME, { create: true });
+			return root.getDirectoryHandle(APP_DIRECTORY_NAME, {
+				create: true,
+			});
 		}
 
 		const selected =
-			await getFromIndexedDB<WritableDirectoryHandle>(OUTPUT_DIRECTORY_KEY);
+			await getFromIndexedDB<WritableDirectoryHandle>(
+				OUTPUT_DIRECTORY_KEY,
+			);
 		if (!selected) {
-			throw new Error("Select an output folder from the Home screen first.");
+			throw new Error(
+				"Select an output folder from the Home screen first.",
+			);
 		}
 		if (selected.queryPermission) {
 			const permission = await selected.queryPermission({
@@ -83,5 +95,7 @@ export const getOutputRootDirectory =
 				);
 			}
 		}
-		return selected.getDirectoryHandle(APP_DIRECTORY_NAME, { create: true });
+		return selected.getDirectoryHandle(APP_DIRECTORY_NAME, {
+			create: true,
+		});
 	};
