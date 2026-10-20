@@ -83,9 +83,6 @@ const markdownSlice = createSlice({
 		setFileState: (_, action: PayloadAction<FileState>) => {
 			return { ...action.payload, loaded: true };
 		},
-		markFileManagerLoaded: (state) => {
-			state.loaded = true;
-		},
 		addFolder: (
 			state,
 			action: PayloadAction<{ parentPath: string; folder: Folder }>
@@ -280,7 +277,6 @@ const markdownSlice = createSlice({
 
 export const {
 	setFileState,
-	markFileManagerLoaded,
 	addFolder,
 	addFile,
 	updateFileContent,

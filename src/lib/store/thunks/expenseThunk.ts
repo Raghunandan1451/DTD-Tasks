@@ -1,6 +1,6 @@
 // src/lib/store/thunks/expenseThunk.ts
 import { createAsyncThunk } from "@reduxjs/toolkit";
-import { getAppData } from "@src/lib/utils/fileStorage/appData";
+import { getFromIndexedDB } from "@src/lib/utils/persistMiddleware";
 import { ExpenseEntry } from "@src/features/finance/type";
 import { setExpenses } from "@src/lib/store/slices/expensesSlice";
 import { RootState } from "@src/lib/store/store";
@@ -19,7 +19,7 @@ export const hydrateExpenses = createAsyncThunk(
 
 			if (state.expenses.loaded) return;
 
-			const data = await getAppData<ExpensesPersistedState>(
+			const data = await getFromIndexedDB<ExpensesPersistedState>(
 				"redux_expenses_data"
 			);
 
