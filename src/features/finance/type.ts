@@ -8,15 +8,13 @@ export type TimeUnit =
 	| "weekly"
 	| "daily";
 
-export type ViewMode = "list" | "graph" | "salary" | "estimate";
+export type ViewMode = "list" | "graph" | "salary" | "budget";
 export type BalanceChangeType = "salary" | "expense" | "manual";
 
 export interface BalanceSectionProps {
 	balance?: number; // Total current balance
 	expenses?: number; // Total expenses
 	remaining?: number; // Optional - you mentioned you might not need this
-	simulatedRemaining?: number; // Optional simulated balance
-	viewMode?: ViewMode;
 }
 
 export interface SummaryItemProps {
@@ -25,7 +23,22 @@ export interface SummaryItemProps {
 }
 
 export interface ExpenseSummaryProps extends BalanceSectionProps {
+	viewMode: ViewMode;
 	onChangeView: (mode: ViewMode) => void;
+}
+
+export interface BudgetCategory {
+	id: string;
+	name: string;
+	percentage: number;
+	expenses?: BudgetExpense[];
+}
+
+export interface BudgetExpense {
+	id: string;
+	name: string;
+	amount: number;
+	expenseId?: string;
 }
 
 /**
@@ -49,6 +62,8 @@ export interface FinanceState {
 	currentBalance: number;
 	manualOverride: boolean;
 	groups: string[];
+	budgetCategories?: BudgetCategory[];
+	budgetPlansByMonth?: Record<string, BudgetCategory[]>;
 	loaded: boolean;
 	lastUpdatedDate?: string;
 }

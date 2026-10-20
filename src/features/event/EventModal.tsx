@@ -38,6 +38,7 @@ const EventModal: React.FC<EventModalProps> = ({
 		handleDateTimeChange,
 		handleTitleChange,
 		handleContentChange,
+		handleRepeatChange,
 		confirmationModal,
 	} = useEventModal({
 		event,
@@ -72,6 +73,7 @@ const EventModal: React.FC<EventModalProps> = ({
 							actualBaseEvent={actualBaseEvent}
 							onTagChange={handleTagChange}
 							onDateTimeChange={handleDateTimeChange}
+							onRepeatChange={handleRepeatChange}
 						/>
 
 						<ContentSection

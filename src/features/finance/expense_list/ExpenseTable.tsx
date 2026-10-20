@@ -4,7 +4,7 @@ import useExpenseTable from "@src/features/finance/hooks/useExpenseTable";
 import GenericTable from "@src/components/shared/table/GenericTable";
 import { createExpenseColumns } from "@src/features/finance/expense_list/ExpenseTableConfig";
 import { ConfirmationModal } from "@src/components/shared/dialog/ConfirmModal";
-import { ShowNotificationFn } from "@src/lib/types/downloadHandlerTypes";
+import type { ShowNotificationFn } from "@src/lib/types/notification";
 
 interface ExpenseTableProps {
 	expenses: ExpenseEntry[];

@@ -23,19 +23,12 @@ describe("TableContext", () => {
 	it("provides context value to descendants", () => {
 		// Create a dummy value conforming to TableContextType.
 		const dummyValue: TableContextType = {
-			handleCellDataChange: (
-				_uniqueId: string,
-				_columnKey: string,
-				_newValue: string
-			) => {},
+			handleCellDataChange: () => {},
 			activeCell: { row: 1, col: 2 },
 			setActiveCell: () => {},
 			inputRefs: { current: {} },
 			cellRef: { current: null },
-			showNotification: (
-				_message: string,
-				_type: "success" | "error" | "info"
-			) => {},
+			showNotification: () => {},
 		};
 
 		render(

@@ -405,20 +405,26 @@ export function updateEventFormData(
 export function applyDefaultRepeatLimit(event: Event): Event {
 	if (event.repeatType && event.repeatType !== "none") {
 		if (!event.repeatLimit || event.repeatLimit === 0) {
-			switch (event.repeatType) {
-				case "daily":
-					event.repeatLimit = 90;
-					break;
-				case "weekly":
-					event.repeatLimit = 13;
-					break;
-				case "monthly":
-					event.repeatLimit = 3;
-					break;
-			}
+			event.repeatLimit = getDefaultRepeatLimit(event.repeatType);
 		}
 	}
 	return event;
+}
+
+export function getDefaultRepeatLimit(
+	repeatType: Event["repeatType"],
+): number {
+	switch (repeatType) {
+		case "daily":
+			return 90;
+		case "weekly":
+			return 13;
+		case "monthly":
+			return 3;
+		case "none":
+		default:
+			return 0;
+	}
 }
 
 export const navigateDate = (

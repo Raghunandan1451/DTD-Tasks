@@ -2,41 +2,46 @@
 import { FC, lazy } from "react";
 import {
 	ExpenseEntry,
-	SimulatedExpense,
+	BudgetCategory,
 	ViewMode,
 } from "@src/features/finance/type";
 import { Suspense } from "react";
 import { Loader } from "lucide-react";
 
 import SalaryForm from "@src/features/finance/base_setup/FinanceSetup";
-import { ShowNotificationFn } from "@src/lib/types/downloadHandlerTypes";
+import type { ShowNotificationFn } from "@src/lib/types/notification";
 const ExpenseList = lazy(
 	() => import("@src/features/finance/expense_list/ExpenseList")
 );
 const ExpenseGraphs = lazy(
 	() => import("@src/features/finance/expense_graph/ExpenseGraphs")
 );
-const Estimator = lazy(
-	() => import("@src/features/finance/estimate_expense/BudgetSimulator")
+const BudgetPlanner = lazy(
+	() => import("@src/features/finance/budget_planning/BudgetPlanner")
 );
 
 export const ExpenseSections: FC<{
 	viewMode: ViewMode;
 	allExpenses: ExpenseEntry[];
 	datedExpenses: ExpenseEntry[];
-	simulatedExpenses: SimulatedExpense[];
-	setSimulatedExpenses: React.Dispatch<
-		React.SetStateAction<SimulatedExpense[]>
-	>;
+	budgetCategories: BudgetCategory[];
+	budgetPlansByMonth?: Record<string, BudgetCategory[]>;
+	onBudgetPlanChange: (
+		month: string,
+		categories: BudgetCategory[],
+	) => void;
 	currentBalance?: number;
+	monthlyIncome?: number;
 	showNotification?: ShowNotificationFn;
 }> = ({
 	viewMode,
 	allExpenses = [],
 	datedExpenses = [],
-	simulatedExpenses,
-	setSimulatedExpenses,
+	budgetCategories,
+	budgetPlansByMonth,
+	onBudgetPlanChange,
 	currentBalance,
+	monthlyIncome = 0,
 	showNotification,
 }) => {
 	return (
@@ -65,13 +70,16 @@ export const ExpenseSections: FC<{
 
 			{viewMode === "salary" && <SalaryForm />}
 
-			{viewMode === "estimate" && (
+			{viewMode === "budget" && (
 				<Suspense
 					fallback={<Loader className="animate-spin text-gray-500" />}
 				>
-					<Estimator
-						setSimulatedExpenses={setSimulatedExpenses}
-						simulatedExpenses={simulatedExpenses}
+					<BudgetPlanner
+						monthlyIncome={monthlyIncome}
+						legacyCategories={budgetCategories}
+						plansByMonth={budgetPlansByMonth}
+						onPlanChange={onBudgetPlanChange}
+						expenses={allExpenses}
 					/>
 				</Suspense>
 			)}

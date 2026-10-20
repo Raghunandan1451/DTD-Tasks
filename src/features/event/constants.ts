@@ -1,4 +1,5 @@
 import { ValidationRules } from "@src/features/event/type";
+import { getMinimumEventDate } from "@src/features/event/lib/dateUtils";
 
 export const TAGS = [
 	{ name: "Personal", color: "#10b981" },
@@ -22,10 +23,13 @@ export const EVENT_VALIDATION_RULES: ValidationRules = {
 		{ minLength: 2, message: "Title must be at least 2 characters" },
 		{ maxLength: 100, message: "Title cannot exceed 100 characters" },
 	],
-	content: [
-		{ required: true, message: "Event content is required" },
-		{ minLength: 10, message: "Content must be at least 10 characters" },
+	startDate: [
+		{ required: true, message: "Start date is required" },
+		{
+			custom: (value) =>
+				typeof value === "string" && value >= getMinimumEventDate(),
+			message: "Events can only be added up to one month in the past",
+		},
 	],
-	startDate: [{ required: true, message: "Start date is required" }],
 	endDate: [{ required: true, message: "End date is required" }],
 };

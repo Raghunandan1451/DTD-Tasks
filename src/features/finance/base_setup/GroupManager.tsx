@@ -5,7 +5,7 @@ import { RootState } from "@src/lib/store/store";
 import Input from "@src/components/ui/input/Input";
 import Button from "@src/components/ui/button/Button";
 import { Trash2 } from "lucide-react";
-import { ShowNotificationFn } from "@src/lib/types/downloadHandlerTypes";
+import type { ShowNotificationFn } from "@src/lib/types/notification";
 
 const GroupManager = ({
 	showNotification,

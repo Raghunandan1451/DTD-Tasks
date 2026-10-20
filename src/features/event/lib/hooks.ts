@@ -7,10 +7,13 @@ import {
 	ValidationRules,
 } from "@src/features/event/type";
 import { TAGS, REPEAT_OPTIONS } from "@src/features/event/constants";
-import { validateForm, getBaseEventId } from "@src/features/event/lib/utils";
+import {
+	validateForm,
+	getBaseEventId,
+	getDefaultRepeatLimit,
+} from "@src/features/event/lib/utils";
 import { useConfirmationModal } from "@src/lib/hooks/useConfirmDialog";
-
-const todayISO = new Date().toISOString().split("T")[0];
+import { getMinimumEventDate } from "@src/features/event/lib/dateUtils";
 
 export const useFormConfig = () => {
 	const formFields: FormField[] = useMemo(
@@ -59,7 +62,6 @@ export const useFormConfig = () => {
 				type: "number",
 				key: "repeatLimit",
 				min: "1",
-				max: "52",
 				span: 1,
 				row: 1,
 				disabled: (formData: EventFormData) =>
@@ -72,7 +74,7 @@ export const useFormConfig = () => {
 				type: "date",
 				key: "startDate",
 				iconName: "calendar",
-				min: todayISO,
+				min: getMinimumEventDate(),
 				span: 1,
 				row: 2,
 			},
@@ -241,6 +243,28 @@ export const useEventModal = ({
 		});
 	};
 
+	const handleRepeatChange = (
+		field: "repeatType" | "repeatLimit",
+		value: string | number,
+	) => {
+		setEditData((previous) => {
+			if (field === "repeatType") {
+				const repeatType = value as EventFormData["repeatType"];
+				const repeatLimit =
+					repeatType === "none"
+						? 0
+						: previous.repeatType === "none" ||
+							  previous.repeatLimit <= 0
+							? getDefaultRepeatLimit(repeatType)
+							: previous.repeatLimit;
+
+				return { ...previous, repeatType, repeatLimit };
+			}
+
+			return { ...previous, repeatLimit: Number(value) || 0 };
+		});
+	};
+
 	return {
 		isEditing,
 		editData,
@@ -258,6 +282,7 @@ export const useEventModal = ({
 		handleDateTimeChange,
 		handleTitleChange,
 		handleContentChange,
+		handleRepeatChange,
 	};
 };
 

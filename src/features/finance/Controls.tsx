@@ -8,7 +8,7 @@ import { ControlsProps, ViewMode } from "@src/features/finance/type";
 const views: { key: ViewMode; label: string }[] = [
 	{ key: "salary", label: "Salary & Recurring" },
 	{ key: "list", label: "Expenses" },
-	{ key: "estimate", label: "Estimator" },
+	{ key: "budget", label: "Budget Planning" },
 	{ key: "graph", label: "Graphs" },
 ];
 

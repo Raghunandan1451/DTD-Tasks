@@ -44,4 +44,20 @@ describe("TitleWithButton Component", () => {
 		expect(mockOnDownload).toHaveBeenCalledTimes(1);
 		expect(mockOnDownload).toHaveBeenCalledWith("Report");
 	});
+
+	it("calls onRefresh when the refresh button is clicked", () => {
+		const mockOnRefresh = vi.fn();
+		render(
+			<TitleWithButton
+				heading="Markdown Editor"
+				onRefresh={mockOnRefresh}
+			/>
+		);
+
+		fireEvent.click(
+			screen.getByRole("button", { name: "Refresh Markdown files" })
+		);
+
+		expect(mockOnRefresh).toHaveBeenCalledTimes(1);
+	});
 });
