@@ -1,12 +1,12 @@
 import { createAsyncThunk } from "@reduxjs/toolkit";
 import { CalendarState } from "@src/features/event/type";
-import { getFromIndexedDB } from "@src/lib/utils/persistMiddleware";
+import { getAppData } from "@src/lib/utils/fileStorage/appData";
 import { setCalendarState } from "@src/lib/store/slices/calendarSlice";
 
 export const hydrateCalendar = createAsyncThunk(
 	"calendar/hydrate",
 	async (_, { dispatch }) => {
-		const data = await getFromIndexedDB<CalendarState>(
+		const data = await getAppData<CalendarState>(
 			"redux_calendar_data"
 		);
 

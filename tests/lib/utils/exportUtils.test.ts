@@ -1,144 +1,126 @@
-import { describe, it, vi, expect, beforeEach, Mock } from "vitest";
-import {
-	handleDownloadPDF,
-	handleDownloadImage,
-	handleZIPExport,
-	FileTree,
-} from "@src/lib/utils/downloadHandler";
-
-import jsPDF from "jspdf";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+import type { File, Folder } from "@src/features/markdown/type";
+import { handleMarkdownExport } from "@src/lib/utils/downloadHandler/markdownExport";
+import { handleQRExport } from "@src/lib/utils/downloadHandler/qrExport";
+import { generateIndividualFilePDF } from "@src/features/markdown/lib/enhancedPDFGenerator";
 import { saveAs } from "file-saver";
 
-vi.mock("jspdf", () => {
-	return {
-		default: vi.fn().mockImplementation(() => ({
-			setFontSize: vi.fn(),
-			text: vi.fn(),
-			rect: vi.fn(),
-			addPage: vi.fn(),
-			save: vi.fn(),
-		})),
-	};
-});
+const { zipFile, pdfFile, zipFolder, generateZip, pdfOutput } = vi.hoisted(
+	() => ({
+		zipFile: vi.fn(),
+		pdfFile: vi.fn(),
+		zipFolder: vi.fn(),
+		generateZip: vi.fn(),
+		pdfOutput: vi.fn(),
+	}),
+);
 
-vi.mock("jszip", () => {
-	return {
-		default: vi.fn().mockImplementation(() => ({
-			folder: vi.fn(),
-			file: vi.fn(),
-			generateAsync: vi
-				.fn()
-				.mockResolvedValue(
-					new Blob(["test"], { type: "application/zip" })
-				),
-		})),
-	};
-});
+vi.mock("jszip", () => ({
+	default: vi.fn(() => ({
+		file: zipFile,
+		folder: zipFolder,
+		generateAsync: generateZip,
+	})),
+}));
 
 vi.mock("file-saver", () => ({
 	saveAs: vi.fn(),
 }));
 
-describe("handleDownloadPDF", () => {
-	const mockShowNotification = vi.fn();
+vi.mock("@src/features/markdown/lib/enhancedPDFGenerator", () => ({
+	generateIndividualFilePDF: vi.fn(() => ({ output: pdfOutput })),
+}));
 
-	const data = [
-		{ uid: "1", name: "Alice", age: "25" },
-		{ uid: "2", name: "", age: "" },
-	];
-
-	const columns = [
-		{ key: "name", header: "Name", type: "string" },
-		{ key: "age", header: "Age", type: "number" },
-	];
+describe("handleQRExport", () => {
+	const showNotification = vi.fn();
 
 	beforeEach(() => {
 		vi.clearAllMocks();
 	});
 
-	it("should show error if all rows are empty", () => {
-		handleDownloadPDF(
-			[{ uid: "", name: "", age: "" }],
-			columns,
-			"Test Title",
-			mockShowNotification
+	it("notifies when there is no QR canvas", async () => {
+		await handleQRExport(null, showNotification);
+
+		expect(showNotification).toHaveBeenCalledWith(
+			"QR Code not generated yet",
+			"error",
 		);
-		expect(mockShowNotification).toHaveBeenCalledWith(
-			"No non-empty rows available to download.",
-			"error"
-		);
+		expect(saveAs).not.toHaveBeenCalled();
 	});
 
-	it("should generate and save PDF when data is valid", () => {
-		handleDownloadPDF(data, columns, "Test Title", mockShowNotification);
-		expect(jsPDF).toHaveBeenCalled();
-		const mockInstance = (jsPDF as unknown as Mock).mock.results[0].value;
-		expect(mockInstance.save).toHaveBeenCalledWith("Test Title.pdf");
-	});
-});
-
-describe("handleDownloadImage", () => {
-	const mockShowNotification = vi.fn();
-
-	it("should show error if no QR data", () => {
-		handleDownloadImage("", null, mockShowNotification);
-		expect(mockShowNotification).toHaveBeenCalledWith(
-			"Please generate a QR code before downloading!",
-			"error"
-		);
-	});
-
-	it("should trigger image download if QR data and canvas are present", () => {
-		const mockCanvas = {
-			toDataURL: vi
-				.fn()
-				.mockReturnValue("data:image/png;base64,someimage"),
+	it("saves the canvas PNG", async () => {
+		const image = new Blob(["qr image"], { type: "image/png" });
+		const canvas = {
+			toBlob: vi.fn((callback: BlobCallback) => callback(image)),
 		} as unknown as HTMLCanvasElement;
 
-		const clickSpy = vi
-			.spyOn(document, "createElement")
-			.mockImplementation(() => {
-				return {
-					click: vi.fn(),
-					set href(value: string) {},
-					set download(value: string) {},
-				} as unknown as HTMLAnchorElement;
-			});
+		await handleQRExport(canvas, showNotification);
 
-		handleDownloadImage("some data", mockCanvas, mockShowNotification);
-		expect(clickSpy).toHaveBeenCalledWith("a");
+		expect(saveAs).toHaveBeenCalledWith(
+			image,
+			expect.stringMatching(/^qr-code_.+\.png$/),
+		);
+		expect(showNotification).toHaveBeenCalledWith(
+			"QR Code downloaded successfully",
+			"success",
+		);
 	});
 });
 
-describe("handleZIPExport", () => {
-	const mockShowNotification = vi.fn();
+describe("handleMarkdownExport", () => {
+	const showNotification = vi.fn();
+	const pdfDirectory = { file: pdfFile };
 
 	beforeEach(() => {
 		vi.clearAllMocks();
+		zipFolder.mockReturnValue(pdfDirectory);
+		generateZip.mockResolvedValue(new Blob(["archive"]));
+		pdfOutput.mockReturnValue("pdf-buffer");
 	});
 
-	it("should show error if no files provided", async () => {
-		await handleZIPExport([], mockShowNotification);
-		expect(mockShowNotification).toHaveBeenCalledWith(
-			"No Files created",
-			"error"
+	it("notifies when there are no Markdown files", async () => {
+		await handleMarkdownExport([], showNotification);
+
+		expect(showNotification).toHaveBeenCalledWith(
+			"No files to export",
+			"error",
 		);
+		expect(saveAs).not.toHaveBeenCalled();
 	});
 
-	it("should generate and save zip when files are valid", async () => {
-		const files = [
-			{ path: "file1.txt", type: "file", content: "Hello World" },
+	it("exports Markdown files and their generated PDFs", async () => {
+		const files: (File | Folder)[] = [
 			{
-				path: "folder1",
+				path: "notes",
 				type: "folder",
 				children: [
-					{ path: "nested.txt", type: "file", content: "Nested" },
+					{ path: "meeting.md", type: "file", content: "# Meeting" },
 				],
 			},
-		] as FileTree[];
+		];
 
-		const result = await handleZIPExport(files, mockShowNotification);
-		expect(result).toBe(true);
-		expect(saveAs).toHaveBeenCalled();
+		await handleMarkdownExport(files, showNotification);
+
+		expect(zipFolder).toHaveBeenCalledWith("PDF");
+		expect(zipFolder).toHaveBeenCalledWith("notes");
+		expect(zipFile).toHaveBeenCalledWith("notes/meeting.md", "# Meeting");
+		expect(generateIndividualFilePDF).toHaveBeenCalledWith({
+			path: "meeting.md",
+			type: "file",
+			content: "# Meeting",
+		});
+		expect(pdfFile).toHaveBeenCalledWith(
+			"notes/meeting.pdf",
+			"pdf-buffer",
+		);
+		expect(generateZip).toHaveBeenCalledWith({ type: "blob" });
+		expect(saveAs).toHaveBeenCalledWith(
+			expect.any(Blob),
+			expect.stringMatching(/^markdown-export_.+\.zip$/),
+		);
+		expect(showNotification).toHaveBeenCalledWith(
+			"Files exported successfully",
+			"success",
+		);
 	});
 });

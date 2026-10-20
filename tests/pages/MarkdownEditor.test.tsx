@@ -1,10 +1,9 @@
-import { render, screen, fireEvent } from "@testing-library/react";
+import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import { Provider } from "react-redux";
 import { configureStore } from "@reduxjs/toolkit";
 import fileManagerReducer from "@src/lib/store/slices/markdownSlice"; // example paths
 import qrReducer from "@src/lib/store/slices/qrSettingSlice";
 import MarkdownEditor from "@src/features/markdown/FileManager";
-import * as downloadHandler from "@src/lib/utils/downloadHandler";
 import { vi, describe, it, beforeEach, expect } from "vitest";
 import "@testing-library/jest-dom";
 
@@ -17,8 +16,22 @@ vi.mock("@src/lib/hooks/useNotifications", () => ({
 	}),
 }));
 
-vi.mock("@src/lib/utils/downloadHandler", () => ({
-	handleZIPExport: vi.fn(),
+const { readMarkdownTreeMock } = vi.hoisted(() => ({
+	readMarkdownTreeMock: vi.fn(
+		async (): Promise<Array<{ type: "file"; path: string; content: string }>> =>
+			[],
+	),
+}));
+
+vi.mock("@src/lib/utils/fileStorage/outputDirectory", () => ({
+	hasOutputDirectory: vi.fn(async () => true),
+}));
+
+vi.mock("@src/lib/utils/fileStorage/outputFiles", () => ({
+	readMarkdownTree: readMarkdownTreeMock,
+	queueOutputWrite: vi.fn(),
+	deleteOutputFile: vi.fn(),
+	writeOutputFile: vi.fn(),
 }));
 
 vi.mock("@src/components/ui/toast/NotificationCenter", () => ({
@@ -34,8 +47,8 @@ vi.mock("@src/features/markdown/Editor", () => ({
 }));
 
 vi.mock("@src/components/shared/title_with_button/TitleWithButton", () => ({
-	default: ({ onDownload }: { onDownload: () => void }) => (
-		<button onClick={onDownload}>Export as ZIP</button>
+	default: ({ onRefresh }: { onRefresh: () => void }) => (
+		<button onClick={onRefresh}>Refresh Markdown files</button>
 	),
 }));
 
@@ -47,12 +60,12 @@ const store = configureStore({
 	preloadedState: {
 		fileManager: {
 			files: [
-				{ type: "file", path: "README.md", content: "# Hello" },
-				{ type: "file", path: "index.md", content: "Welcome" },
+				{ type: "file" as const, path: "README.md", content: "# Hello" },
+				{ type: "file" as const, path: "index.md", content: "Welcome" },
 			],
 			selectedFile: null,
 			content: "",
-			loaded: false,
+			loaded: true,
 		},
 		qr: {
 			qrData: "",
@@ -69,34 +82,40 @@ describe("MarkdownEditor", () => {
 	});
 
 	it("renders all parts of the UI", () => {
-		// const store = createMockStore();
 		render(
 			<Provider store={store}>
 				<MarkdownEditor />
 			</Provider>,
 		);
 
-		expect(screen.getByText("Export as ZIP")).toBeInTheDocument();
+		expect(screen.getByText("Refresh Markdown files")).toBeInTheDocument();
 		expect(screen.getByText("File Tree")).toBeInTheDocument();
 		expect(screen.getByText("Editor")).toBeInTheDocument();
 		expect(screen.getByText("Notification Center")).toBeInTheDocument();
 	});
 
-	// it("calls handleZIPExport on download button click", () => {
-	// 	// const store = createMockStore();
-	// 	render(
-	// 		<Provider store={store}>
-	// 			<MarkdownEditor />
-	// 		</Provider>
-	// 	);
+	it("re-reads Markdown files when Refresh is clicked", async () => {
+		readMarkdownTreeMock
+			.mockReset()
+			.mockResolvedValueOnce([])
+			.mockResolvedValueOnce([
+				{ type: "file" as const, path: "latest.md", content: "Latest content" },
+			]);
+		render(
+			<Provider store={store}>
+				<MarkdownEditor />
+			</Provider>,
+		);
 
-	// 	fireEvent.click(screen.getByText("Export as ZIP"));
-	// 	expect(downloadHandler.handleZIPExport).toHaveBeenCalledWith(
-	// 		[
-	// 			{ name: "README.md", content: "# Hello" },
-	// 			{ name: "index.md", content: "Welcome" },
-	// 		],
-	// 		mockShowNotification
-	// 	);
-	// });
+		await waitFor(() => {
+			expect(readMarkdownTreeMock).toHaveBeenCalledTimes(1);
+		});
+		fireEvent.click(screen.getByText("Refresh Markdown files"));
+		await waitFor(() => {
+			expect(readMarkdownTreeMock).toHaveBeenCalledTimes(2);
+			expect(store.getState().fileManager.files).toEqual([
+				{ type: "file", path: "latest.md", content: "Latest content" },
+			]);
+		});
+	});
 });

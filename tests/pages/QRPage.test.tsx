@@ -3,8 +3,9 @@ import { render, screen, fireEvent } from "@testing-library/react";
 import { describe, it, expect, vi, Mock, beforeEach } from "vitest";
 import QRGenerator from "@src/features/qr_generator/QRGenerator";
 import { useDispatch, useSelector } from "react-redux";
-import * as downloadHandler from "@src/lib/utils/downloadHandler";
+import * as downloadHandler from "@src/lib/utils/downloadHandler/qrExport";
 import { updateSettings } from "@src/lib/store/slices/qrSettingSlice";
+import type { RootState } from "@src/lib/store/store";
 // import { RootState } from '@src/lib/store/store';
 
 // 🧪 Mocks
@@ -47,8 +48,8 @@ vi.mock("@src/components/ui/toast/NotificationCenter", () => ({
 	default: () => <div>Notifications</div>,
 }));
 
-vi.mock("@src/lib/utils/downloadHandler", () => ({
-	handleDownloadImage: vi.fn(),
+vi.mock("@src/lib/utils/downloadHandler/qrExport", () => ({
+	handleQRExport: vi.fn(),
 }));
 
 // Mocks for QRCodeCanvas (optional - prevents canvas rendering issues)
@@ -63,15 +64,16 @@ describe("QRGenerator", () => {
 		vi.clearAllMocks();
 
 		// ✅ Return a mock state with valid shape
-		(useSelector as unknown as Mock).mockImplementation((selector: any) =>
-			selector({
-				qr: {
-					qrData: "https://example.com",
-					bgColor: "#ffffff",
-					fgColor: "#000000",
-					selectedIcon: "",
-				},
-			}),
+		(useSelector as unknown as Mock).mockImplementation(
+			(selector: (state: RootState) => unknown) =>
+				selector({
+					qr: {
+						qrData: "https://example.com",
+						bgColor: "#ffffff",
+						fgColor: "#000000",
+						selectedIcon: "",
+					},
+				} as RootState),
 		);
 
 		(useDispatch as unknown as Mock).mockReturnValue(mockDispatch);
@@ -121,6 +123,6 @@ describe("QRGenerator", () => {
 	it('calls download handler on "Download Image"', () => {
 		render(<QRGenerator />);
 		fireEvent.click(screen.getByText("Download Image"));
-		expect(downloadHandler.handleDownloadImage).toHaveBeenCalled();
+		expect(downloadHandler.handleQRExport).toHaveBeenCalled();
 	});
 });

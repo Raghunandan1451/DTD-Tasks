@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useCallback, useState } from "react";
 import {
 	Notification,
 	NotificationHookProps,
@@ -8,17 +8,17 @@ let notificationId = 0;
 const useNotifications = (): NotificationHookProps => {
 	const [notifications, setNotifications] = useState<Notification[]>([]);
 
-	const showNotification = (
-		message: string,
-		type: "error" | "success" | "info" = "info"
-	) => {
-		const id = notificationId++;
-		setNotifications((prev) => [...prev, { id, message, type }]);
+	const showNotification = useCallback(
+		(message: string, type: "error" | "success" | "info" = "info") => {
+			const id = notificationId++;
+			setNotifications((prev) => [...prev, { id, message, type }]);
 
-		setTimeout(() => {
-			setNotifications((prev) => prev.filter((n) => n.id !== id));
-		}, 5000);
-	};
+			setTimeout(() => {
+				setNotifications((prev) => prev.filter((n) => n.id !== id));
+			}, 5000);
+		},
+		[],
+	);
 
 	return { notifications, showNotification };
 };
