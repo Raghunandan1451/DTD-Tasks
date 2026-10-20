@@ -1,10 +1,10 @@
-import { useSelector } from "react-redux";
-import { RootState } from "@src/lib/store/store";
+import { useDispatch, useSelector } from "react-redux";
+import { AppDispatch, RootState } from "@src/lib/store/store";
 import { useEffect, useState } from "react";
 import ExpenseSummary from "@src/features/finance/ExpenseSummary";
 import TitleWithButton from "@src/components/shared/title_with_button/TitleWithButton";
 import { ExpenseSections } from "@src/features/finance/ExpenseSections";
-import { ViewMode, SimulatedExpense } from "@src/features/finance/type";
+import { ViewMode } from "@src/features/finance/type";
 import {
 	selectExpensesForSelectedDate,
 	selectCalculatedBalance,
@@ -17,8 +17,11 @@ import type { FinanceExportReportScope } from "@src/lib/utils/downloadHandler";
 import { useFinanceHydration } from "@src/features/finance/hooks/useFinanceHydration";
 import { useFinanceUploadHandler } from "@src/features/finance/hooks/useFinanceUploadHandler";
 import DownloadOptionsModal from "@src/features/finance/components/DownloadOptionsModal";
+import { DEFAULT_BUDGET_CATEGORIES } from "@src/features/finance/lib/budgetCategories";
+import { setBudgetPlanForMonth } from "@src/lib/store/slices/financeSlice";
 
 const ExpenseTracker = () => {
+	const dispatch = useDispatch<AppDispatch>();
 	const { notifications, showNotification } = useNotifications();
 
 	const finance = useSelector((state: RootState) => state.finance);
@@ -33,17 +36,10 @@ const ExpenseTracker = () => {
 	const { salary, currentBalance, loaded } = finance;
 
 	const [viewMode, setViewMode] = useState<ViewMode>("salary");
-	const [simulatedExpenses, setSimulatedExpenses] = useState<
-		SimulatedExpense[]
-	>([]);
+	const budgetCategories =
+		finance.budgetCategories ?? DEFAULT_BUDGET_CATEGORIES;
 	const [showDownloadOptions, setShowDownloadOptions] = useState(false);
 	const [isExportingReports, setIsExportingReports] = useState(false);
-
-	const totalSimulatedCost = simulatedExpenses.reduce(
-		(sum, item) => sum + item.amount,
-		0,
-	);
-	const projectedBalance = calculatedBalance - totalSimulatedCost;
 
 	useFinanceHydration(finance, expenses, expensesLoaded);
 	const handleUpload = useFinanceUploadHandler(showNotification);
@@ -62,8 +58,8 @@ const ExpenseTracker = () => {
 			await handleFinanceExport(
 				finance,
 				expensesState,
-				simulatedExpenses,
-				totalSimulatedCost,
+				undefined,
+				undefined,
 				showNotification,
 				reportScope,
 			);
@@ -86,7 +82,6 @@ const ExpenseTracker = () => {
 			<ExpenseSummary
 				balance={calculatedBalance}
 				expenses={totalAllExpenses}
-				simulatedRemaining={projectedBalance}
 				viewMode={viewMode}
 				onChangeView={setViewMode}
 			/>
@@ -94,9 +89,13 @@ const ExpenseTracker = () => {
 				viewMode={viewMode}
 				allExpenses={expenses}
 				datedExpenses={selectedDateExpenses}
-				setSimulatedExpenses={setSimulatedExpenses}
-				simulatedExpenses={simulatedExpenses}
+				budgetCategories={budgetCategories}
+				budgetPlansByMonth={finance.budgetPlansByMonth}
+				onBudgetPlanChange={(month, categories) =>
+					dispatch(setBudgetPlanForMonth({ month, categories }))
+				}
 				currentBalance={currentBalance}
+				monthlyIncome={finance.salary?.amount ?? 0}
 				showNotification={showNotification}
 			/>
 			{showDownloadOptions && (

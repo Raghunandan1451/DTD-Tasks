@@ -4,8 +4,8 @@ import { useCallback } from "react";
  * Handles Enter (advance to next field) and Shift+Enter (go back to
  * previous field) within a form, skipping disabled controls.
  *
- * Extracted from BudgetSimulatorForm.tsx and ExpenseEntryForm.tsx,
- * which had this exact ~20-line handler duplicated verbatim.
+ * Extracted from ExpenseEntryForm.tsx, which previously had this
+ * handler duplicated inline.
  */
 export const useFormEnterNavigation = () => {
 	return useCallback((e: React.KeyboardEvent<HTMLElement>) => {

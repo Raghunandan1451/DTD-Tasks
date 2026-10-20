@@ -17,11 +17,8 @@ interface QuantityCellProps {
  * Quantity + unit cell for an expense row, read-only or editable.
  * Extracted from ExpenseRow.tsx.
  *
- * displayQuantity is optional on TableHandlers<T> (BudgetSimulatorTable's
- * handlers never define it), so this falls back to "-" when it's missing
- * rather than calling a possibly-undefined function -- that fallback is
- * what fixes the "Cannot invoke an object which is possibly 'undefined'"
- * error that ExpenseRow.tsx hit by calling it unconditionally.
+ * displayQuantity is optional on TableHandlers<T>, so this falls back
+ * to "-" when a handler does not define it.
  */
 const QuantityCell: FC<QuantityCellProps> = ({
 	expense,

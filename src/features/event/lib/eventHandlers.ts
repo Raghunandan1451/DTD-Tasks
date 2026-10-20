@@ -72,10 +72,6 @@ export const handleUpdateEvent = (
 				...baseEvent,
 				...updatedEvent,
 				id: numericBaseId, // Keep the base event ID
-				// Preserve recurring properties from base event
-				repeatType: baseEvent.repeatType,
-				repeatLimit: baseEvent.repeatLimit,
-				recurring: baseEvent.recurring,
 				excludedDates: baseEvent.excludedDates,
 			};
 			dispatch(updateEvent(updatedBaseEvent));

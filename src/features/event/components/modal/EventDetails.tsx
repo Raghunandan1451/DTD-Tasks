@@ -1,7 +1,7 @@
 import React from "react";
 import { Tag, Calendar, RefreshCw } from "lucide-react";
 import { Event } from "@src/features/event/type";
-import { TAGS } from "@src/features/event/constants";
+import { TAGS, REPEAT_OPTIONS } from "@src/features/event/constants";
 import Input from "@src/components/ui/input/Input";
 
 interface EventDetailsProps {
@@ -12,6 +12,10 @@ interface EventDetailsProps {
 	actualBaseEvent?: Event;
 	onTagChange: (tagName: string) => void;
 	onDateTimeChange: (field: string, value: string) => void;
+	onRepeatChange: (
+		field: "repeatType" | "repeatLimit",
+		value: string | number,
+	) => void;
 }
 
 export const EventDetails: React.FC<EventDetailsProps> = ({
@@ -22,6 +26,7 @@ export const EventDetails: React.FC<EventDetailsProps> = ({
 	actualBaseEvent,
 	onTagChange,
 	onDateTimeChange,
+	onRepeatChange,
 }) => (
 	<div className="space-y-4">
 		{/* Tag and Color */}
@@ -54,6 +59,48 @@ export const EventDetails: React.FC<EventDetailsProps> = ({
 				)}
 			</div>
 		</div>
+
+		{isEditing && (
+			<div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+				<label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+					Repeat
+					<select
+						value={editData.repeatType}
+						onChange={(e) =>
+							onRepeatChange("repeatType", e.target.value)
+						}
+						className="mt-1 w-full bg-transparent border border-gray-300 dark:border-gray-600 rounded px-2 py-1 text-sm text-gray-900 dark:text-white"
+					>
+						{REPEAT_OPTIONS.map((option) => (
+							<option
+								key={option.value}
+								value={option.value}
+								className="bg-gray-800"
+							>
+								{option.label}
+							</option>
+						))}
+					</select>
+				</label>
+				<label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+					Repeat Limit
+					<Input
+						id="repeatLimit"
+						type="number"
+						min="1"
+						value={editData.repeatLimit}
+						disabled={editData.repeatType === "none"}
+						onChange={(e) =>
+							onRepeatChange(
+								"repeatLimit",
+								parseInt(e.target.value, 10) || 0,
+							)
+						}
+						className="number-input-noappearance mt-1 bg-transparent border border-gray-300 dark:border-gray-600 rounded px-2 py-1 text-sm text-gray-900 dark:text-white disabled:opacity-50"
+					/>
+				</label>
+			</div>
+		)}
 
 		{/* Recurring Info */}
 		{!isEditing && isRecurringInstance && actualBaseEvent && (

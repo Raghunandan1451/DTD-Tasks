@@ -6,7 +6,6 @@ import BalanceSection from "@src/features/finance/BalanceSection";
 const ExpenseSummary: FC<ExpenseSummaryProps> = ({
 	balance,
 	expenses,
-	simulatedRemaining,
 	viewMode,
 	onChangeView,
 }) => {
@@ -15,8 +14,6 @@ const ExpenseSummary: FC<ExpenseSummaryProps> = ({
 			<BalanceSection
 				balance={balance}
 				expenses={expenses}
-				simulatedRemaining={simulatedRemaining}
-				viewMode={viewMode}
 			/>
 			<Controls
 				viewMode={viewMode ?? "salary"}
