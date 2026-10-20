@@ -16,6 +16,43 @@ type IterableDirectoryHandle = FileSystemDirectoryHandle & {
 	entries: () => AsyncIterableIterator<[string, FileSystemHandle]>;
 };
 
+const getFallbackManifest = async (): Promise<string[]> =>
+	(await getFromIndexedDB<string[]>(OUTPUT_FALLBACK_MANIFEST_KEY)) ?? [];
+
+const updateFallbackManifest = async (
+	relativePath: string,
+	includePath: boolean,
+): Promise<void> => {
+	const manifest = await getFallbackManifest();
+	const updatedManifest = includePath
+		? manifest.includes(relativePath)
+			? manifest
+			: [...manifest, relativePath]
+		: manifest.filter((path) => path !== relativePath);
+	await saveToIndexedDB(OUTPUT_FALLBACK_MANIFEST_KEY, updatedManifest);
+};
+
+const removeFallbackOutputFile = async (
+	relativePath: string,
+): Promise<void> => {
+	await deleteFromIndexedDB(`${OUTPUT_FALLBACK_PREFIX}${relativePath}`);
+	await updateFallbackManifest(relativePath, false);
+};
+
+const saveFallbackOutputFile = async (
+	relativePath: string,
+	content: Blob,
+): Promise<boolean> => {
+	const fileKey = `${OUTPUT_FALLBACK_PREFIX}${relativePath}`;
+	const previous = await getFromIndexedDB<Blob>(fileKey);
+	if (previous && (await sameBytes(previous, content))) return false;
+
+	await saveToIndexedDB(fileKey, content);
+	await updateFallbackManifest(relativePath, true);
+	saveAs(content, relativePath.split(/[\\/]/).pop() ?? "download");
+	return true;
+};
+
 export const queueOutputWrite = (write: () => Promise<void>): Promise<void> => {
 	outputWriteQueue = outputWriteQueue.then(write, write);
 	return outputWriteQueue;
@@ -85,17 +122,7 @@ export const writeOutputFile = async (
 		}
 
 		if (isMobileStorage()) {
-			await deleteFromIndexedDB(
-				`${OUTPUT_FALLBACK_PREFIX}${relativePath}`,
-			);
-			const manifest =
-				(await getFromIndexedDB<string[]>(
-					OUTPUT_FALLBACK_MANIFEST_KEY,
-				)) ?? [];
-			await saveToIndexedDB(
-				OUTPUT_FALLBACK_MANIFEST_KEY,
-				manifest.filter((path) => path !== relativePath),
-			);
+			await removeFallbackOutputFile(relativePath);
 			saveAs(nextBlob, fileName);
 		}
 	} catch (error) {
@@ -104,21 +131,7 @@ export const writeOutputFile = async (
 			"OPFS output write failed; using IndexedDB fallback:",
 			error,
 		);
-		const fileKey = `${OUTPUT_FALLBACK_PREFIX}${relativePath}`;
-		const previous = await getFromIndexedDB<Blob>(fileKey);
-		if (previous && (await sameBytes(previous, nextBlob))) return;
-
-		await saveToIndexedDB(fileKey, nextBlob);
-		const manifest =
-			(await getFromIndexedDB<string[]>(OUTPUT_FALLBACK_MANIFEST_KEY)) ??
-			[];
-		if (!manifest.includes(relativePath)) {
-			await saveToIndexedDB(OUTPUT_FALLBACK_MANIFEST_KEY, [
-				...manifest,
-				relativePath,
-			]);
-		}
-		saveAs(nextBlob, relativePath.split(/[\\/]/).pop() ?? "download");
+		await saveFallbackOutputFile(relativePath, nextBlob);
 	}
 };
 
@@ -166,15 +179,7 @@ export const deleteOutputFile = async (relativePath: string): Promise<void> => {
 		}
 	}
 	if (isMobileStorage()) {
-		await saveToIndexedDB(
-			OUTPUT_FALLBACK_MANIFEST_KEY,
-			(
-				(await getFromIndexedDB<string[]>(
-					OUTPUT_FALLBACK_MANIFEST_KEY,
-				)) ?? []
-			).filter((path) => path !== relativePath),
-		);
-		await deleteFromIndexedDB(`${OUTPUT_FALLBACK_PREFIX}${relativePath}`);
+		await removeFallbackOutputFile(relativePath);
 	}
 };
 
@@ -235,8 +240,7 @@ export const readOutputFiles = async (
 	}
 
 	if (!isMobileStorage()) return storedFiles;
-	const manifest =
-		(await getFromIndexedDB<string[]>(OUTPUT_FALLBACK_MANIFEST_KEY)) ?? [];
+	const manifest = await getFallbackManifest();
 	const storedPaths = new Set(storedFiles.map(({ path }) => path));
 	for (const path of manifest) {
 		const normalizedPath = path.replace(/\\/g, "/");
@@ -287,4 +291,3 @@ export const readMarkdownTree = async (): Promise<(File | Folder)[]> => {
 	}
 	return tree;
 };
-

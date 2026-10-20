@@ -15,8 +15,7 @@ const truncateLabel = (value: unknown, maxLength: number): string => {
 
 /**
  * X-axis category tick for the vertical-column bar chart. Centered
- * under each bar (unlike CategoryAxisTick, which right-aligns labels
- * for the old horizontal-bar layout). Truncates instead of wrapping --
+ * under each bar. Truncates instead of wrapping --
  * multi-line labels under narrow columns get visually messy fast,
  * especially as more categories are added or the viewport narrows.
  */

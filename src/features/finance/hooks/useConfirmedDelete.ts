@@ -1,5 +1,5 @@
 import { useConfirmationModal } from "@src/lib/hooks/useConfirmDialog";
-import { ShowNotificationFn } from "@src/lib/types/downloadHandlerTypes";
+import type { ShowNotificationFn } from "@src/lib/types/notification";
 
 /**
  * Confirmation-dialog-wrapped delete/remove handlers, shared by the

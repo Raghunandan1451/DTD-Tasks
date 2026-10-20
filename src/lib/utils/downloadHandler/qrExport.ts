@@ -1,6 +1,8 @@
 import { saveAs } from "file-saver";
-import type { ShowNotificationFn } from "@src/lib/types/downloadHandlerTypes";
-import { formatTimestamp } from "./common";
+import type { ShowNotificationFn } from "@src/lib/types/notification";
+
+const formatTimestamp = (): string =>
+	new Date().toISOString().replace(/[:.]/g, "-").slice(0, -5);
 
 export const handleQRExport = async (
 	canvas: HTMLCanvasElement | null,

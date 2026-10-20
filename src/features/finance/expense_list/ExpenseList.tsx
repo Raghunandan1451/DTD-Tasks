@@ -19,7 +19,7 @@ import {
 import { ExpenseEntry } from "@src/features/finance/type";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import Button from "@src/components/ui/button/Button";
-import { ShowNotificationFn } from "@src/lib/types/downloadHandlerTypes";
+import type { ShowNotificationFn } from "@src/lib/types/notification";
 
 interface ExpenseListProps {
 	expenses?: ExpenseEntry[];

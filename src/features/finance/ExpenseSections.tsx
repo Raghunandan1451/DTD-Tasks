@@ -9,7 +9,7 @@ import { Suspense } from "react";
 import { Loader } from "lucide-react";
 
 import SalaryForm from "@src/features/finance/base_setup/FinanceSetup";
-import { ShowNotificationFn } from "@src/lib/types/downloadHandlerTypes";
+import type { ShowNotificationFn } from "@src/lib/types/notification";
 const ExpenseList = lazy(
 	() => import("@src/features/finance/expense_list/ExpenseList")
 );

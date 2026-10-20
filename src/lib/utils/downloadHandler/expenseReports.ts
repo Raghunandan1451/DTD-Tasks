@@ -1,14 +1,15 @@
 import jsPDF from "jspdf";
 import type {
 	ExpenseEntry,
-	FinanceState,
-	SimulatedExpense,
 } from "@src/features/finance/type";
-import type { ExpensesData } from "@src/lib/types/downloadHandlerTypes";
 
-export type FinanceExportReportScope = "allMonths" | "lastTwoMonths";
+interface ExpensesData {
+	expenses: ExpenseEntry[];
+	selectedDate: string;
+	loaded: boolean;
+}
 
-export interface GenerateExpensesPDFOptions {
+interface GenerateExpensesPDFOptions {
 	title?: string;
 	monthKey?: string;
 	initialBalance?: number;
@@ -51,9 +52,8 @@ const formatCurrency = (value: number): string => {
 	});
 };
 
-const getExpenseNet = (expense: ExpenseEntry): number => {
-	return expense.type === "Cr" ? expense.amount : -expense.amount;
-};
+const getExpenseNet = (expense: ExpenseEntry): number =>
+	expense.type === "Cr" ? expense.amount : -expense.amount;
 
 const getMonthLabel = (monthKey: string): string => {
 	return parseISODate(`${monthKey}-01`).toLocaleDateString("en-US", {
@@ -298,7 +298,7 @@ const groupExpensesByMonthAndDate = (
 	);
 };
 
-export const generateExpensesPDF = (
+const generateExpensesPDF = (
 	expenses: ExpensesData,
 	options: GenerateExpensesPDFOptions = {},
 ): jsPDF => {
@@ -484,207 +484,6 @@ export const generateExpensesPDF = (
 	});
 
 	return doc;
-};
-
-interface EstimatedData {
-	simulatedExpenses: SimulatedExpense[];
-	totalEstimatedPrice?: number;
-}
-
-export const generateEstimatedPDF = ({
-	simulatedExpenses,
-	totalEstimatedPrice,
-}: EstimatedData): jsPDF => {
-	const doc = new jsPDF();
-	const pageWidth = doc.internal.pageSize.getWidth();
-	const pageHeight = doc.internal.pageSize.getHeight();
-	const marginLeft = 14;
-	const marginTop = 20;
-	const lineHeight = 7;
-
-	let yPos = marginTop;
-
-	// --- Title ---
-	doc.setFontSize(18);
-	doc.setFont("helvetica", "bold");
-	doc.text("Estimated Expense Report", pageWidth / 2, yPos, {
-		align: "center",
-	});
-
-	yPos += 10;
-	doc.setFontSize(10);
-	doc.setFont("helvetica", "normal");
-	doc.text(
-		`Generated: ${new Date().toLocaleDateString()}`,
-		pageWidth / 2,
-		yPos,
-		{ align: "center" },
-	);
-
-	yPos += 15;
-
-	// --- Table Header ---
-	doc.setFontSize(11);
-	doc.setFont("helvetica", "bold");
-	doc.text("Name", marginLeft, yPos);
-	doc.text("Qty", marginLeft + 80, yPos);
-	doc.text("Unit", marginLeft + 110, yPos);
-	doc.text("Amount", marginLeft + 140, yPos);
-
-	yPos += 3;
-	doc.line(marginLeft, yPos, pageWidth - marginLeft, yPos);
-	yPos += 4;
-
-	// --- Table Rows ---
-	doc.setFont("helvetica", "normal");
-	simulatedExpenses.forEach((item) => {
-		// Check if next line fits, else add new page
-		if (yPos + lineHeight > pageHeight - 20) {
-			doc.addPage();
-			yPos = marginTop;
-
-			// Re-add table header on new page
-			doc.setFontSize(11);
-			doc.setFont("helvetica", "bold");
-			doc.text("Name", marginLeft, yPos);
-			doc.text("Qty", marginLeft + 80, yPos);
-			doc.text("Unit", marginLeft + 110, yPos);
-			doc.text("Amount", marginLeft + 140, yPos);
-			yPos += 3;
-			doc.line(marginLeft, yPos, pageWidth - marginLeft, yPos);
-			yPos += 4;
-			doc.setFont("helvetica", "normal");
-		}
-
-		const qtyText = item.quantity ? item.quantity.toString() : "-";
-		const amountText = item.amount.toFixed(2);
-
-		doc.text(item.name, marginLeft, yPos);
-		doc.text(qtyText, marginLeft + 80, yPos);
-		doc.text(item.unit || "-", marginLeft + 110, yPos);
-		doc.text(amountText, marginLeft + 140, yPos);
-
-		yPos += lineHeight;
-	});
-
-	yPos += 10;
-
-	// Add new page if summary won't fit
-	if (yPos + lineHeight > pageHeight - 20) {
-		doc.addPage();
-		yPos = marginTop;
-	}
-
-	doc.setFont("helvetica", "bold");
-	doc.text("Estimated Summary", marginLeft, yPos);
-	yPos += lineHeight;
-	doc.text(
-		`Total Estimated Price: ${totalEstimatedPrice?.toFixed(2)}`,
-		marginLeft + 10,
-		yPos,
-	);
-
-	return doc;
-};
-
-export interface ExpenseReportFile {
-	fileName: string;
-	pdf: jsPDF;
-}
-
-const getExpenseMonthKeys = (expenses: ExpenseEntry[]): string[] => {
-	const monthKeys = new Set(
-		expenses.map((expense) => expense.date.substring(0, 7)),
-	);
-
-	return Array.from(monthKeys).sort((a, b) => b.localeCompare(a));
-};
-
-const getLastTwoMonthKeys = (): string[] => {
-	const today = new Date();
-
-	return [0, 1].map((monthsBack) => {
-		const date = new Date(today.getFullYear(), today.getMonth() - monthsBack, 1);
-		return formatISODate(date).substring(0, 7);
-	});
-};
-
-const createScopedExpensesData = (
-	source: ExpensesData,
-	expenses: ExpenseEntry[],
-	selectedDate: string,
-): ExpensesData => {
-	return {
-		...source,
-		expenses,
-		selectedDate,
-	};
-};
-
-export const buildExpenseReportFiles = (
-	financeData: FinanceState,
-	expensesData: ExpensesData,
-	reportScope: FinanceExportReportScope,
-): ExpenseReportFile[] => {
-	const allExpenses = expensesData.expenses || [];
-	const initialBalance = financeData?.currentBalance ?? 0;
-
-	if (reportScope === "lastTwoMonths") {
-		return getLastTwoMonthKeys().map((monthKey) => {
-			const monthExpenses = allExpenses.filter((expense) =>
-				expense.date.startsWith(monthKey),
-			);
-			const scopedExpenses = createScopedExpensesData(
-				expensesData,
-				monthExpenses,
-				`${monthKey}-01`,
-			);
-
-			return {
-				fileName: `expenses-report-${monthKey}.pdf`,
-				pdf: generateExpensesPDF(scopedExpenses, {
-					title: `Expense Report - ${getMonthLabel(monthKey)}`,
-					monthKey,
-					initialBalance,
-					allExpenses,
-				}),
-			};
-		});
-	}
-
-	const reports: ExpenseReportFile[] = [
-		{
-			fileName: "expenses-report-all-months.pdf",
-			pdf: generateExpensesPDF(expensesData, {
-				title: "Expense Report - All Months",
-				initialBalance,
-				allExpenses,
-			}),
-		},
-	];
-
-	getExpenseMonthKeys(allExpenses).forEach((monthKey) => {
-		const monthExpenses = allExpenses.filter((expense) =>
-			expense.date.startsWith(monthKey),
-		);
-		const scopedExpenses = createScopedExpensesData(
-			expensesData,
-			monthExpenses,
-			`${monthKey}-01`,
-		);
-
-		reports.push({
-			fileName: `expenses-report-${monthKey}.pdf`,
-			pdf: generateExpensesPDF(scopedExpenses, {
-				title: `Expense Report - ${getMonthLabel(monthKey)}`,
-				monthKey,
-				initialBalance,
-				allExpenses,
-			}),
-		});
-	});
-
-	return reports;
 };
 
 export const generateMonthlyExpenseReportPDF = (
