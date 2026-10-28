@@ -1,8 +1,4 @@
-import {
-	formatISODate,
-	parseISODate,
-	generateDateRange,
-} from "@src/lib/utils/isoDate";
+import { parseISODate, generateDateRange } from "@src/lib/utils/isoDate";
 import type { ExpenseEntry, Expense } from "@src/features/finance/type";
 
 export interface BalanceTrendPoint {
@@ -24,7 +20,7 @@ type TrendableExpense = Pick<
  * drawBalanceTrendChart, which previously reimplemented this
  * independently as buildBalanceTrendData.
  */
-const buildBalanceTrend = (
+export const buildBalanceTrend = (
 	expenses: TrendableExpense[],
 	initialBalance: number,
 	range: { start: Date; end: Date },
@@ -94,4 +90,4 @@ export const buildBalanceTrendForAllTime = (
 	return buildBalanceTrend(expenses, initialBalance, { start, end });
 };
 
-export { formatISODate, parseISODate };
+export { parseISODate };

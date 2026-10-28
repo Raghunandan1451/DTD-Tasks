@@ -3,6 +3,7 @@ import { FC, lazy } from "react";
 import {
 	ExpenseEntry,
 	BudgetCategory,
+	SalaryHistoryEntry,
 	ViewMode,
 } from "@src/features/finance/type";
 import { Suspense } from "react";
@@ -23,7 +24,6 @@ const BudgetPlanner = lazy(
 export const ExpenseSections: FC<{
 	viewMode: ViewMode;
 	allExpenses: ExpenseEntry[];
-	datedExpenses: ExpenseEntry[];
 	budgetCategories: BudgetCategory[];
 	budgetPlansByMonth?: Record<string, BudgetCategory[]>;
 	onBudgetPlanChange: (
@@ -32,16 +32,17 @@ export const ExpenseSections: FC<{
 	) => void;
 	currentBalance?: number;
 	monthlyIncome?: number;
+	salaryHistory?: SalaryHistoryEntry[];
 	showNotification?: ShowNotificationFn;
 }> = ({
 	viewMode,
 	allExpenses = [],
-	datedExpenses = [],
 	budgetCategories,
 	budgetPlansByMonth,
 	onBudgetPlanChange,
 	currentBalance,
 	monthlyIncome = 0,
+	salaryHistory,
 	showNotification,
 }) => {
 	return (
@@ -50,10 +51,7 @@ export const ExpenseSections: FC<{
 				<Suspense
 					fallback={<Loader className="animate-spin text-gray-500" />}
 				>
-					<ExpenseList
-						expenses={datedExpenses as ExpenseEntry[]}
-						showNotification={showNotification}
-					/>
+					<ExpenseList showNotification={showNotification} />
 				</Suspense>
 			)}
 
@@ -76,6 +74,7 @@ export const ExpenseSections: FC<{
 				>
 					<BudgetPlanner
 						monthlyIncome={monthlyIncome}
+						salaryHistory={salaryHistory}
 						legacyCategories={budgetCategories}
 						plansByMonth={budgetPlansByMonth}
 						onPlanChange={onBudgetPlanChange}

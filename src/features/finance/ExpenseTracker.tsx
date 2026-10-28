@@ -1,4 +1,4 @@
-import { useDispatch, useSelector } from "react-redux";
+import { useDispatch, useSelector, useStore } from "react-redux";
 import { AppDispatch, RootState } from "@src/lib/store/store";
 import { useEffect, useState } from "react";
 import ExpenseSummary from "@src/features/finance/ExpenseSummary";
@@ -6,43 +6,57 @@ import TitleWithButton from "@src/components/shared/title_with_button/TitleWithB
 import { ExpenseSections } from "@src/features/finance/ExpenseSections";
 import { ViewMode } from "@src/features/finance/type";
 import {
-	selectExpensesForSelectedDate,
+	selectExpenses,
+	selectExpensesLoaded,
 	selectCalculatedBalance,
 	selectTotalAllExpenses,
 } from "@src/lib/store/selectors/expenseSelectors";
+import {
+	selectBudgetCategories,
+	selectBudgetPlansByMonth,
+	selectCurrentBalance,
+	selectFinance,
+	selectFinanceLoaded,
+	selectSalary,
+	selectSalaryHistory,
+} from "@src/lib/store/selectors/financeSelectors";
 import { handleFinanceExport } from "@src/lib/utils/downloadHandler";
 import useNotifications from "@src/lib/hooks/useNotifications";
 import NotificationCenter from "@src/components/ui/toast/NotificationCenter";
 import type { FinanceExportReportScope } from "@src/lib/utils/downloadHandler";
 import { useFinanceHydration } from "@src/features/finance/hooks/useFinanceHydration";
+import { useSavingsSnapshots } from "@src/features/finance/budget_planning/hooks/useSavingsSnapshots";
 import { useFinanceUploadHandler } from "@src/features/finance/hooks/useFinanceUploadHandler";
 import DownloadOptionsModal from "@src/features/finance/components/DownloadOptionsModal";
-import { DEFAULT_BUDGET_CATEGORIES } from "@src/features/finance/lib/budgetCategories";
 import { setBudgetPlanForMonth } from "@src/lib/store/slices/financeSlice";
 
 const ExpenseTracker = () => {
 	const dispatch = useDispatch<AppDispatch>();
 	const { notifications, showNotification } = useNotifications();
 
-	const finance = useSelector((state: RootState) => state.finance);
-	const expensesState = useSelector((state: RootState) => state.expenses);
-	const expenses = expensesState.expenses;
-	const expensesLoaded = expensesState.loaded;
+	const store = useStore<RootState>();
 
-	const selectedDateExpenses = useSelector(selectExpensesForSelectedDate);
+	// useSavingsSnapshots reconciles against most of the finance slice
+	const finance = useSelector(selectFinance);
+	const expenses = useSelector(selectExpenses);
+	const expensesLoaded = useSelector(selectExpensesLoaded);
+	const loaded = useSelector(selectFinanceLoaded);
+	const salary = useSelector(selectSalary);
+	const salaryHistory = useSelector(selectSalaryHistory);
+	const currentBalance = useSelector(selectCurrentBalance);
+	const budgetCategories = useSelector(selectBudgetCategories);
+	const budgetPlansByMonth = useSelector(selectBudgetPlansByMonth);
+
 	const calculatedBalance = useSelector(selectCalculatedBalance);
 	const totalAllExpenses = useSelector(selectTotalAllExpenses);
 
-	const { salary, currentBalance, loaded } = finance;
-
 	const [viewMode, setViewMode] = useState<ViewMode>("salary");
-	const budgetCategories =
-		finance.budgetCategories ?? DEFAULT_BUDGET_CATEGORIES;
 	const [showDownloadOptions, setShowDownloadOptions] = useState(false);
 	const [isExportingReports, setIsExportingReports] = useState(false);
 
-	useFinanceHydration(finance, expenses, expensesLoaded);
-	const handleUpload = useFinanceUploadHandler(showNotification);
+	useFinanceHydration();
+	useSavingsSnapshots({ finance, expenses, expensesLoaded });
+	const handleUpload = useFinanceUploadHandler();
 
 	useEffect(() => {
 		if (loaded && salary && currentBalance) {
@@ -57,7 +71,7 @@ const ExpenseTracker = () => {
 		try {
 			await handleFinanceExport(
 				finance,
-				expensesState,
+				store.getState().expenses,
 				undefined,
 				undefined,
 				showNotification,
@@ -75,7 +89,7 @@ const ExpenseTracker = () => {
 				heading="Expense Tracker"
 				buttonText="Download"
 				onDownload={() => setShowDownloadOptions(true)}
-				onUpload={handleUpload}
+				onUploadFiles={handleUpload}
 				showUpload={true}
 				showNotification={showNotification}
 			/>
@@ -88,14 +102,14 @@ const ExpenseTracker = () => {
 			<ExpenseSections
 				viewMode={viewMode}
 				allExpenses={expenses}
-				datedExpenses={selectedDateExpenses}
 				budgetCategories={budgetCategories}
-				budgetPlansByMonth={finance.budgetPlansByMonth}
+				budgetPlansByMonth={budgetPlansByMonth}
 				onBudgetPlanChange={(month, categories) =>
 					dispatch(setBudgetPlanForMonth({ month, categories }))
 				}
 				currentBalance={currentBalance}
-				monthlyIncome={finance.salary?.amount ?? 0}
+				monthlyIncome={salary?.amount ?? 0}
+				salaryHistory={salaryHistory}
 				showNotification={showNotification}
 			/>
 			{showDownloadOptions && (

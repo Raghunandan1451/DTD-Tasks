@@ -189,6 +189,52 @@ describe("BudgetPlanner", () => {
 		expect(screen.getByText("60%")).toBeTruthy();
 	});
 
+	it("shows live potential savings that react to linked expenses and allocations", () => {
+		render(<BudgetPlannerHarness />);
+
+		const summary = screen.getByLabelText(/potential savings/i);
+		expect(summary.textContent).toContain("5,000.00");
+		expect(summary.textContent).toContain("Unassigned spend: 125.50");
+
+		fireEvent.click(screen.getAllByRole("button", { name: "Add expense" })[0]);
+		fireEvent.click(screen.getByRole("button", { name: /Groceries/ }));
+		expect(summary.textContent).toContain("4,874.50");
+		expect(summary.textContent).toContain("Needs: 2,374.50");
+		expect(summary.textContent).not.toContain("Unassigned spend");
+
+		fireEvent.click(screen.getByRole("button", { name: "Edit Savings" }));
+		fireEvent.change(screen.getByLabelText("Allocation percentage"), {
+			target: { value: "10" },
+		});
+		fireEvent.click(screen.getByRole("button", { name: "Save Changes" }));
+		expect(summary.textContent).toContain("4,374.50");
+	});
+
+	it("shows a negative potential savings total when overspending exceeds the allocations", () => {
+		render(
+			<BudgetPlannerHarness
+				expenses={[
+					...ledgerExpenses,
+					{
+						id: "big-1",
+						date: `${currentMonth}-09`,
+						name: "Car repair",
+						group: "Auto",
+						amount: 9000,
+						type: "Dr",
+					},
+				]}
+			/>,
+		);
+
+		fireEvent.click(screen.getAllByRole("button", { name: "Add expense" })[0]);
+		fireEvent.click(screen.getByRole("button", { name: /Car repair/ }));
+		// 1000 + (2500 - 9000) + 1500
+		expect(
+			screen.getByLabelText(/potential savings/i).textContent,
+		).toContain("-4,000.00");
+	});
+
 	it("stores monthly plans independently in finance state", () => {
 		const initialState = financeReducer(undefined, { type: "test/init" });
 		const firstMonth = DEFAULT_BUDGET_CATEGORIES.map((category) => ({

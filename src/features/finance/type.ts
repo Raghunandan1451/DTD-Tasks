@@ -39,6 +39,8 @@ export interface BudgetExpense {
 	name: string;
 	amount: number;
 	expenseId?: string;
+	/** Auto-savings snapshot computed from the current salary (no ledger salary credit that month) */
+	isEstimated?: boolean;
 }
 
 /**
@@ -57,8 +59,16 @@ export interface DatedSalary {
 	dayOfMonth: number;
 }
 
+/** Salary in effect from the given month ("yyyy-MM") until the next entry */
+export interface SalaryHistoryEntry {
+	from: string;
+	amount: number;
+}
+
 export interface FinanceState {
 	salary: DatedSalary | null;
+	/** Past salary amounts, so a raise never rewrites earlier months */
+	salaryHistory?: SalaryHistoryEntry[];
 	currentBalance: number;
 	manualOverride: boolean;
 	groups: string[];
@@ -107,4 +117,9 @@ export interface Expense {
 	amount: number;
 	group: string;
 	type?: "Dr" | "Cr";
+}
+
+export interface VisibleRange {
+	startIndex: number;
+	endIndex: number;
 }

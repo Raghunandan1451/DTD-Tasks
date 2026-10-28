@@ -1,5 +1,6 @@
 import React, { useState, useRef } from "react";
 import Button from "@src/components/ui/button/Button";
+import { UploadError } from "@src/lib/utils/uploadError";
 
 type ShowNotificationFn = (
 	message: string,
@@ -11,17 +12,24 @@ interface TitleWithButtonProps {
 	onDownload:
 		| (() => Promise<void> | void)
 		| ((heading: string) => Promise<void> | void);
-	onUpload?: (file: File, heading: string) => Promise<void> | void;
+	/** Return a string to use it as the success message instead of the default */
+	onUpload?: (file: File, heading: string) => Promise<string | void> | string | void;
+	/** Takes several files at once; enables multi-select in the file picker */
+	onUploadFiles?: (
+		files: File[],
+		heading: string
+	) => Promise<string | void> | string | void;
 	buttonText: string;
 	showUpload?: boolean;
 	containerClass?: string;
 	showNotification?: ShowNotificationFn;
 }
 
-export const TitleWithButton: React.FC<TitleWithButtonProps> = ({
+const TitleWithButton: React.FC<TitleWithButtonProps> = ({
 	heading,
 	onDownload,
 	onUpload,
+	onUploadFiles,
 	buttonText,
 	showUpload = false,
 	containerClass,
@@ -50,20 +58,29 @@ export const TitleWithButton: React.FC<TitleWithButtonProps> = ({
 	};
 
 	const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
-		const file = e.target.files?.[0];
-		if (!file || !onUpload) return;
+		const files = Array.from(e.target.files ?? []);
+		if (files.length === 0 || !(onUploadFiles || onUpload)) return;
 
 		setIsUploading(true);
 		try {
-			await onUpload(file, heading);
-			showNotification?.(`Data restored successfully!`, "success");
+			const message = onUploadFiles
+				? await onUploadFiles(files, heading)
+				: await onUpload?.(files[0], heading);
+			showNotification?.(
+				typeof message === "string" ? message : `Data restored successfully!`,
+				"success"
+			);
+		} catch (error) {
+			console.error("Upload error:", error);
+			showNotification?.(
+				error instanceof UploadError ? error.message : `Failed to restore data`,
+				"error"
+			);
+		} finally {
+			// Reset so picking the same file again after a failure still fires onChange
 			if (fileInputRef.current) {
 				fileInputRef.current.value = "";
 			}
-		} catch (error) {
-			console.error("Upload error:", error);
-			showNotification?.(`Failed to restore data`, "error");
-		} finally {
 			setIsUploading(false);
 		}
 	};
@@ -102,6 +119,7 @@ export const TitleWithButton: React.FC<TitleWithButtonProps> = ({
 							ref={fileInputRef}
 							type="file"
 							accept=".json"
+							multiple={Boolean(onUploadFiles)}
 							className="hidden"
 							onChange={handleFileChange}
 							disabled={isDownloading || isUploading}

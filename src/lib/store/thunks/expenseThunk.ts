@@ -1,15 +1,11 @@
 // src/lib/store/thunks/expenseThunk.ts
 import { createAsyncThunk } from "@reduxjs/toolkit";
 import { getFromIndexedDB } from "@src/lib/utils/persistMiddleware";
-import { ExpenseEntry } from "@src/features/finance/type";
-import { setExpenses } from "@src/lib/store/slices/expensesSlice";
+import {
+	ExpensesState,
+	setExpenses,
+} from "@src/lib/store/slices/expensesSlice";
 import { RootState } from "@src/lib/store/store";
-
-interface ExpensesPersistedState {
-	expenses: ExpenseEntry[];
-	selectedDate: string;
-	loaded: boolean;
-}
 
 export const hydrateExpenses = createAsyncThunk(
 	"expenses/hydrate",
@@ -19,8 +15,8 @@ export const hydrateExpenses = createAsyncThunk(
 
 			if (state.expenses.loaded) return;
 
-			const data = await getFromIndexedDB<ExpensesPersistedState>(
-				"redux_expenses_data"
+			const data = await getFromIndexedDB<ExpensesState>(
+				"redux_expenses_data",
 			);
 
 			if (data && Array.isArray(data.expenses)) {
@@ -32,5 +28,5 @@ export const hydrateExpenses = createAsyncThunk(
 			console.error("Failed to hydrate expenses:", error);
 			dispatch(setExpenses([]));
 		}
-	}
+	},
 );

@@ -1,7 +1,8 @@
 import { useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { addGroup, removeGroup } from "@src/lib/store/slices/financeSlice";
-import { RootState } from "@src/lib/store/store";
+import { selectFinanceGroups } from "@src/lib/store/selectors/financeSelectors";
+import { selectExpenses } from "@src/lib/store/selectors/expenseSelectors";
 import Input from "@src/components/ui/input/Input";
 import Button from "@src/components/ui/button/Button";
 import { Trash2 } from "lucide-react";
@@ -14,8 +15,8 @@ const GroupManager = ({
 }) => {
 	const [groupName, setGroupName] = useState<string>("");
 	const dispatch = useDispatch();
-	const groups = useSelector((state: RootState) => state.finance.groups);
-	const expenses = useSelector((state: RootState) => state.expenses.expenses);
+	const groups = useSelector(selectFinanceGroups);
+	const expenses = useSelector(selectExpenses);
 
 	const handleAddGroup = () => {
 		if (groupName.trim()) {

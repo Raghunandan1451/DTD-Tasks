@@ -1,5 +1,6 @@
 import { File, Folder } from "@src/features/markdown/type";
-import { ExpenseEntry, FinanceState } from "@src/features/finance/type";
+import { FinanceState } from "@src/features/finance/type";
+import type { ExpensesState } from "@src/lib/store/slices/expensesSlice";
 import { Event } from "@src/features/event/type";
 
 export interface FileTree {
@@ -27,11 +28,7 @@ export interface CalendarData {
 	loaded?: boolean;
 }
 
-export interface ExpensesData {
-	expenses: ExpenseEntry[];
-	selectedDate: string;
-	loaded: boolean;
-}
+export type ExpensesData = ExpensesState;
 
 export interface FileManagerData {
 	files: (File | Folder)[];

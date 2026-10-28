@@ -1,66 +1,62 @@
 import { useCallback } from "react";
 import { useDispatch } from "react-redux";
 import { AppDispatch } from "@src/lib/store/store";
-import { handleJSONUpload } from "@src/lib/utils/downloadHandler";
 import { setFinanceState } from "@src/lib/store/slices/financeSlice";
 import { setExpenses } from "@src/lib/store/slices/expensesSlice";
-import type { FinanceState } from "@src/features/finance/type";
-import type { ExpensesData } from "@src/lib/types/downloadHandlerTypes";
-import type { ShowNotificationFn } from "@src/lib/types/downloadHandlerTypes";
+import {
+	mergeParsedBackups,
+	parseFinanceBackupText,
+} from "@src/features/finance/lib/financeBackup";
+import { UploadError } from "@src/lib/utils/uploadError";
+
+const describeRestore = (
+	hasFinance: boolean,
+	expenseCount: number | undefined,
+	skipped: number,
+): string => {
+	const parts = [
+		expenseCount !== undefined ? `${expenseCount} expenses` : null,
+		hasFinance ? "finance settings" : null,
+	].filter(Boolean);
+	const skippedNote = skipped > 0 ? ` (${skipped} invalid entries skipped)` : "";
+	return `Restored ${parts.join(" and ")}${skippedNote}`;
+};
 
 /**
- * Routes an uploaded JSON file to the right restore handler (finance vs.
- * expenses) based on its filename, then dispatches the parsed data.
- *
- * Extracted from ExpenseTracker.tsx. Checks "expense" before "finance"
- * so a name like "expenses-and-finance-backup.json" still resolves to
- * expenses rather than silently matching "finance" first -- the
- * original substring check had this ordering risk.
+ * Restores finance data from one or several JSON files: the combined
+ * finance-backup.json, or the older finance-data.json / expenses-data.json
+ * (picked together or one at a time). File types are detected from their
+ * content, and every file is validated before anything is dispatched, so a
+ * bad file never leaves a half-restored state. Returns the success message.
  */
-export const useFinanceUploadHandler = (
-	showNotification: ShowNotificationFn,
-) => {
+export const useFinanceUploadHandler = () => {
 	const dispatch = useDispatch<AppDispatch>();
 
 	return useCallback(
-		async (file: File) => {
-			const fileName = file.name.toLowerCase();
-
-			if (fileName.includes("expense")) {
-				return handleJSONUpload<ExpensesData>(
-					file,
-					(data) => {
-						dispatch(setExpenses(data.expenses));
-						showNotification(
-							"Expenses data restored successfully",
-							"success",
-						);
-					},
-					(error) => showNotification(error, "error"),
-					showNotification,
+		async (files: File[]): Promise<string> => {
+			let merged;
+			try {
+				const texts = await Promise.all(files.map((file) => file.text()));
+				merged = mergeParsedBackups(
+					texts.map((text, index) =>
+						parseFinanceBackupText(text, files[index].name),
+					),
+				);
+			} catch (error) {
+				throw new UploadError(
+					error instanceof Error ? error.message : "Failed to read file",
 				);
 			}
 
-			if (fileName.includes("finance")) {
-				return handleJSONUpload<FinanceState>(
-					file,
-					(data) => {
-						dispatch(setFinanceState(data));
-						showNotification(
-							"Finance data restored successfully",
-							"success",
-						);
-					},
-					(error) => showNotification(error, "error"),
-					showNotification,
-				);
-			}
+			if (merged.finance) dispatch(setFinanceState(merged.finance));
+			if (merged.expenses) dispatch(setExpenses(merged.expenses));
 
-			showNotification(
-				"Please select a finance or expense JSON file",
-				"error",
+			return describeRestore(
+				Boolean(merged.finance),
+				merged.expenses?.length,
+				merged.skippedEntries,
 			);
 		},
-		[dispatch, showNotification],
+		[dispatch],
 	);
 };

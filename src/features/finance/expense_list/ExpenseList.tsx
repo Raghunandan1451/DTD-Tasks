@@ -1,5 +1,4 @@
-// Updated ExpenseList.tsx with net daily total (expenses - credits)
-import { FC, useState, useMemo, useEffect } from "react";
+import { FC, useState, useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { AppDispatch, RootState } from "@src/lib/store/store";
 import ExpenseNavigation from "@src/features/finance/expense_list/ExpenseNavigation";
@@ -11,7 +10,9 @@ import {
 	selectSelectedDateCredits,
 	selectExpenseGroups,
 	selectFilteredExpensesForSelectedDate,
+	selectSelectedDate,
 } from "@src/lib/store/selectors/expenseSelectors";
+import { selectFinanceGroups } from "@src/lib/store/selectors/financeSelectors";
 import {
 	updateExpense,
 	deleteExpense,
@@ -20,16 +21,13 @@ import { ExpenseEntry } from "@src/features/finance/type";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import Button from "@src/components/ui/button/Button";
 import { ShowNotificationFn } from "@src/lib/types/downloadHandlerTypes";
+import { parseISODate } from "@src/lib/utils/isoDate";
 
 interface ExpenseListProps {
-	expenses?: ExpenseEntry[];
 	showNotification?: ShowNotificationFn;
 }
 
-const ExpenseList: FC<ExpenseListProps> = ({
-	expenses: propExpenses,
-	showNotification,
-}) => {
+const ExpenseList: FC<ExpenseListProps> = ({ showNotification }) => {
 	const dispatch = useDispatch<AppDispatch>();
 	const [selectedGroup, setSelectedGroup] = useState<string | null>("All");
 	const [currentPage, setCurrentPage] = useState(1);
@@ -38,66 +36,22 @@ const ExpenseList: FC<ExpenseListProps> = ({
 	const dailyExpenses = useSelector(selectSelectedDateTotal); // Debits only
 	const dailyCredits = useSelector(selectSelectedDateCredits); // Credits only
 	const expenseGroups = useSelector(selectExpenseGroups);
-	const selectedDate = useSelector(
-		(state: RootState) => state.expenses.selectedDate
-	);
-
-	const financeGroups = useSelector(
-		(state: RootState) => state.finance.groups ?? []
-	);
+	const selectedDate = useSelector(selectSelectedDate);
+	const financeGroups = useSelector(selectFinanceGroups);
 
 	const availableGroups =
 		expenseGroups.length > 0 ? expenseGroups : financeGroups;
 
 	const filteredExpenses = useSelector((state: RootState) =>
-		selectFilteredExpensesForSelectedDate(state, selectedGroup)
+		selectFilteredExpensesForSelectedDate(state, selectedGroup),
 	);
 
-	const finalExpenses = useMemo(() => {
-		if (propExpenses) {
-			const dateFiltered = propExpenses.filter(
-				(expense) => expense.date === selectedDate
-			);
-			if (!selectedGroup || selectedGroup === "All") {
-				return dateFiltered;
-			}
-			return dateFiltered.filter(
-				(expense) => expense.group === selectedGroup
-			);
-		}
-		return filteredExpenses;
-	}, [propExpenses, filteredExpenses, selectedDate, selectedGroup]);
+	const dailyNet = dailyCredits - dailyExpenses;
 
-	const finalDailyExpenses = useMemo(() => {
-		if (propExpenses) {
-			return propExpenses
-				.filter(
-					(expense) =>
-						expense.date === selectedDate && expense.type !== "Cr"
-				)
-				.reduce((total, expense) => total + expense.amount, 0);
-		}
-		return dailyExpenses;
-	}, [propExpenses, selectedDate, dailyExpenses]);
-
-	const finalDailyCredits = useMemo(() => {
-		if (propExpenses) {
-			return propExpenses
-				.filter(
-					(expense) =>
-						expense.date === selectedDate && expense.type === "Cr"
-				)
-				.reduce((total, expense) => total + expense.amount, 0);
-		}
-		return dailyCredits;
-	}, [propExpenses, selectedDate, dailyCredits]);
-
-	const dailyNet = finalDailyCredits - finalDailyExpenses;
-
-	const totalPages = Math.ceil(finalExpenses.length / itemsPerPage);
+	const totalPages = Math.ceil(filteredExpenses.length / itemsPerPage);
 	const startIndex = (currentPage - 1) * itemsPerPage;
 	const endIndex = startIndex + itemsPerPage;
-	const paginatedExpenses = finalExpenses.slice(startIndex, endIndex);
+	const paginatedExpenses = filteredExpenses.slice(startIndex, endIndex);
 
 	useEffect(() => {
 		setCurrentPage(1);
@@ -171,27 +125,27 @@ const ExpenseList: FC<ExpenseListProps> = ({
 			<div className="mt-4 border-t border-white/20 pt-2 text-right text-sm text-gray-700 dark:text-gray-300 flex flex-wrap justify-end gap-4">
 				<div>
 					Day:{" "}
-					{new Date(selectedDate).toLocaleDateString("en-GB", {
+					{parseISODate(selectedDate).toLocaleDateString("en-GB", {
 						day: "2-digit",
 						month: "short",
 						year: "numeric",
 					})}
 				</div>
 
-				{finalDailyCredits > 0 && (
+				{dailyCredits > 0 && (
 					<div className="text-green-600 dark:text-green-400">
 						Received:{" "}
 						<span className="font-medium">
-							+{finalDailyCredits.toFixed(2)}
+							+{dailyCredits.toFixed(2)}
 						</span>
 					</div>
 				)}
 
-				{finalDailyExpenses > 0 && (
+				{dailyExpenses > 0 && (
 					<div className="text-red-600 dark:text-red-400">
 						Spent:{" "}
 						<span className="font-medium">
-							-{finalDailyExpenses.toFixed(2)}
+							-{dailyExpenses.toFixed(2)}
 						</span>
 					</div>
 				)}

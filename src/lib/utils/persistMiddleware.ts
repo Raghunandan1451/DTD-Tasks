@@ -27,7 +27,9 @@ export const persistMiddleware: Middleware =
 
 				if (!debouncedSaves[key]) {
 					debouncedSaves[key] = debounce((stateToSave) => {
-						saveToIndexedDB(key, stateToSave);
+						saveToIndexedDB(key, stateToSave).catch((error) => {
+							console.error(`Failed to persist ${key}`, error);
+						});
 					}, 1000);
 				}
 
@@ -49,7 +51,7 @@ const isReduxAction = (
 	);
 };
 
-export const getDB = () =>
+const getDB = () =>
 	openDB("AIO-List", 1, {
 		upgrade(db) {
 			if (!db.objectStoreNames.contains("data")) {

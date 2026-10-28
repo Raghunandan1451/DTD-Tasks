@@ -1,6 +1,6 @@
 import React, { useMemo, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { RootState } from "@src/lib/store/store";
+import { selectFinanceGroups } from "@src/lib/store/selectors/financeSelectors";
 import { addExpenseToSelectedDate } from "@src/lib/store/slices/expensesSlice";
 import GenericForm from "@src/components/shared/form/GenericForm";
 import { createExpenseFormFields, ExpenseFormData } from "./ExpenseFormConfig";
@@ -22,7 +22,7 @@ const ExpenseEntryForm: React.FC = () => {
 	// Filtered the same way selectExpenseGroups filters for the Edit
 	// picker (excludes "Salary" and any blank/invalid entries), so both
 	// pickers show the same list and help pick the correct group.
-	const groups = useSelector((state: RootState) => state.finance.groups);
+	const groups = useSelector(selectFinanceGroups);
 	const selectableGroups = useMemo(
 		() => filterSelectableGroups(groups),
 		[groups],
