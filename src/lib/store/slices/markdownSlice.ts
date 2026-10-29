@@ -252,6 +252,10 @@ const markdownSlice = createSlice({
 				}
 			}
 		},
+		deselectFile: (state) => {
+			state.selectedFile = null;
+			state.content = "";
+		},
 		selectFile: (state, action) => {
 			const path = action.payload;
 			state.selectedFile = null;
@@ -281,6 +285,7 @@ export const {
 	addFile,
 	updateFileContent,
 	selectFile,
+	deselectFile,
 	deleteFile,
 	renameFile,
 } = markdownSlice.actions;
