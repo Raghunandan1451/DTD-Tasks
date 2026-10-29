@@ -1,8 +1,14 @@
-// src/store/slices/expensesSlice.ts - Minimal changes to existing code
+// src/store/slices/expensesSlice.ts
 import { createSlice, nanoid, PayloadAction } from "@reduxjs/toolkit";
+import { addDays, addMonths } from "date-fns";
 import { ExpenseEntry } from "@src/features/finance/type";
+import {
+	formatISODate,
+	parseISODate,
+	todayISO,
+} from "@src/lib/utils/isoDate";
 
-interface ExpensesState {
+export interface ExpensesState {
 	expenses: ExpenseEntry[];
 	selectedDate: string;
 	loaded: boolean;
@@ -10,9 +16,24 @@ interface ExpensesState {
 
 const initialState: ExpensesState = {
 	expenses: [],
-	selectedDate: new Date().toISOString().split("T")[0],
+	selectedDate: todayISO(),
 	loaded: false,
 };
+
+/** ISO dates sort lexicographically, so a string compare is enough. */
+const clampToToday = (date: string): string => {
+	const today = todayISO();
+	return date > today ? today : date;
+};
+
+/** Salary entries default to credits, everything else to debits. */
+const buildEntry = (
+	payload: Omit<ExpenseEntry, "id">,
+): ExpenseEntry => ({
+	...payload,
+	id: nanoid(),
+	type: payload.type || (payload.group === "Salary" ? "Cr" : "Dr"),
+});
 
 const expensesSlice = createSlice({
 	name: "expenses",
@@ -24,51 +45,38 @@ const expensesSlice = createSlice({
 		},
 
 		setSelectedDate(state, action: PayloadAction<string>) {
-			state.selectedDate = action.payload;
+			state.selectedDate = clampToToday(action.payload);
 		},
 
-		goToPreviousDay(state) {
-			const currentDate = new Date(state.selectedDate);
-			currentDate.setDate(currentDate.getDate() - 1);
-			state.selectedDate = currentDate.toISOString().split("T")[0];
-		},
-
-		goToNextDay(state) {
-			const currentDate = new Date(state.selectedDate);
-			currentDate.setDate(currentDate.getDate() + 1);
-			state.selectedDate = currentDate.toISOString().split("T")[0];
-		},
-
-		goToToday(state) {
-			state.selectedDate = new Date().toISOString().split("T")[0];
+		/** Moves the selected date by days and/or months, never past today. */
+		shiftSelectedDate(
+			state,
+			action: PayloadAction<{ days?: number; months?: number }>,
+		) {
+			const { days = 0, months = 0 } = action.payload;
+			const shifted = addDays(
+				addMonths(parseISODate(state.selectedDate), months),
+				days,
+			);
+			state.selectedDate = clampToToday(formatISODate(shifted));
 		},
 
 		addExpense(state, action: PayloadAction<Omit<ExpenseEntry, "id">>) {
-			state.expenses.push({
-				...action.payload,
-				id: nanoid(),
-				// Set default type based on whether it's salary or regular expense
-				type:
-					action.payload.type ||
-					(action.payload.group === "Salary" ? "Cr" : "Dr"),
-			});
+			state.expenses.push(buildEntry(action.payload));
 		},
 
 		addExpenseToSelectedDate(
 			state,
-			action: PayloadAction<Omit<ExpenseEntry, "id" | "date">>
+			action: PayloadAction<Omit<ExpenseEntry, "id" | "date">>,
 		) {
-			state.expenses.push({
-				...action.payload,
-				id: nanoid(),
-				date: state.selectedDate,
-				type: action.payload.type || "Dr",
-			});
+			state.expenses.push(
+				buildEntry({ ...action.payload, date: state.selectedDate }),
+			);
 		},
 
 		updateExpense(state, action: PayloadAction<ExpenseEntry>) {
 			const index = state.expenses.findIndex(
-				(e) => e.id === action.payload.id
+				(e) => e.id === action.payload.id,
 			);
 			if (index >= 0) {
 				state.expenses[index] = action.payload;
@@ -77,7 +85,7 @@ const expensesSlice = createSlice({
 
 		deleteExpense(state, action: PayloadAction<string>) {
 			state.expenses = state.expenses.filter(
-				(e) => e.id !== action.payload
+				(e) => e.id !== action.payload,
 			);
 		},
 	},
@@ -86,9 +94,7 @@ const expensesSlice = createSlice({
 export const {
 	setExpenses,
 	setSelectedDate,
-	goToPreviousDay,
-	goToNextDay,
-	goToToday,
+	shiftSelectedDate,
 	addExpense,
 	addExpenseToSelectedDate,
 	updateExpense,

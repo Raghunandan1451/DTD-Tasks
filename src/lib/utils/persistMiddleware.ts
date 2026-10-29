@@ -1,12 +1,7 @@
+import { openDB } from "idb";
 import { Middleware, Action } from "@reduxjs/toolkit";
 import { RootState } from "@src/lib/store/store";
 import { debounce } from "@src/lib/utils/debounce";
-import { saveAppData } from "@src/lib/utils/fileStorage/appData";
-
-export {
-	getFromIndexedDB,
-	saveToIndexedDB,
-} from "@src/lib/utils/fileStorage/database";
 
 const sliceStorageKeys: Record<string, string> = {
 	calendar: "redux_calendar_data",
@@ -32,8 +27,8 @@ export const persistMiddleware: Middleware =
 
 				if (!debouncedSaves[key]) {
 					debouncedSaves[key] = debounce((stateToSave) => {
-						void saveAppData(key, stateToSave).catch((error: unknown) => {
-							console.error(`Failed to persist ${key}:`, error);
+						saveToIndexedDB(key, stateToSave).catch((error) => {
+							console.error(`Failed to persist ${key}`, error);
 						});
 					}, 1000);
 				}
@@ -54,4 +49,26 @@ const isReduxAction = (
 		"type" in action &&
 		typeof action.type === "string"
 	);
+};
+
+const getDB = () =>
+	openDB("AIO-List", 1, {
+		upgrade(db) {
+			if (!db.objectStoreNames.contains("data")) {
+				db.createObjectStore("data");
+			}
+		},
+	});
+
+export const saveToIndexedDB = async <T>(
+	key: string,
+	data: T
+): Promise<void> => {
+	const db = await getDB();
+	await db.put("data", data, key);
+};
+
+export const getFromIndexedDB = async <T>(key: string): Promise<T | null> => {
+	const db = await getDB();
+	return (await db.get("data", key)) ?? null;
 };

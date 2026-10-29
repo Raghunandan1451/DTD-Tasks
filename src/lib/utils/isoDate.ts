@@ -16,6 +16,9 @@ export const parseISODate = (date: string): Date => {
 	return new Date(`${date}T00:00:00`);
 };
 
+/** Today's local date as YYYY-MM-DD. */
+export const todayISO = (): string => formatISODate(new Date());
+
 /** Generates every YYYY-MM-DD date string from start to end, inclusive. */
 export const generateDateRange = (start: Date, end: Date): string[] => {
 	const dates: string[] = [];

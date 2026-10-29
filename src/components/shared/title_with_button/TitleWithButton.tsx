@@ -1,6 +1,6 @@
-import React, { useRef, useState } from "react";
-import { RefreshCw } from "lucide-react";
+import React, { useState, useRef } from "react";
 import Button from "@src/components/ui/button/Button";
+import { UploadError } from "@src/lib/utils/uploadError";
 
 type ShowNotificationFn = (
 	message: string,
@@ -9,40 +9,46 @@ type ShowNotificationFn = (
 
 interface TitleWithButtonProps {
 	heading: string;
-	onDownload?:
-		| ((heading: string) => Promise<void> | void)
-		| (() => Promise<void> | void);
-	buttonText?: string;
-	onUpload?: (file: File, heading: string) => Promise<void> | void;
+	onDownload:
+		| (() => Promise<void> | void)
+		| ((heading: string) => Promise<void> | void);
+	/** Return a string to use it as the success message instead of the default */
+	onUpload?: (file: File, heading: string) => Promise<string | void> | string | void;
+	/** Takes several files at once; enables multi-select in the file picker */
+	onUploadFiles?: (
+		files: File[],
+		heading: string
+	) => Promise<string | void> | string | void;
+	buttonText: string;
 	showUpload?: boolean;
-	uploadAccept?: string;
 	containerClass?: string;
 	showNotification?: ShowNotificationFn;
-	onRefresh?: () => Promise<void> | void;
-	isRefreshing?: boolean;
 }
 
-export const TitleWithButton: React.FC<TitleWithButtonProps> = ({
+const TitleWithButton: React.FC<TitleWithButtonProps> = ({
 	heading,
 	onDownload,
-	buttonText,
 	onUpload,
+	onUploadFiles,
+	buttonText,
 	showUpload = false,
-	uploadAccept = ".json",
 	containerClass,
 	showNotification,
-	onRefresh,
-	isRefreshing = false,
 }) => {
 	const [isDownloading, setIsDownloading] = useState(false);
 	const [isUploading, setIsUploading] = useState(false);
-	const fileInputRef = useRef<HTMLInputElement>(null);
+	const fileInputRef = useRef<HTMLInputElement | null>(null);
 
 	const handleDownloadClick = async () => {
-		if (!onDownload) return;
 		setIsDownloading(true);
 		try {
-			await onDownload(heading);
+			if (onDownload.length === 0) {
+				await (onDownload as () => Promise<void> | void)();
+			} else {
+				await (onDownload as (heading: string) => Promise<void> | void)(
+					heading
+				);
+			}
 		} catch (error) {
 			console.error("Download error:", error);
 			showNotification?.(`Failed to download data`, "error");
@@ -51,27 +57,36 @@ export const TitleWithButton: React.FC<TitleWithButtonProps> = ({
 		}
 	};
 
-	const handleUploadChange = async (
-		event: React.ChangeEvent<HTMLInputElement>,
-	) => {
-		const file = event.target.files?.[0];
-		if (!file || !onUpload) return;
+	const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+		const files = Array.from(e.target.files ?? []);
+		if (files.length === 0 || !(onUploadFiles || onUpload)) return;
+
 		setIsUploading(true);
 		try {
-			await onUpload(file, heading);
-			showNotification?.("Data restored successfully.", "success");
+			const message = onUploadFiles
+				? await onUploadFiles(files, heading)
+				: await onUpload?.(files[0], heading);
+			showNotification?.(
+				typeof message === "string" ? message : `Data restored successfully!`,
+				"success"
+			);
 		} catch (error) {
 			console.error("Upload error:", error);
 			showNotification?.(
-				error instanceof Error
-					? error.message
-					: "Failed to restore data.",
-				"error",
+				error instanceof UploadError ? error.message : `Failed to restore data`,
+				"error"
 			);
 		} finally {
-			event.target.value = "";
+			// Reset so picking the same file again after a failure still fires onChange
+			if (fileInputRef.current) {
+				fileInputRef.current.value = "";
+			}
 			setIsUploading(false);
 		}
+	};
+
+	const handleUploadClick = () => {
+		fileInputRef.current?.click();
 	};
 
 	return (
@@ -83,55 +98,35 @@ export const TitleWithButton: React.FC<TitleWithButtonProps> = ({
 			<h1 className="panel-title text-2xl md:text-4xl">
 				{heading.toUpperCase()}
 			</h1>
-			{(onDownload || onRefresh || showUpload) && (
-				<div className="flex gap-2 md:gap-3 items-center w-full md:w-auto">
-					{onRefresh && (
+			<div className="flex gap-2 md:gap-3 items-center w-full md:w-auto">
+				<Button
+					type="button"
+					className="btn-primary flex-1 md:flex-initial text-sm md:text-base py-2 px-3 md:px-4"
+					onClick={handleDownloadClick}
+					text={isDownloading ? "Downloading..." : buttonText}
+					disabled={isDownloading || isUploading}
+				/>
+				{showUpload && (
+					<>
 						<Button
 							type="button"
-							className="btn-primary flex-1 md:flex-initial text-sm md:text-base py-2 px-3 md:px-4 inline-flex items-center justify-center gap-2"
-							onClick={() => void onRefresh()}
-							text={isRefreshing ? "Refreshing..." : "Refresh"}
-							disabled={isRefreshing}
-							title="Refresh Markdown files from the selected folder"
-							aria-label="Refresh Markdown files"
-						>
-							<RefreshCw
-								className={`h-4 w-4 ${isRefreshing ? "animate-spin" : ""}`}
-							/>
-						</Button>
-					)}
-					{onDownload && (
-						<Button
-							type="button"
-							className="btn-primary flex-1 md:flex-initial text-sm md:text-base py-2 px-3 md:px-4"
-							onClick={handleDownloadClick}
-							text={isDownloading ? "Working..." : buttonText ?? "Download"}
+							className="btn-secondary flex-1 md:flex-initial text-sm md:text-base py-2 px-3 md:px-4"
+							onClick={handleUploadClick}
+							text={isUploading ? "Uploading..." : "Upload JSON"}
 							disabled={isDownloading || isUploading}
 						/>
-					)}
-					{showUpload && onUpload && (
-						<>
-							<Button
-								type="button"
-								className="btn-secondary flex-1 md:flex-initial text-sm md:text-base py-2 px-3 md:px-4"
-								onClick={() => fileInputRef.current?.click()}
-								text={isUploading ? "Uploading..." : "Upload JSON"}
-								disabled={isDownloading || isUploading}
-							/>
-							<input
-								ref={fileInputRef}
-								type="file"
-								accept={uploadAccept}
-								className="hidden"
-								onChange={(event) =>
-									void handleUploadChange(event)
-								}
-								disabled={isDownloading || isUploading}
-							/>
-						</>
-					)}
-				</div>
-			)}
+						<input
+							ref={fileInputRef}
+							type="file"
+							accept=".json"
+							multiple={Boolean(onUploadFiles)}
+							className="hidden"
+							onChange={handleFileChange}
+							disabled={isDownloading || isUploading}
+						/>
+					</>
+				)}
+			</div>
 		</div>
 	);
 };

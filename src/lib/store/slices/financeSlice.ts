@@ -1,11 +1,14 @@
 // financeSlice.ts - Updated with proper lastUpdatedDate handling
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
+import { format } from "date-fns";
 import {
 	BudgetCategory,
 	FinanceState,
 	DatedSalary,
 } from "@src/features/finance/type";
 import { DEFAULT_BUDGET_CATEGORIES } from "@src/features/finance/lib/budgetCategories";
+import { recordSalaryChange } from "@src/features/finance/lib/salaryHistory";
+import { todayISO } from "@src/lib/utils/isoDate";
 
 const initialState: FinanceState = {
 	salary: null,
@@ -22,13 +25,22 @@ const financeSlice = createSlice({
 	initialState,
 	reducers: {
 		setSalary(state, action: PayloadAction<DatedSalary>) {
+			const previous = state.salary;
+			if (previous && previous.amount !== action.payload.amount) {
+				state.salaryHistory = recordSalaryChange(
+					state.salaryHistory,
+					previous.amount,
+					action.payload.amount,
+					format(new Date(), "yyyy-MM"),
+				);
+			}
 			state.salary = action.payload;
-			state.lastUpdatedDate = new Date().toISOString().split("T")[0];
+			state.lastUpdatedDate = todayISO();
 		},
 		setCurrentBalance(state, action: PayloadAction<number>) {
 			state.currentBalance = action.payload;
 			state.manualOverride = true;
-			state.lastUpdatedDate = new Date().toISOString().split("T")[0];
+			state.lastUpdatedDate = todayISO();
 		},
 		addGroup(state, action: PayloadAction<string>) {
 			if (!state.groups.includes(action.payload)) {
@@ -38,9 +50,6 @@ const financeSlice = createSlice({
 		removeGroup(state, action: PayloadAction<string>) {
 			state.groups = state.groups.filter((g) => g !== action.payload);
 		},
-		setBudgetCategories(state, action: PayloadAction<BudgetCategory[]>) {
-			state.budgetCategories = action.payload;
-		},
 		setBudgetPlanForMonth(
 			state,
 			action: PayloadAction<{ month: string; categories: BudgetCategory[] }>,
@@ -48,6 +57,15 @@ const financeSlice = createSlice({
 			state.budgetPlansByMonth ??= {};
 			state.budgetPlansByMonth[action.payload.month] =
 				action.payload.categories;
+		},
+		applyBudgetPlans(
+			state,
+			action: PayloadAction<Record<string, BudgetCategory[]>>,
+		) {
+			state.budgetPlansByMonth = {
+				...state.budgetPlansByMonth,
+				...action.payload,
+			};
 		},
 		setFinanceState(state, action: PayloadAction<FinanceState>) {
 			return { ...state, ...action.payload, loaded: true };
@@ -60,8 +78,8 @@ export const {
 	setCurrentBalance,
 	addGroup,
 	removeGroup,
-	setBudgetCategories,
 	setBudgetPlanForMonth,
+	applyBudgetPlans,
 	setFinanceState,
 } = financeSlice.actions;
 

@@ -6,7 +6,13 @@ import {
 } from "@src/lib/store/slices/financeSlice";
 import Input from "@src/components/ui/input/Input";
 import Button from "@src/components/ui/button/Button";
-import { AppDispatch, RootState } from "@src/lib/store/store";
+import { AppDispatch } from "@src/lib/store/store";
+import {
+	selectCurrentBalance,
+	selectFinanceLoaded,
+	selectManualOverride,
+	selectSalary,
+} from "@src/lib/store/selectors/financeSelectors";
 import { validateFinanceSetup } from "@src/lib/utils/finance";
 import { AlertTriangle, Lock } from "lucide-react";
 
@@ -18,9 +24,10 @@ interface BaseFinanceSetupProps {
 }
 
 const BaseFinanceSetup = ({ showNotification }: BaseFinanceSetupProps) => {
-	const { salary, currentBalance, loaded, manualOverride } = useSelector(
-		(state: RootState) => state.finance
-	);
+	const salary = useSelector(selectSalary);
+	const currentBalance = useSelector(selectCurrentBalance);
+	const loaded = useSelector(selectFinanceLoaded);
+	const manualOverride = useSelector(selectManualOverride);
 	const dispatch = useDispatch<AppDispatch>();
 	const [amount, setAmount] = useState("");
 	const [day, setDay] = useState("");

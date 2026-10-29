@@ -44,7 +44,7 @@ export function getDateColumns(
 	return columns;
 }
 
-export function generateRecurringInstances(
+function generateRecurringInstances(
 	events: Event[],
 	dateColumns: DateColumn[],
 ): Event[] {
@@ -243,12 +243,6 @@ export function getBaseEventId(instanceId: string): string {
 	return firstDashIndex !== -1
 		? instanceId.substring(0, firstDashIndex)
 		: instanceId;
-}
-
-export function getPreviousDayString(dateString: string): string {
-	const date = new Date(dateString);
-	date.setDate(date.getDate() - 1);
-	return date.toISOString().split("T")[0];
 }
 
 export function getEventsForColumn(
@@ -488,7 +482,7 @@ export const getDateRange = (
  * Converts oklch/oklab colors to hex format
  * Example: oklch(0.7 0.15 180) -> #00bfa5
  */
-export const convertOklchToHex = (oklchString: string): string => {
+const convertOklchToHex = (oklchString: string): string => {
 	const match = oklchString.match(/oklch\(([\d.]+)\s+([\d.]+)\s+([\d.]+)\)/);
 	if (!match) return oklchString;
 
@@ -571,7 +565,7 @@ const hslToHex = (h: number, s: number, l: number): string => {
  * Converts any modern CSS color format to hex
  * Supports: oklch, oklab, rgb, rgba, hsl, hsla
  */
-export const normalizeColorToHex = (color: string): string => {
+const normalizeColorToHex = (color: string): string => {
 	if (!color) return "#000000";
 
 	// Already hex
@@ -617,7 +611,7 @@ export const normalizeColorToHex = (color: string): string => {
  * Pre-process an HTML element to convert all colors to hex
  * This modifies the element in-place before html2canvas processes it
  */
-export const normalizeElementColors = (element: HTMLElement): void => {
+const normalizeElementColors = (element: HTMLElement): void => {
 	// Normalize inline styles
 	if (element.style.color) {
 		element.style.color = normalizeColorToHex(element.style.color);

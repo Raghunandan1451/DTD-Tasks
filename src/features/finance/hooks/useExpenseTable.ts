@@ -2,7 +2,7 @@
 import { useState, useRef } from "react";
 import { ExpenseEntry } from "@src/features/finance/type";
 import { TableHandlers } from "@src/lib/types/table";
-import type { ShowNotificationFn } from "@src/lib/types/notification";
+import { ShowNotificationFn } from "@src/lib/types/downloadHandlerTypes";
 import { useConfirmedDelete } from "@src/features/finance/hooks/useConfirmedDelete";
 import { useEditRowKeyNavigation } from "@src/features/finance/hooks/useEditRowKeyNavigation";
 

@@ -1,7 +1,7 @@
 import React from "react";
 import { Brush } from "recharts";
 import { parseISODate } from "@src/features/finance/lib/balanceTrend";
-import type { VisibleRange } from "@src/features/finance/hooks/useVisibleRange";
+import type { VisibleRange } from "@src/features/finance/type";
 
 interface ThemedBrushProps {
 	range: VisibleRange;

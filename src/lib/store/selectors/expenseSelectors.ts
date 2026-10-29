@@ -1,10 +1,20 @@
 import { createSelector } from "@reduxjs/toolkit";
 import { RootState } from "@src/lib/store/store";
 import { isSelectableGroup } from "@src/features/finance/lib/groupFilters";
+import { ExpenseEntry } from "@src/features/finance/type";
 
-const selectExpenses = (state: RootState) => state.expenses.expenses;
-const selectSelectedDate = (state: RootState) => state.expenses.selectedDate;
+export const selectExpenses = (state: RootState) => state.expenses.expenses;
+export const selectSelectedDate = (state: RootState) =>
+	state.expenses.selectedDate;
+export const selectExpensesLoaded = (state: RootState) =>
+	state.expenses.loaded;
 const selectInitialBalance = (state: RootState) => state.finance.currentBalance;
+
+/** Sums credits ("Cr") or debits (anything that isn't "Cr"). */
+const sumByType = (expenses: ExpenseEntry[], type: "Dr" | "Cr"): number =>
+	expenses
+		.filter((expense) => (expense.type === "Cr") === (type === "Cr"))
+		.reduce((total, expense) => total + expense.amount, 0);
 
 export const selectExpensesForSelectedDate = createSelector(
 	[selectExpenses, selectSelectedDate],
@@ -14,40 +24,46 @@ export const selectExpensesForSelectedDate = createSelector(
 
 export const selectSelectedDateTotal = createSelector(
 	[selectExpensesForSelectedDate],
-	(expenses) =>
-		expenses
-			.filter((expense) => expense.type !== "Cr")
-			.reduce((total, expense) => total + expense.amount, 0),
+	(expenses) => sumByType(expenses, "Dr"),
 );
 
 export const selectSelectedDateCredits = createSelector(
 	[selectExpensesForSelectedDate],
-	(expenses) =>
-		expenses
-			.filter((expense) => expense.type === "Cr")
-			.reduce((total, expense) => total + expense.amount, 0),
+	(expenses) => sumByType(expenses, "Cr"),
 );
 
-export const selectTotalAllCredits = createSelector(
-	[selectExpenses],
-	(expenses) =>
-		expenses
-			.filter((expense) => expense.type === "Cr")
-			.reduce((total, expense) => total + expense.amount, 0),
+const selectTotalAllCredits = createSelector([selectExpenses], (expenses) =>
+	sumByType(expenses, "Cr"),
 );
 
 export const selectTotalAllExpenses = createSelector(
 	[selectExpenses],
-	(expenses) =>
-		expenses
-			.filter((expense) => expense.type !== "Cr")
-			.reduce((total, expense) => total + expense.amount, 0),
+	(expenses) => sumByType(expenses, "Dr"),
 );
 
 export const selectCalculatedBalance = createSelector(
 	[selectInitialBalance, selectTotalAllCredits, selectTotalAllExpenses],
 	(initialBalance, totalCredits, totalExpenses) =>
 		initialBalance + totalCredits - totalExpenses,
+);
+
+export interface DailyTotals {
+	debit: number;
+	credit: number;
+}
+
+/** Debit/credit totals keyed by ISO date, across all expenses (for the date picker). */
+export const selectDailyTotalsByDate = createSelector(
+	[selectExpenses],
+	(expenses) => {
+		const totals: Record<string, DailyTotals> = {};
+		for (const expense of expenses) {
+			const day = (totals[expense.date] ??= { debit: 0, credit: 0 });
+			if (expense.type === "Cr") day.credit += expense.amount;
+			else day.debit += expense.amount;
+		}
+		return totals;
+	},
 );
 
 export const selectFilteredExpensesForSelectedDate = createSelector(

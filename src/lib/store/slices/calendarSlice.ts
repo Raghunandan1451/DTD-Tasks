@@ -53,13 +53,6 @@ const calendarSlice = createSlice({
 			return { ...state, ...action.payload, loading: false, error: null };
 		},
 
-		setError: (state, action: PayloadAction<string>) => {
-			state.error = action.payload;
-			state.loading = false;
-		},
-		clearError: (state) => {
-			state.error = null;
-		},
 	},
 	extraReducers: (builder) => {
 		builder
@@ -89,8 +82,6 @@ export const {
 	setSelectedEvent,
 	setShowAddForm,
 	setCalendarState,
-	setError,
-	clearError,
 } = calendarSlice.actions;
 
 export default calendarSlice.reducer;

@@ -44,38 +44,4 @@ describe("TitleWithButton Component", () => {
 		expect(mockOnDownload).toHaveBeenCalledTimes(1);
 		expect(mockOnDownload).toHaveBeenCalledWith("Report");
 	});
-
-	it("calls onRefresh when the refresh button is clicked", () => {
-		const mockOnRefresh = vi.fn();
-		render(
-			<TitleWithButton
-				heading="Markdown Editor"
-				onRefresh={mockOnRefresh}
-			/>
-		);
-
-		fireEvent.click(
-			screen.getByRole("button", { name: "Refresh Markdown files" })
-		);
-
-		expect(mockOnRefresh).toHaveBeenCalledTimes(1);
-	});
-
-	it("renders JSON upload controls only when enabled", () => {
-		const { container } = render(
-			<TitleWithButton
-				heading="Event Tracker"
-				onUpload={vi.fn()}
-				showUpload
-			/>,
-		);
-
-		expect(
-			screen.getByRole("button", { name: "Upload JSON" }),
-		).toBeInTheDocument();
-		expect(container.querySelector('input[type="file"]')).toHaveAttribute(
-			"accept",
-			".json",
-		);
-	});
 });

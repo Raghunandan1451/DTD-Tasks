@@ -5,7 +5,7 @@ import QRCodeSettings from "@src/features/qr_generator/QRCodeSettings";
 import { useDispatch, useSelector } from "react-redux";
 import NotificationCenter from "@src/components/ui/toast/NotificationCenter";
 import useNotifications from "@src/lib/hooks/useNotifications";
-import { handleQRExport } from "@src/lib/utils/downloadHandler/qrExport";
+import { handleQRExport } from "@src/lib/utils/downloadHandler";
 import { updateSettings } from "@src/lib/store/slices/qrSettingSlice";
 import { RootState } from "@src/lib/store/store";
 import Button from "@src/components/ui/button/Button";
@@ -43,6 +43,7 @@ const QRGenerator: React.FC = () => {
 					onDownload={handleDownload}
 					buttonText="Download"
 					containerClass="rounded-bl-xl"
+					showUpload={false}
 					showNotification={showNotification}
 				/>
 

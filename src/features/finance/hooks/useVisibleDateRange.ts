@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
-import type { VisibleRange } from "@src/features/finance/hooks/useVisibleRange";
 import { findRangeForDays } from "@src/features/finance/lib/findRangeForDays";
+import type { VisibleRange } from "@src/features/finance/type";
 
 interface DatedPoint {
 	date: string;

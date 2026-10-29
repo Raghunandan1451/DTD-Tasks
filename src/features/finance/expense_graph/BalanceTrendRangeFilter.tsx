@@ -1,7 +1,7 @@
 import React from "react";
 import Button from "@src/components/ui/button/Button";
 import { findRangeForDays } from "@src/features/finance/lib/findRangeForDays";
-import type { VisibleRange } from "@src/features/finance/hooks/useVisibleRange";
+import type { VisibleRange } from "@src/features/finance/type";
 
 interface DatedPoint {
 	date: string;
