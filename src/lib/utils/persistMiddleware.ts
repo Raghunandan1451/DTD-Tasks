@@ -1,10 +1,9 @@
-import { openDB } from "idb";
 import { Middleware, Action } from "@reduxjs/toolkit";
 import { RootState } from "@src/lib/store/store";
 import { debounce } from "@src/lib/utils/debounce";
+import { getValue, setValue } from "@src/lib/db/database";
 
 const sliceStorageKeys: Record<string, string> = {
-	calendar: "redux_calendar_data",
 	fileManager: "redux_markdown_data",
 	expenses: "redux_expenses_data",
 	finance: "redux_finance_data",
@@ -51,24 +50,8 @@ const isReduxAction = (
 	);
 };
 
-const getDB = () =>
-	openDB("AIO-List", 1, {
-		upgrade(db) {
-			if (!db.objectStoreNames.contains("data")) {
-				db.createObjectStore("data");
-			}
-		},
-	});
+export const saveToIndexedDB = <T>(key: string, data: T): Promise<void> =>
+	setValue(key, data);
 
-export const saveToIndexedDB = async <T>(
-	key: string,
-	data: T
-): Promise<void> => {
-	const db = await getDB();
-	await db.put("data", data, key);
-};
-
-export const getFromIndexedDB = async <T>(key: string): Promise<T | null> => {
-	const db = await getDB();
-	return (await db.get("data", key)) ?? null;
-};
+export const getFromIndexedDB = <T>(key: string): Promise<T | null> =>
+	getValue<T>(key);

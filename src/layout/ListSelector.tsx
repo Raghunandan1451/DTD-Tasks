@@ -2,66 +2,47 @@ import React, { useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import ThemeToggle from "@src/components/shared/theme_toggler/ThemeToggle";
 
-// Define the proper types for our navigation structure
-interface ListItem {
-	id: string;
+export interface NavItem {
+	id: string; // route segment
 	name: string;
 	description: string;
+	mobileReady?: boolean;
+	group?: string; // reserved for grouping later
 }
 
-interface NavigationGroup {
-	title?: string; // Optional group title
-	items: ListItem[];
-}
-
-// Create the updated navigation structure
-const navigationData: NavigationGroup[] = [
+const navigationData: NavItem[] = [
 	{
-		// Home doesn't need a group title
-		items: [
-			{
-				id: "",
-				name: "Home",
-				description: "Dashboard & Overview",
-			},
-		],
+		id: "home",
+		name: "Home",
+		description: "Activity & Journal",
+		mobileReady: true,
 	},
 	{
-		title: "Trackers",
-		items: [
-			{
-				id: "events",
-				name: "Events",
-				description: "Calendar & Schedule",
-			},
-			{
-				id: "expenses",
-				name: "Expenses",
-				description: "Not compatible with mobile yet",
-			},
-		],
+		id: "expenses",
+		name: "Expenses",
+		description: "Track spending & budgets",
+		mobileReady: false,
 	},
 	{
-		title: "Generators",
-		items: [
-			{
-				id: "qrgen",
-				name: "QR Code",
-				description: "Create QR Codes",
-			},
-		],
+		id: "qrgen",
+		name: "QR Code",
+		description: "Create QR codes",
+		mobileReady: true,
 	},
 	{
-		title: "Editors",
-		items: [
-			{
-				id: "markdown",
-				name: "Markdown",
-				description: "Not compatible with mobile yet",
-			},
-		],
+		id: "markdown",
+		name: "Markdown",
+		description: "Write & export notes",
+		mobileReady: true,
 	},
 ];
+
+/** "home" is the index route; every other id is its route segment. */
+const toPath = (id: string): string => (id === "home" ? "/" : `/${id}`);
+
+const DesktopOnlyBadge: React.FC = () => (
+	<span className="nav-badge">Desktop only</span>
+);
 
 const ListSelector: React.FC = () => {
 	const location = useLocation();
@@ -69,7 +50,7 @@ const ListSelector: React.FC = () => {
 
 	const isActive = (
 		currentPath: { pathname: string },
-		targetPath: string
+		targetPath: string,
 	): boolean => {
 		return currentPath.pathname === targetPath;
 	};
@@ -164,36 +145,30 @@ const ListSelector: React.FC = () => {
 
 					{/* Navigation Links */}
 					<div className="flex-1 overflow-y-auto py-4 px-2">
-						{navigationData.map((group, groupIndex) => (
-							<div key={groupIndex} className="mb-6">
-								{group.title && (
-									<div className="px-3 py-2 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-										{group.title}
-									</div>
-								)}
-								{group.items.map(
-									({ id, name, description }) => (
-										<Link
-											key={id}
-											to={`/${id}`}
-											onClick={closeMenu}
-											className={`flex flex-col gap-1 px-3 py-3 rounded-lg text-sm transition-colors mb-2 ${
-												isActive(location, `/${id}`)
-													? "bg-cyan-500/20 text-cyan-600 dark:text-cyan-400"
-													: "text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
-											}`}
-										>
-											<span className="font-semibold">
-												{name}
-											</span>
-											<span className="text-xs text-gray-500 dark:text-gray-400 font-normal">
-												{description}
-											</span>
-										</Link>
-									)
-								)}
-							</div>
-						))}
+						{navigationData.map(
+							({ id, name, description, mobileReady }) => (
+								<Link
+									key={id}
+									to={toPath(id)}
+									onClick={closeMenu}
+									className={`flex flex-col gap-1 px-3 py-3 rounded-lg text-sm transition-colors mb-2 ${
+										isActive(location, toPath(id))
+											? "bg-cyan-500/20 text-cyan-600 dark:text-cyan-400"
+											: "text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
+									}`}
+								>
+									<span className="flex items-center gap-2 font-semibold">
+										{name}
+										{mobileReady === false && (
+											<DesktopOnlyBadge />
+										)}
+									</span>
+									<span className="text-xs text-gray-500 dark:text-gray-400 font-normal">
+										{description}
+									</span>
+								</Link>
+							),
+						)}
 					</div>
 				</div>
 			</nav>
@@ -206,26 +181,20 @@ const ListSelector: React.FC = () => {
 					</h2>
 					<ThemeToggle />
 				</div>
-				{navigationData.map((group, groupIndex) => (
-					<div key={groupIndex} className="flex flex-col gap-1">
-						{group.title && (
-							<div className="glass-nav-section-title">
-								{group.title}
-							</div>
-						)}
-						{group.items.map(({ id, name }) => (
-							<Link
-								key={id}
-								to={`/${id}`}
-								className={`${
-									isActive(location, `/${id}`) ? "active" : ""
-								} glass-link`}
-							>
-								{name}
-							</Link>
-						))}
-					</div>
-				))}
+				<div className="flex flex-col gap-1">
+					{navigationData.map(({ id, name, mobileReady }) => (
+						<Link
+							key={id}
+							to={toPath(id)}
+							className={`${
+								isActive(location, toPath(id)) ? "active" : ""
+							} glass-link flex items-center justify-between gap-2`}
+						>
+							{name}
+							{mobileReady === false && <DesktopOnlyBadge />}
+						</Link>
+					))}
+				</div>
 			</nav>
 		</>
 	);

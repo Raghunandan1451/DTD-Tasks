@@ -1,12 +1,10 @@
 import { useState, useMemo } from "react";
 import { useSelector, useDispatch } from "react-redux";
 import {
-	handleCalendarExport,
 	handleFinanceExport,
 	handleMarkdownExport,
 	handleFullAppExport,
 } from "@src/lib/utils/downloadHandler";
-import { hydrateCalendar } from "@src/lib/store/thunks/calendarThunk";
 import { hydrateFinance } from "@src/lib/store/thunks/financeThunk";
 import { hydrateExpenses } from "@src/lib/store/thunks/expenseThunk";
 import { hydrateMarkdown } from "@src/lib/store/thunks/markdownThunk";
@@ -28,7 +26,6 @@ export const useHomeDownload = (
 
 	const isDataLoaded = useMemo(
 		() => ({
-			events: appState.calendar?.loaded || false,
 			finance:
 				(appState.finance?.loaded || false) &&
 				(appState.expenses?.loaded || false),
@@ -39,7 +36,6 @@ export const useHomeDownload = (
 
 	const stats: Record<Section, string | number> = useMemo(
 		() => ({
-			events: appState.calendar?.events?.length || 0,
 			finance: appState.expenses?.expenses?.length || 0,
 			files: appState.fileManager?.files?.length || 0,
 		}),
@@ -64,12 +60,6 @@ export const useHomeDownload = (
 		total: number,
 	) => {
 		const loaders: Record<Section, () => Promise<void>> = {
-			events: async () => {
-				if (!isDataLoaded.events) {
-					showNotification("Loading events data...", "info");
-					await dispatch(hydrateCalendar()).unwrap();
-				}
-			},
 			finance: async () => {
 				if (!isDataLoaded.finance) {
 					showNotification("Loading finance data...", "info");
@@ -117,12 +107,6 @@ export const useHomeDownload = (
 			} else {
 				showNotification("Creating export...", "info");
 
-				if (selected.has("events")) {
-					await handleCalendarExport(
-						appState.calendar,
-						showNotification,
-					);
-				}
 				if (selected.has("finance")) {
 					await handleFinanceExport(
 						appState.finance,

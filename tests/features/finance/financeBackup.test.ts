@@ -32,6 +32,14 @@ const expensesState = {
 };
 
 describe("buildFinanceBackup / parseFinanceBackup", () => {
+	it("ignores a leftover events key from old backups", () => {
+		const backup = { ...buildFinanceBackup(finance, expensesState), events: [{ id: 1 }] };
+
+		const parsed = parseFinanceBackup(JSON.parse(JSON.stringify(backup)));
+		expect(parsed.finance).toEqual(finance);
+		expect(parsed.expenses).toHaveLength(2);
+	});
+
 	it("round-trips a combined backup", () => {
 		const backup = buildFinanceBackup(finance, expensesState);
 		expect(backup.version).toBe(FINANCE_BACKUP_VERSION);

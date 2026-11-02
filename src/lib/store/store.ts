@@ -4,7 +4,6 @@ import qrSettingReducer from "@src/lib/store/slices/qrSettingSlice";
 import markdownReducer from "@src/lib/store/slices/markdownSlice";
 import financeReducer from "@src/lib/store/slices/financeSlice";
 import expenseReducer from "@src/lib/store/slices/expensesSlice";
-import calendarReducer from "@src/lib/store/slices/calendarSlice";
 
 const store = configureStore({
 	reducer: {
@@ -12,7 +11,6 @@ const store = configureStore({
 		fileManager: markdownReducer,
 		finance: financeReducer,
 		expenses: expenseReducer,
-		calendar: calendarReducer,
 	},
 	middleware: (getDefaultMiddleware) => {
 		return getDefaultMiddleware().concat(persistMiddleware);

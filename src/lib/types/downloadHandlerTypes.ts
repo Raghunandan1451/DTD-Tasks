@@ -1,7 +1,6 @@
 import { File, Folder } from "@src/features/markdown/type";
 import { FinanceState } from "@src/features/finance/type";
 import type { ExpensesState } from "@src/lib/store/slices/expensesSlice";
-import { Event } from "@src/features/event/type";
 
 export interface FileTree {
 	path: string;
@@ -15,17 +14,6 @@ export interface QRData {
 	selectedIcon: string;
 	bgColor: string;
 	fgColor: string;
-}
-
-export interface CalendarData {
-	events: Event[];
-	currentDate: string;
-	viewMode: "daily" | "weekly";
-	selectedEvent: Event | null;
-	showAddForm: boolean;
-	loading: boolean;
-	error: string | null;
-	loaded?: boolean;
 }
 
 export type ExpensesData = ExpensesState;
@@ -42,7 +30,6 @@ export interface AppState {
 	fileManager?: FileManagerData;
 	finance?: FinanceState;
 	expenses?: ExpensesData;
-	calendar?: CalendarData;
 }
 
 export interface Metadata {

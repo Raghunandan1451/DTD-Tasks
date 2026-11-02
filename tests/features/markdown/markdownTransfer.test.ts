@@ -20,6 +20,12 @@ describe("Markdown JSON transfer", () => {
 		expect(parseMarkdownJSON({ files })).toEqual(files);
 	});
 
+	it("ignores a leftover events key from old backups", () => {
+		const files = [{ path: "idea.md", type: "file", content: "Draft" }];
+
+		expect(parseMarkdownJSON({ files, events: [{ id: 1 }] })).toEqual(files);
+	});
+
 	it("rejects malformed Markdown data", () => {
 		expect(() => parseMarkdownJSON({ files: [{ path: "bad.md" }] })).toThrow(
 			"Markdown JSON contains an invalid file tree.",

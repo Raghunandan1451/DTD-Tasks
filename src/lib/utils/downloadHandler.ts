@@ -3,7 +3,6 @@ import JSZip from "jszip";
 import { saveAs } from "file-saver";
 import {
 	AppState,
-	CalendarData,
 	ExpensesData,
 	FileTree,
 	Metadata,
@@ -15,8 +14,6 @@ import {
 	FinanceState,
 	SimulatedExpense,
 } from "@src/features/finance/type";
-import { Event } from "@src/features/event/type";
-import { generateWeeklyCalendarScreenshot } from "@src/features/event/lib/utils";
 import { generateIndividualFilePDF } from "@src/features/markdown/lib/enhancedPDFGenerator";
 import {
 	buildFinanceBackup,
@@ -37,22 +34,6 @@ const formatTimestamp = (): string => {
 		.replace(/[:.]/g, "-")
 		.slice(0, -5);
 	return timestamp;
-};
-
-const createICS = (events: Event[]): string => {
-	const header = `BEGIN:VCALENDAR\nVERSION:2.0\nPRODID:-//ListManager//EN\nCALSCALE:GREGORIAN`;
-	const body = events
-		.map((ev) => {
-			const formatDate = (date: string) => date.replace(/-/g, "");
-			return `BEGIN:VEVENT\nUID:${ev.id}@listmanager\nSUMMARY:${
-				ev.title || "Event"
-			}\nDTSTART;VALUE=DATE:${formatDate(ev.startDate)}\nDTEND;VALUE=DATE:${formatDate(ev.endDate)}\nDESCRIPTION:${
-				ev.content || ""
-			}\nCATEGORIES:${ev.tag}\nSTATUS:CONFIRMED\nEND:VEVENT`;
-		})
-		.join("\n");
-	const footer = "END:VCALENDAR";
-	return `${header}\n${body}\n${footer}`;
 };
 
 const createMetadata = (section: string, dataCount: number): Metadata => {
@@ -187,62 +168,6 @@ const generateEstimatedPDF = ({
 	);
 
 	return doc;
-};
-
-export const handleCalendarExport = async (
-	calendarData: CalendarData,
-	showNotification?: ShowNotificationFn,
-): Promise<void> => {
-	const events = calendarData?.events || [];
-
-	if (!events.length) {
-		showNotification?.("No calendar events to export", "error");
-		return;
-	}
-
-	try {
-		const zip = new JSZip();
-
-		// Add calendar JSON
-		zip.file("calendar-data.json", JSON.stringify(calendarData, null, 2));
-
-		// Add ICS file
-		const icsContent = createICS(events);
-		zip.file("calendar.ics", icsContent);
-
-		// Add weekly screenshot
-		const screenshot = await generateWeeklyCalendarScreenshot(
-			events,
-			calendarData.currentDate,
-		);
-		if (screenshot) {
-			zip.file("weekly-schedule.png", screenshot);
-		} else {
-			console.warn("Screenshot generation failed");
-		}
-
-		// Add metadata
-		zip.file(
-			"meta.json",
-			JSON.stringify(
-				{
-					type: "Calendar",
-					count: events.length,
-					exportedAt: new Date().toISOString(),
-				},
-				null,
-				2,
-			),
-		);
-
-		const blob = await zip.generateAsync({ type: "blob" });
-
-		saveAs(blob, `calendar-export_${formatTimestamp()}.zip`);
-		showNotification?.("Calendar exported successfully", "success");
-	} catch (error) {
-		console.error("Calendar export error:", error);
-		showNotification?.("Failed to export calendar", "error");
-	}
 };
 
 interface ExpenseReportFile {
@@ -546,32 +471,6 @@ export const handleFullAppExport = async (
 		let totalItems = 0;
 		let hasData = false;
 
-		// Calendar
-		if (appState.calendar?.events?.length) {
-			hasData = true;
-			const calendarFolder = zip.folder("Calendar");
-
-			calendarFolder?.file(
-				"calendar-data.json",
-				JSON.stringify(appState.calendar, null, 2),
-			);
-			calendarFolder?.file(
-				"calendar.ics",
-				createICS(appState.calendar.events),
-			);
-
-			// Add weekly screenshot
-			const screenshot = await generateWeeklyCalendarScreenshot(
-				appState.calendar.events,
-				appState.calendar.currentDate,
-			);
-			if (screenshot) {
-				calendarFolder?.file("weekly-schedule.png", screenshot);
-			}
-
-			totalItems += appState.calendar.events.length;
-		}
-
 		// Finance & Expenses
 		if (appState.finance || appState.expenses?.expenses?.length) {
 			hasData = true;
@@ -657,12 +556,11 @@ Generated: ${new Date().toLocaleString()}
 Total Items: ${totalItems}
 
 Folders:
-- Calendar: Events and .ics file
 - Finance: Balance, expenses, and PDF report
 - Markdown: Files and folders
 
 To restore data:
-1. Go to the specific page (Calendar/Finance/Markdown)
+1. Go to the specific page (Finance/Markdown)
 2. Click "Upload JSON" and select the file (Finance: finance-backup.json)
 3. QR codes must be regenerated manually
 `,

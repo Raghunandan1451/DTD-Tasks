@@ -17,7 +17,7 @@ vi.mock("idb", () => {
 		get: vi.fn(async (_store: string, key: string) => db.data[key]),
 	};
 	return {
-		openDB: vi.fn(() => db),
+		openDB: vi.fn(() => Promise.resolve(db)),
 	};
 });
 

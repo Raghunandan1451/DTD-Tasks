@@ -1,15 +1,29 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render, screen } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
-import ListSelector from "@src/layout/ListSelector"; // Adjust the path as needed
+import ListSelector from "@src/layout/ListSelector";
 import "@testing-library/jest-dom";
 import { ThemeProvider } from "@src/lib/context/ThemeContext";
 
+const renderAt = (path: string) =>
+	render(
+		<MemoryRouter initialEntries={[path]}>
+			<ThemeProvider>
+				<ListSelector />
+			</ThemeProvider>
+		</MemoryRouter>,
+	);
+
+// The desktop and mobile menus both render each link.
+const desktopLink = (name: string) =>
+	screen
+		.getAllByRole("link", { name: new RegExp(name) })
+		.find((link) => link.classList.contains("glass-link"));
+
 describe("ListSelector component", () => {
 	beforeEach(() => {
-		// Mock window.matchMedia to return the preferred theme for testing purposes
 		global.matchMedia = vi.fn().mockImplementation((query) => ({
-			matches: query === "(prefers-color-scheme: dark)", // Set this to true or false depending on what theme you want to test
+			matches: query === "(prefers-color-scheme: dark)",
 			media: query,
 			onchange: null,
 			addEventListener: vi.fn(),
@@ -18,39 +32,44 @@ describe("ListSelector component", () => {
 		}));
 	});
 
-	it("renders all list items", () => {
-		render(
-			<MemoryRouter>
-				<ThemeProvider>
-					<ListSelector />
-				</ThemeProvider>
-			</MemoryRouter>
-		);
+	it("renders a flat list without Events or group titles", () => {
+		renderAt("/");
 
-		// Expected list items
-		const items = ["Home", "Finance", "QR Code", "Markdown"];
-		items.forEach((item) => {
-			expect(screen.getByText(item)).toBeInTheDocument();
+		["Home", "Expenses", "QR Code", "Markdown"].forEach((name) => {
+			expect(desktopLink(name)).toBeInTheDocument();
 		});
+		expect(screen.queryByText("Events")).not.toBeInTheDocument();
+		expect(screen.queryByText("Trackers")).not.toBeInTheDocument();
+		expect(screen.queryByText("Generators")).not.toBeInTheDocument();
+		expect(screen.queryByText("Editors")).not.toBeInTheDocument();
 	});
 
-	it("applies active class to the correct link", () => {
-		// Set initial route to "/finance" so that the Finance link is active.
-		render(
-			<MemoryRouter initialEntries={["/finance"]}>
-				<ThemeProvider>
-					<ListSelector />
-				</ThemeProvider>
-			</MemoryRouter>
-		);
+	it("links Home to the root route", () => {
+		renderAt("/expenses");
 
-		const todoLink = screen.getByText("Finance");
+		expect(desktopLink("Home")).toHaveAttribute("href", "/");
+		expect(desktopLink("Expenses")).toHaveAttribute("href", "/expenses");
+	});
 
-		// In your component, when active, the link gets "bg-teal-400" in its className.
-		expect(todoLink).toHaveClass("active");
+	it("marks the current route as active", () => {
+		renderAt("/expenses");
 
-		// Check that a non-active link (e.g., "Home") does not have the active class.
-		const homeLink = screen.getByText("Home");
-		expect(homeLink).not.toHaveClass("active");
+		expect(desktopLink("Expenses")).toHaveClass("active");
+		expect(desktopLink("Home")).not.toHaveClass("active");
+	});
+
+	it("marks Home active at the root", () => {
+		renderAt("/");
+
+		expect(desktopLink("Home")).toHaveClass("active");
+	});
+
+	it("shows a desktop-only badge only on non-mobile-ready items", () => {
+		renderAt("/");
+
+		expect(desktopLink("Expenses")).toHaveTextContent("Desktop only");
+		expect(desktopLink("Markdown")).toHaveTextContent("Desktop only");
+		expect(desktopLink("Home")).not.toHaveTextContent("Desktop only");
+		expect(desktopLink("QR Code")).not.toHaveTextContent("Desktop only");
 	});
 });

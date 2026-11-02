@@ -6,8 +6,8 @@
 			   rounded-r-xl shadow-lg;
 	}
 
-	.glass-nav-section-title {
-		@apply px-1 text-xs font-medium text-gray-800 dark:text-gray-400 transition-colors duration-300;
+	.nav-badge {
+		@apply shrink-0 rounded-full border border-current/30 px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wide text-gray-600 dark:text-gray-400;
 	}
 
 	.glass-link {
