@@ -1,5 +1,5 @@
 import { useState, useMemo } from "react";
-import { useSelector, useDispatch } from "react-redux";
+import { useSelector, useDispatch, useStore } from "react-redux";
 import {
 	handleFinanceExport,
 	handleMarkdownExport,
@@ -18,7 +18,12 @@ export const useHomeDownload = (
 	) => void,
 ) => {
 	const dispatch = useDispatch<AppDispatch>();
-	const appState = useSelector((state: RootState) => state);
+	const store = useStore<RootState>();
+	// Select slices individually: selecting the whole state re-renders on every
+	// store change and triggers react-redux's "returned the root state" warning.
+	const finance = useSelector((state: RootState) => state.finance);
+	const expenses = useSelector((state: RootState) => state.expenses);
+	const fileManager = useSelector((state: RootState) => state.fileManager);
 
 	const [isDownloading, setIsDownloading] = useState(false);
 	const [downloadProgress, setDownloadProgress] = useState(0);
@@ -26,20 +31,18 @@ export const useHomeDownload = (
 
 	const isDataLoaded = useMemo(
 		() => ({
-			finance:
-				(appState.finance?.loaded || false) &&
-				(appState.expenses?.loaded || false),
-			files: appState.fileManager?.loaded || false,
+			finance: (finance?.loaded || false) && (expenses?.loaded || false),
+			files: fileManager?.loaded || false,
 		}),
-		[appState],
+		[finance, expenses, fileManager],
 	);
 
 	const stats: Record<Section, string | number> = useMemo(
 		() => ({
-			finance: appState.expenses?.expenses?.length || 0,
-			files: appState.fileManager?.files?.length || 0,
+			finance: expenses?.expenses?.length || 0,
+			files: fileManager?.files?.length || 0,
 		}),
-		[appState],
+		[expenses, fileManager],
 	);
 
 	const toggleSection = (section: Section) => {
@@ -101,6 +104,9 @@ export const useHomeDownload = (
 
 			await new Promise((resolve) => setTimeout(resolve, 100));
 
+			// Read after hydration: the slices captured at render time are stale.
+			const appState = store.getState();
+
 			if (selected.size === SECTIONS.length) {
 				showNotification("Creating full export...", "info");
 				await handleFullAppExport(appState, showNotification);
@@ -146,7 +152,6 @@ export const useHomeDownload = (
 	};
 
 	return {
-		appState,
 		isDownloading,
 		downloadProgress,
 		selected,
