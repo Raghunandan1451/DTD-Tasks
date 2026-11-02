@@ -1,7 +1,16 @@
 import { openDB, DBSchema, IDBPDatabase } from "idb";
+import type {
+	JournalEntry,
+	JournalImage,
+	MarkdownAction,
+	MarkdownLogEntry,
+} from "@src/lib/db/types";
 
 export const DB_NAME = "AIO-List";
-export const DB_VERSION = 2;
+export const DB_VERSION = 3;
+
+/** Unique index that makes [fileId, day, action] a natural upsert key. */
+export const MARKDOWN_LOG_UNIQUE_INDEX = "fileId_day_action";
 
 /** v1 stored the removed Events page under this key. */
 export const LEGACY_CALENDAR_KEY = "redux_calendar_data";
@@ -12,6 +21,23 @@ interface AppDB extends DBSchema {
 	data: {
 		key: string;
 		value: unknown;
+	};
+	journal: {
+		key: string;
+		value: JournalEntry;
+		indexes: { createdAt: number };
+	};
+	journalImages: {
+		key: string;
+		value: JournalImage;
+	};
+	markdownLog: {
+		key: string;
+		value: MarkdownLogEntry;
+		indexes: {
+			day: string;
+			fileId_day_action: [string, string, MarkdownAction];
+		};
 	};
 }
 
@@ -54,6 +80,27 @@ export const getDB = (): Promise<IDBPDatabase<AppDB>> => {
 					db.createObjectStore("data");
 				}
 
+				// v2 -> v3: timeline stores. Created before any await so the
+				// versionchange transaction is still active.
+				if (oldVersion < 3) {
+					const journal = db.createObjectStore("journal", {
+						keyPath: "id",
+					});
+					journal.createIndex("createdAt", "createdAt");
+
+					db.createObjectStore("journalImages", { keyPath: "id" });
+
+					const markdownLog = db.createObjectStore("markdownLog", {
+						keyPath: "id",
+					});
+					markdownLog.createIndex("day", "day");
+					markdownLog.createIndex(
+						MARKDOWN_LOG_UNIQUE_INDEX,
+						["fileId", "day", "action"],
+						{ unique: true },
+					);
+				}
+
 				// v1 -> v2: Events was removed. Keep its data aside for a
 				// one-time download, then drop the old key.
 				if (oldVersion > 0 && oldVersion < 2) {
@@ -93,7 +140,7 @@ export const getDB = (): Promise<IDBPDatabase<AppDB>> => {
 };
 
 /** Surfaces write failures (quota exceeded and similar) through the status. */
-const withErrorStatus = async <T>(operation: () => Promise<T>): Promise<T> => {
+export const withErrorStatus = async <T>(operation: () => Promise<T>): Promise<T> => {
 	try {
 		return await operation();
 	} catch (error) {
