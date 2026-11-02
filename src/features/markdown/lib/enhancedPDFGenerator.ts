@@ -2,7 +2,7 @@
 import { jsPDF } from "jspdf";
 import { File } from "@src/features/markdown/type";
 
-export const generateIndividualFilePDF = (file: File): jsPDF => {
+export const generateIndividualFilePDF = (file: Pick<File, "path" | "content">): jsPDF => {
 	const doc = new jsPDF({
 		unit: "pt",
 		format: "a4",

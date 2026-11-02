@@ -1,5 +1,6 @@
 import type { ExpenseEntry, FinanceState } from "@src/features/finance/type";
 import type { ExpensesState } from "@src/lib/store/slices/expensesSlice";
+import { SCHEMA_VERSION } from "@src/lib/utils/schemaVersion";
 
 export const FINANCE_BACKUP_FILE = "finance-backup.json";
 export const FINANCE_BACKUP_VERSION = 1;
@@ -7,6 +8,7 @@ export const FINANCE_BACKUP_VERSION = 1;
 /** One file holding both slices, so a restore is a single upload. */
 export interface FinanceBackup {
 	version: number;
+	schemaVersion: number;
 	finance?: FinanceState;
 	expenses?: ExpensesState;
 }
@@ -33,6 +35,7 @@ export const buildFinanceBackup = (
 	expenses?: ExpensesState,
 ): FinanceBackup => ({
 	version: FINANCE_BACKUP_VERSION,
+	schemaVersion: SCHEMA_VERSION,
 	...(finance ? { finance } : {}),
 	...(expenses ? { expenses } : {}),
 });

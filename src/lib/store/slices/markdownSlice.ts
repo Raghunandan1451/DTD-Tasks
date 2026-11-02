@@ -1,5 +1,6 @@
-import { createSlice, PayloadAction } from "@reduxjs/toolkit";
+import { createSlice, nanoid, PayloadAction } from "@reduxjs/toolkit";
 import { findFileByPath } from "@src/lib/utils/treeUtils";
+import { ensureIds } from "@src/lib/utils/markdownIds";
 import { File, Folder, FileState } from "@src/features/markdown/type";
 
 const MARKDOWN_RULES_CONTENT = `# Markdown Formatting Guide
@@ -66,6 +67,7 @@ function example() {
 const initialState: FileState = {
 	files: [
 		{
+			id: "markdown-rules",
 			path: "Markdown_Rules.md",
 			type: "file",
 			content: MARKDOWN_RULES_CONTENT,
@@ -81,55 +83,81 @@ const markdownSlice = createSlice({
 	initialState: initialState,
 	reducers: {
 		setFileState: (_, action: PayloadAction<FileState>) => {
-			return { ...action.payload, loaded: true };
+			return {
+				...action.payload,
+				files: ensureIds(action.payload.files),
+				loaded: true,
+			};
 		},
-		addFolder: (
-			state,
-			action: PayloadAction<{ parentPath: string; folder: Folder }>
-		) => {
-			const { parentPath, folder } = action.payload;
-			const parts = parentPath.split("/").filter(Boolean);
+		addFolder: {
+			reducer: (
+				state,
+				action: PayloadAction<{ parentPath: string; folder: Folder }>
+			) => {
+				const { parentPath, folder } = action.payload;
+				const parts = parentPath.split("/").filter(Boolean);
 
-			let current: (File | Folder)[] = state.files;
-			for (const part of parts) {
-				const existing = current.find(
-					(item) => item.type === "folder" && item.path === part
-				) as Folder | undefined;
-				if (!existing) return;
-				current = existing.children;
-			}
+				let current: (File | Folder)[] = state.files;
+				for (const part of parts) {
+					const existing = current.find(
+						(item) => item.type === "folder" && item.path === part
+					) as Folder | undefined;
+					if (!existing) return;
+					current = existing.children;
+				}
 
-			if (!current.some((item) => item.path === folder.path)) {
-				current.push(folder);
-			}
+				if (!current.some((item) => item.path === folder.path)) {
+					current.push(folder);
+				}
+			},
+			// Ids are generated here so the reducer stays pure.
+			prepare: (payload: {
+				parentPath: string;
+				folder: Omit<Folder, "id"> & { id?: string };
+			}) => ({
+				payload: {
+					parentPath: payload.parentPath,
+					folder: { ...payload.folder, id: payload.folder.id ?? nanoid() },
+				},
+			}),
 		},
-		addFile: (
-			state,
-			action: PayloadAction<{
+		addFile: {
+			reducer: (
+				state,
+				action: PayloadAction<{
+					id: string;
+					path: string;
+					content: string;
+					parentPath: string;
+				}>
+			) => {
+				const { id, path, content, parentPath } = action.payload;
+				const parts = parentPath.split("/").filter(Boolean);
+
+				let current: (File | Folder)[] = state.files;
+				for (const part of parts) {
+					const existing = current.find(
+						(item) => item.type === "folder" && item.path === part
+					) as Folder | undefined;
+					if (!existing) return;
+					current = existing.children;
+				}
+
+				if (!current.some((item) => item.path === path)) {
+					current.push({
+						id,
+						path,
+						type: "file",
+						content,
+					});
+				}
+			},
+			prepare: (payload: {
+				id?: string;
 				path: string;
 				content: string;
 				parentPath: string;
-			}>
-		) => {
-			const { path, content, parentPath } = action.payload;
-			const parts = parentPath.split("/").filter(Boolean);
-
-			let current: (File | Folder)[] = state.files;
-			for (const part of parts) {
-				const existing = current.find(
-					(item) => item.type === "folder" && item.path === part
-				) as Folder | undefined;
-				if (!existing) return;
-				current = existing.children;
-			}
-
-			if (!current.some((item) => item.path === path)) {
-				current.push({
-					path,
-					type: "file",
-					content,
-				});
-			}
+			}) => ({ payload: { ...payload, id: payload.id ?? nanoid() } }),
 		},
 		renameFile: (
 			state,

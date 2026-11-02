@@ -1,4 +1,6 @@
 export interface BaseItem {
+	/** Stable identity; survives renames, unlike `path`. */
+	id: string;
 	path: string;
 	type: "file" | "folder";
 	fullPath?: string;

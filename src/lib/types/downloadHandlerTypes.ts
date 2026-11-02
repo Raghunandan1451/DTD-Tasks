@@ -37,6 +37,7 @@ export interface Metadata {
 	exportDate: string;
 	itemCount: number;
 	version: string;
+	schemaVersion: number;
 	appName: string;
 }
 

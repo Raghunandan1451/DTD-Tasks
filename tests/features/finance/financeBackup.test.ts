@@ -7,6 +7,7 @@ import {
 	parseFinanceBackupText,
 } from "@src/features/finance/lib/financeBackup";
 import type { ExpenseEntry, FinanceState } from "@src/features/finance/type";
+import { SCHEMA_VERSION } from "@src/lib/utils/schemaVersion";
 
 const entry = (id: string, date = "2026-10-01"): ExpenseEntry => ({
 	id,
@@ -43,6 +44,7 @@ describe("buildFinanceBackup / parseFinanceBackup", () => {
 	it("round-trips a combined backup", () => {
 		const backup = buildFinanceBackup(finance, expensesState);
 		expect(backup.version).toBe(FINANCE_BACKUP_VERSION);
+		expect(backup.schemaVersion).toBe(SCHEMA_VERSION);
 
 		const parsed = parseFinanceBackup(JSON.parse(JSON.stringify(backup)));
 		expect(parsed.finance).toEqual(finance);

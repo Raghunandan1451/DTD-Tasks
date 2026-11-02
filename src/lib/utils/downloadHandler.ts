@@ -25,6 +25,7 @@ import {
 } from "@src/features/finance/lib/expenseReport";
 import { renderExpenseReportPdf } from "@src/features/finance/lib/expenseReportPdf";
 import { formatISODate } from "@src/lib/utils/isoDate";
+import { SCHEMA_VERSION } from "@src/lib/utils/schemaVersion";
 
 export type FinanceExportReportScope = "allMonths" | "lastTwoMonths";
 
@@ -42,6 +43,7 @@ const createMetadata = (section: string, dataCount: number): Metadata => {
 		exportDate: new Date().toISOString(),
 		itemCount: dataCount,
 		version: "1.0.0",
+		schemaVersion: SCHEMA_VERSION,
 		appName: "List Manager",
 	};
 };
@@ -379,8 +381,7 @@ export const handleMarkdownExport = async (
 					zip.file(fullPath, item.content);
 
 					// Generate individual PDF with proper encoding
-					const fileObj: File = {
-						type: "file",
+					const fileObj = {
 						path: item.path,
 						content: item.content,
 					};
@@ -405,18 +406,10 @@ export const handleMarkdownExport = async (
 		processFileTree(fileTree);
 
 		// Add JSON for re-import (in root)
-		zip.file("file-manager-data.json", JSON.stringify({ files }, null, 2));
-
-		// Add metadata
-		const createMetadata = (section: string, dataCount: number) => {
-			return {
-				section,
-				exportDate: new Date().toISOString(),
-				itemCount: dataCount,
-				version: "1.0.0",
-				appName: "List Manager",
-			};
-		};
+		zip.file(
+			"file-manager-data.json",
+			JSON.stringify({ schemaVersion: SCHEMA_VERSION, files }, null, 2),
+		);
 
 		zip.file(
 			"meta.json",
@@ -533,7 +526,11 @@ export const handleFullAppExport = async (
 			processFiles(fileTree);
 			fileManagerFolder?.file(
 				"file-manager-data.json",
-				JSON.stringify(appState.fileManager, null, 2),
+				JSON.stringify(
+					{ schemaVersion: SCHEMA_VERSION, ...appState.fileManager },
+					null,
+					2,
+				),
 			);
 		}
 
