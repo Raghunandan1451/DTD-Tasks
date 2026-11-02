@@ -13,3 +13,16 @@ export const ensureIds = (items: (File | Folder)[]): (File | Folder)[] =>
 			? { ...item, id, children: ensureIds(item.children) }
 			: { ...item, id };
 	});
+
+/** Ids of every file and folder currently in the tree. */
+export const collectItemIds = (items: (File | Folder)[]): Set<string> => {
+	const ids = new Set<string>();
+	const visit = (list: (File | Folder)[]) => {
+		for (const item of list) {
+			ids.add(item.id);
+			if (item.type === "folder") visit(item.children);
+		}
+	};
+	visit(items);
+	return ids;
+};
