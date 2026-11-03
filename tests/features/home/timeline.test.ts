@@ -2,6 +2,7 @@ import "fake-indexeddb/auto";
 import { IDBFactory } from "fake-indexeddb";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import {
+	getOlderDay,
 	getTimelineDays,
 	mergeTimelineDays,
 	type TimelineSources,
@@ -308,5 +309,70 @@ describe("getTimelineDays", () => {
 		const getState = vi.fn(() => state(true));
 		expect(await getTimelineDays({ fromDay: "x", toDay: "y" }, "all", getState)).toEqual([]);
 		expect(getState).not.toHaveBeenCalled();
+	});
+});
+
+describe("getOlderDay", () => {
+	const withExpenses = (days: string[]) =>
+		({
+			expenses: {
+				expenses: days.map((date, index) => ({
+					id: `e${index}`,
+					date,
+					group: "Food",
+					name: "x",
+					amount: 1,
+				})),
+				selectedDate: "2026-10-20",
+				loaded: true,
+			},
+			fileManager: { files: [], selectedFile: null, content: "", loaded: true },
+		}) as unknown as RootState;
+
+	beforeEach(async () => {
+		await resetDBForTests();
+		globalThis.indexedDB = new IDBFactory();
+	});
+
+	it("returns null when nothing is older", async () => {
+		expect(await getOlderDay("2026-10-01", "all", () => withExpenses([]))).toBeNull();
+	});
+
+	it("finds the newest older day across all three sources", async () => {
+		const db = await getDB();
+		await db.put("journal", note("j", at(2026, 9, 10)));
+		await logMarkdown("f", "a.md", "edited", undefined, at(2026, 9, 20));
+		const older = await getOlderDay("2026-10-01", "all", () =>
+			withExpenses(["2026-09-15", "2026-10-05"]),
+		);
+		expect(older).toBe("2026-09-20");
+	});
+
+	it("is strictly before the given day", async () => {
+		const db = await getDB();
+		await db.put("journal", note("j", at(2026, 10, 1, 0, 0)));
+		expect(await getOlderDay("2026-10-01", "all", () => withExpenses([]))).toBeNull();
+	});
+
+	it("only looks at the sources the filter includes", async () => {
+		const db = await getDB();
+		await db.put("journal", note("j", at(2026, 9, 10)));
+		await logMarkdown("f", "a.md", "edited", undefined, at(2026, 9, 20));
+		const state = () => withExpenses(["2026-09-25"]);
+		expect(await getOlderDay("2026-10-01", "journal", state)).toBe("2026-09-10");
+		expect(await getOlderDay("2026-10-01", "files", state)).toBe("2026-09-20");
+		expect(await getOlderDay("2026-10-01", "expenses", state)).toBe("2026-09-25");
+	});
+
+	it("uses the local day for a late-night note", async () => {
+		const db = await getDB();
+		await db.put("journal", note("late", at(2026, 9, 30, 23, 30)));
+		expect(await getOlderDay("2026-10-01", "journal", () => withExpenses([]))).toBe(
+			"2026-09-30",
+		);
+	});
+
+	it("returns null for an invalid day", async () => {
+		expect(await getOlderDay("nope", "all", () => withExpenses([]))).toBeNull();
 	});
 });

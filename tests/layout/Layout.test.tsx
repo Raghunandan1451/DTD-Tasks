@@ -37,7 +37,8 @@ describe("Layout component", () => {
 		);
 
 		// Check that ListSelector is rendered by searching for one of its links (e.g., "Home")
-		expect(screen.getByText("Home")).toBeInTheDocument();
+		// The desktop and mobile menus both render the link.
+		expect(screen.getAllByText("Home").length).toBeGreaterThan(0);
 
 		// Check that the Outlet is rendering the dummy component
 		expect(screen.getByTestId("dummy")).toBeInTheDocument();

@@ -2,102 +2,58 @@ import { describe, it, expect, vi, beforeEach, Mock } from "vitest";
 import { render, screen } from "@testing-library/react";
 import MarkdownPreview from "@src/components/shared/preview_editor/MarkdownPreview";
 import { parseMarkdown } from "@src/lib/utils/parseMarkdown";
-import { useSelector } from "react-redux";
 import "@testing-library/jest-dom";
-
-// Create a mock for RootState since we can't import it directly in test
-interface MockRootState {
-	fileManager: {
-		content: string;
-	};
-}
-
-// Mock dependencies
-vi.mock("react-redux", () => ({
-	useSelector: vi.fn(),
-}));
 
 vi.mock("@src/lib/utils/parseMarkdown", () => ({
 	parseMarkdown: vi.fn(),
 }));
 
 describe("MarkdownPreview", () => {
-	const mockContent = "# Test Markdown";
-	const mockParsedContent = [<h1 key="1">Test Markdown</h1>];
+	const content = "# Test Markdown";
 
 	beforeEach(() => {
 		vi.clearAllMocks();
+		(parseMarkdown as unknown as Mock).mockReturnValue([
+			<h1 key="1">Test Markdown</h1>,
+		]);
 
-		// Properly type the mocks
-		const mockedUseSelector = useSelector as unknown as Mock;
-		mockedUseSelector.mockImplementation(
-			(selector: (state: MockRootState) => unknown) => {
-				const mockState: MockRootState = {
-					fileManager: {
-						content: mockContent,
-					},
-				};
-
-				return selector(mockState);
-			}
-		);
-
-		const mockedParseMarkdown = parseMarkdown as unknown as Mock;
-		mockedParseMarkdown.mockReturnValue(mockParsedContent);
-
-		// Mock the scrollIntoView functionality
-		Element.prototype.scrollTo = vi.fn();
+		// Fake layout: 100px of content in a 50px box.
 		Object.defineProperties(HTMLElement.prototype, {
-			scrollHeight: {
-				configurable: true,
-				value: 100,
-			},
-			clientHeight: {
-				configurable: true,
-				value: 50,
-			},
-			scrollTop: {
-				configurable: true,
-				value: 0,
-				writable: true,
-			},
+			scrollHeight: { configurable: true, value: 100 },
+			clientHeight: { configurable: true, value: 50 },
+			scrollTop: { configurable: true, value: 0, writable: true },
 		});
 	});
 
 	it("renders the parsed markdown content", () => {
-		render(<MarkdownPreview />);
+		render(<MarkdownPreview content={content} />);
 
-		// Check if parseMarkdown was called with the correct content
-		expect(parseMarkdown).toHaveBeenCalledWith(mockContent);
-
-		// Check if the parsed content is rendered
+		expect(parseMarkdown).toHaveBeenCalledWith(content);
 		expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent(
 			"Test Markdown"
 		);
 	});
 
-	it("applies auto-scrolling to the bottom when content changes", () => {
-		// Create a ref spy
-		const scrollTopSpy = vi.spyOn(
-			HTMLElement.prototype,
-			"scrollTop",
-			"set"
-		);
+	it("scrolls to the bottom when auto-scroll is on", () => {
+		render(<MarkdownPreview content={content} enableAutoScroll />);
 
-		render(<MarkdownPreview />);
+		// scrollHeight (100) - clientHeight (50)
+		expect(screen.getByTestId("markdown-preview").scrollTop).toBe(50);
+	});
 
-		// Verify auto-scrolling was applied
-		expect(scrollTopSpy).toHaveBeenCalledWith(50); // scrollHeight (100) - clientHeight (50) = 50
+	it("stays at the top when auto-scroll is off", () => {
+		render(<MarkdownPreview content={content} />);
+
+		expect(screen.getByTestId("markdown-preview").scrollTop).toBe(0);
 	});
 
 	it("renders with the correct CSS classes", () => {
-		render(<MarkdownPreview />);
+		render(<MarkdownPreview content={content} />);
 
 		const container = screen.getByTestId("markdown-preview");
-		expect(container).toHaveClass("flex-1");
+		expect(container).toHaveClass("h-full");
 		expect(container).toHaveClass("overflow-y-auto");
 		expect(container).toHaveClass("p-2");
 		expect(container).toHaveClass("rounded-sm");
-		expect(container).toHaveClass("mb-4");
 	});
 });

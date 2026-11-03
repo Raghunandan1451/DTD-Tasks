@@ -72,14 +72,15 @@ describe("parseMarkdown", () => {
 		const code = container.querySelector("code");
 		expect(code).toBeTruthy();
 		expect(code?.textContent).toBe("code");
-		expect(code?.className).toContain("bg-gray-700");
+		expect(code?.className).toContain("font-mono");
+		expect(code?.className).toContain("bg-gray-800");
 	});
 
 	it("handles mixed inline styles", () => {
 		const { container } = render(
 			<>
 				{parseMarkdown(
-					"Text with **bold**, *italic*, __underline__, and ~strikethrough~"
+					"Text with **bold**, *italic*, __underline__, and ~~strikethrough~~"
 				)}
 			</>
 		);

@@ -131,3 +131,15 @@ export const getJournalOnThisDay = async (
 	}
 	return found;
 };
+
+/** createdAt of the newest note strictly before beforeMs, or null if there is none. */
+export const getJournalTimeBefore = async (
+	beforeMs: number,
+): Promise<number | null> => {
+	const db = await getDB();
+	const cursor = await db
+		.transaction("journal")
+		.store.index("createdAt")
+		.openCursor(IDBKeyRange.upperBound(beforeMs, true), "prev");
+	return cursor ? (cursor.key as number) : null;
+};

@@ -1,7 +1,7 @@
-import { Edit2Icon, EyeIcon, SplitSquareVerticalIcon } from "lucide-react";
+import { Edit2Icon, EyeIcon } from "lucide-react";
 import Button from "@src/components/ui/button/Button";
 
-export type EditorMode = "edit" | "preview" | "split";
+export type EditorMode = "edit" | "preview";
 
 interface ModeSelectorProps {
 	currentMode: EditorMode;
@@ -21,11 +21,6 @@ const ModeSelector = ({
 	const modeConfig = {
 		edit: { icon: Edit2Icon, label: "Edit", ariaLabel: "Edit mode" },
 		preview: { icon: EyeIcon, label: "Preview", ariaLabel: "Preview mode" },
-		split: {
-			icon: SplitSquareVerticalIcon,
-			label: "Split",
-			ariaLabel: "Split view mode",
-		},
 	};
 
 	return (

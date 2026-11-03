@@ -37,3 +37,213 @@
 		@apply text-4xl font-bold;
 	}
 }
+
+/*
+ * Timeline: one glass card per day. Inside it a slim rail (--tl-x from the
+ * card's left edge) carries a colour-coded dot per activity: indigo for notes,
+ * emerald for expenses, sky for files. The same layout is used at every width.
+ * Dotted gaps between cards sit on the same x so the path reads as one thread.
+ */
+@layer components {
+	.tl {
+		--tl-x: 1.5rem;
+		--tl-gutter: 3.25rem;
+		--tl-journal: 99 102 241;
+		--tl-expenses: 16 185 129;
+		--tl-files: 14 165 233;
+		--tl-day: 56 189 248;
+	}
+
+	.tl-day {
+		position: relative;
+		border-radius: 1rem;
+		border: 1px solid rgb(255 255 255 / 0.2);
+		background: rgb(255 255 255 / 0.1);
+		box-shadow: 0 4px 14px rgb(0 0 0 / 0.08);
+	}
+	.dark .tl-day {
+		border-color: rgb(255 255 255 / 0.1);
+		background: rgb(15 23 42 / 0.25);
+	}
+
+	/* Sticky date header: stays visible while that day's activity scrolls under it. */
+	.tl-day-head {
+		position: sticky;
+		top: 0;
+		z-index: 10;
+		display: flex;
+		align-items: center;
+		min-height: 2.75rem;
+		padding: 0.5rem 0.75rem 0.5rem var(--tl-gutter);
+		border-radius: 1rem 1rem 0 0;
+		border-bottom: 1px solid rgb(255 255 255 / 0.12);
+		background: rgb(255 255 255 / 0.55);
+		backdrop-filter: blur(10px);
+	}
+	.dark .tl-day-head {
+		background: rgb(15 23 42 / 0.65);
+	}
+	.tl-node {
+		position: absolute;
+		top: 50%;
+		left: var(--tl-x);
+		width: 1.125rem;
+		height: 1.125rem;
+		transform: translate(-50%, -50%);
+		border-radius: 9999px;
+		border: 2px solid rgb(var(--tl-day));
+		background: rgb(var(--tl-day) / 0.2);
+	}
+	.tl-node::after {
+		content: "";
+		position: absolute;
+		inset: 0.1875rem;
+		border-radius: 9999px;
+		background: rgb(var(--tl-day));
+	}
+	.tl-node--today::before {
+		content: "";
+		position: absolute;
+		inset: -2px;
+		border-radius: 9999px;
+		border: 2px solid rgb(var(--tl-day));
+		animation: tl-pulse 2.4s ease-out infinite;
+	}
+
+	/* The rail runs through the day's activities. */
+	.tl-day-list {
+		position: relative;
+		padding: 0.5rem 0.75rem 0.75rem 0;
+	}
+	.tl-day-list::before {
+		content: "";
+		position: absolute;
+		top: 0;
+		bottom: 0;
+		left: var(--tl-x);
+		width: 2px;
+		transform: translateX(-50%);
+		background: linear-gradient(
+			to bottom,
+			rgb(var(--tl-day) / 0.6),
+			rgb(129 140 248 / 0.35)
+		);
+	}
+
+	.tl-row {
+		--tl-accent: var(--tl-files);
+		--tl-dot-top: 1.1rem;
+		position: relative;
+		padding: 0.25rem 0 0.25rem var(--tl-gutter);
+	}
+	.tl-row--journal {
+		--tl-accent: var(--tl-journal);
+		--tl-dot-top: 1.5rem;
+	}
+	.tl-row--expenses {
+		--tl-accent: var(--tl-expenses);
+	}
+	.tl-row::before {
+		content: "";
+		position: absolute;
+		top: var(--tl-dot-top);
+		left: var(--tl-x);
+		width: calc(var(--tl-gutter) - var(--tl-x));
+		height: 2px;
+		transform: translateY(-50%);
+		background: rgb(var(--tl-accent) / 0.45);
+	}
+	.tl-row::after {
+		content: "";
+		position: absolute;
+		top: var(--tl-dot-top);
+		left: var(--tl-x);
+		width: 0.75rem;
+		height: 0.75rem;
+		transform: translate(-50%, -50%);
+		border-radius: 9999px;
+		background: rgb(var(--tl-accent));
+		box-shadow: 0 0 0 3px rgb(var(--tl-accent) / 0.25);
+	}
+	.tl-row--journal::after {
+		width: 0.875rem;
+		height: 0.875rem;
+	}
+	.tl-row [data-tl-icon] {
+		color: rgb(var(--tl-accent));
+	}
+	.tl-row--journal > article {
+		border-left: 3px solid rgb(var(--tl-accent) / 0.7);
+	}
+
+	/* Quiet stretch between two day cards, on the same x as the rail. */
+	.tl-gap {
+		position: relative;
+		height: 3rem;
+	}
+	.tl-gap::before {
+		content: "";
+		position: absolute;
+		top: 0.25rem;
+		bottom: 0.25rem;
+		left: var(--tl-x);
+		transform: translateX(-50%);
+		border-left: 2px dotted rgb(148 163 184 / 0.7);
+	}
+	.tl-gap-label {
+		position: absolute;
+		top: 50%;
+		left: calc(var(--tl-x) + 1rem);
+		transform: translateY(-50%);
+	}
+
+	/* Smooth expand/collapse without measuring heights. */
+	.tl-collapse {
+		display: grid;
+		grid-template-rows: 0fr;
+		transition: grid-template-rows 0.25s ease;
+	}
+	.tl-collapse[data-open="true"] {
+		grid-template-rows: 1fr;
+	}
+	.tl-collapse > div {
+		min-height: 0;
+		overflow: hidden;
+	}
+
+	/* Newly loaded days fade and slide in. */
+	.tl-enter {
+		animation: tl-enter 0.35s ease-out both;
+	}
+
+	@keyframes tl-enter {
+		from {
+			opacity: 0;
+			transform: translateY(8px);
+		}
+		to {
+			opacity: 1;
+			transform: translateY(0);
+		}
+	}
+	@keyframes tl-pulse {
+		0% {
+			transform: scale(1);
+			opacity: 0.7;
+		}
+		100% {
+			transform: scale(1.9);
+			opacity: 0;
+		}
+	}
+
+	@media (prefers-reduced-motion: reduce) {
+		.tl-enter,
+		.tl-node--today::before {
+			animation: none;
+		}
+		.tl-collapse {
+			transition: none;
+		}
+	}
+}

@@ -64,11 +64,11 @@ describe("ListSelector component", () => {
 		expect(desktopLink("Home")).toHaveClass("active");
 	});
 
-	it("shows a desktop-only badge only on non-mobile-ready items", () => {
+	it("shows a desktop-only badge only on Expenses", () => {
 		renderAt("/");
 
 		expect(desktopLink("Expenses")).toHaveTextContent("Desktop only");
-		expect(desktopLink("Markdown")).toHaveTextContent("Desktop only");
+		expect(desktopLink("Markdown")).not.toHaveTextContent("Desktop only");
 		expect(desktopLink("Home")).not.toHaveTextContent("Desktop only");
 		expect(desktopLink("QR Code")).not.toHaveTextContent("Desktop only");
 	});

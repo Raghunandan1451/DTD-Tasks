@@ -8,6 +8,12 @@ type TextareaProps = {
 	rows?: number;
 	onScroll?: () => void;
 	textareaRef?: React.RefObject<HTMLTextAreaElement | null>;
+	/** Defaults to true (the Markdown editor relies on it); pass false for inline forms. */
+	autoFocus?: boolean;
+	maxLength?: number;
+	id?: string;
+	"aria-label"?: string;
+	onKeyDown?: (e: React.KeyboardEvent<HTMLTextAreaElement>) => void;
 };
 
 const Textarea = forwardRef<HTMLTextAreaElement, TextareaProps>(
@@ -20,6 +26,11 @@ const Textarea = forwardRef<HTMLTextAreaElement, TextareaProps>(
 			rows = 3,
 			onScroll,
 			textareaRef,
+			autoFocus = true,
+			maxLength,
+			id,
+			"aria-label": ariaLabel,
+			onKeyDown,
 		},
 		ref
 	) => {
@@ -34,7 +45,11 @@ const Textarea = forwardRef<HTMLTextAreaElement, TextareaProps>(
 				className={`bg-transparent outline-hidden resize-none ${className} scrollbar-hide`}
 				rows={rows}
 				placeholder={placeholder}
-				autoFocus
+				autoFocus={autoFocus}
+				maxLength={maxLength}
+				id={id}
+				aria-label={ariaLabel}
+				onKeyDown={onKeyDown}
 			/>
 		);
 	}

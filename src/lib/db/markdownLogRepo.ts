@@ -69,3 +69,15 @@ export const getMarkdownLogInRange = async (
 		IDBKeyRange.bound(fromDay, toDay),
 	);
 };
+
+/** The newest log day strictly before beforeDay (YYYY-MM-DD), or null if there is none. */
+export const getMarkdownLogDayBefore = async (
+	beforeDay: string,
+): Promise<string | null> => {
+	const db = await getDB();
+	const cursor = await db
+		.transaction("markdownLog")
+		.store.index("day")
+		.openCursor(IDBKeyRange.upperBound(beforeDay, true), "prev");
+	return cursor ? (cursor.key as string) : null;
+};

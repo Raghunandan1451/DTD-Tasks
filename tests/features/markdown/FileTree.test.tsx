@@ -17,7 +17,7 @@ vi.mock("@src/features/markdown/TreeView", () => ({
 }));
 
 describe("FileTree component", () => {
-	let store;
+	let store: ReturnType<typeof configureStore>;
 
 	beforeEach(() => {
 		store = configureStore({
@@ -32,17 +32,17 @@ describe("FileTree component", () => {
 			</Provider>
 		);
 
-	it("renders the Add File button", () => {
+	it("renders the add button", () => {
 		renderWithStore();
 
-		const addButton = screen.getByRole("button", { name: /add file/i });
+		const addButton = screen.getByTestId("add").closest("button")!;
 		expect(addButton).toBeInTheDocument();
 	});
 
-	it("displays input when Add File button is clicked", async () => {
+	it("displays input when the add button is clicked", async () => {
 		renderWithStore();
 
-		const addButton = screen.getByRole("button", { name: /add file/i });
+		const addButton = screen.getByTestId("add").closest("button")!;
 		fireEvent.click(addButton);
 
 		const treeView = screen.getByTestId("treeview");

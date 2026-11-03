@@ -8,7 +8,7 @@ import NotificationCenter from "@src/components/ui/toast/NotificationCenter";
 import useNotifications from "@src/lib/hooks/useNotifications";
 import TitleWithButton from "@src/components/shared/title_with_button/TitleWithButton";
 import FileTree from "@src/features/markdown/FileTree";
-import Editor from "@src/features/markdown/Editor";
+import DiaryEditor from "@src/features/markdown/DiaryEditor";
 import { AppDispatch, RootState } from "@src/lib/store/store";
 import { hydrateMarkdown } from "@src/lib/store/thunks/markdownThunk";
 import { setFileState, deselectFile } from "@src/lib/store/slices/markdownSlice";
@@ -60,7 +60,8 @@ const FileManager: React.FC = () => {
 				<div className="flex flex-1 min-h-0 border border-white/20 dark:border-white/10">
 					{/* On phones show one pane at a time: file list, or editor once a file is open */}
 					<FileTree className={selectedFile ? "hidden md:flex" : "flex"} />
-					<Editor
+					<DiaryEditor
+						key={selectedFile ?? "none"}
 						className={selectedFile ? "flex" : "hidden md:flex"}
 						onBack={() => dispatch(deselectFile())}
 					/>

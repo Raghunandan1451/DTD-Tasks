@@ -12,6 +12,7 @@ interface DownloadMenuProps {
 	buttonText: string;
 	onToggle: (section: Section) => void;
 	onSelectAll: () => void;
+	onDeselectAll: () => void;
 	onDownload: () => void;
 }
 
@@ -23,6 +24,7 @@ const DownloadMenu: React.FC<DownloadMenuProps> = ({
 	buttonText,
 	onToggle,
 	onSelectAll,
+	onDeselectAll,
 	onDownload,
 }) => {
 	const [open, setOpen] = useState(false);
@@ -50,7 +52,7 @@ const DownloadMenu: React.FC<DownloadMenuProps> = ({
 		<div ref={containerRef} className="relative flex gap-2 items-center">
 			<Button
 				type="button"
-				className="btn-primary text-sm md:text-base py-2 px-3 md:px-4"
+				className="btn-primary text-xs md:text-base py-1.5 md:py-2 px-2.5 md:px-4"
 				onClick={onDownload}
 				text={buttonText}
 				disabled={isDownloading || selected.size === 0}
@@ -61,7 +63,7 @@ const DownloadMenu: React.FC<DownloadMenuProps> = ({
 				aria-haspopup="true"
 				aria-expanded={open}
 				onClick={() => setOpen((value) => !value)}
-				className="btn-secondary py-2 px-2 rounded-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400"
+				className="btn-secondary py-1.5 md:py-2 px-2 rounded-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400"
 			>
 				<ChevronDown
 					className={`w-4 h-4 transition-transform ${open ? "rotate-180" : ""}`}
@@ -95,12 +97,20 @@ const DownloadMenu: React.FC<DownloadMenuProps> = ({
 							</span>
 						</label>
 					))}
-					<Button
-						type="button"
-						onClick={onSelectAll}
-						text="Select all"
-						className="mt-2 text-xs underline underline-offset-2 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200"
-					/>
+					<div className="mt-2 flex gap-3">
+						<Button
+							type="button"
+							onClick={onSelectAll}
+							text="Select all"
+							className="text-xs underline underline-offset-2 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200"
+						/>
+						<Button
+							type="button"
+							onClick={onDeselectAll}
+							text="Deselect all"
+							className="text-xs underline underline-offset-2 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200"
+						/>
+					</div>
 				</div>
 			)}
 		</div>

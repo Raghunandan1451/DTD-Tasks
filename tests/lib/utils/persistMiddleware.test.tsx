@@ -21,23 +21,26 @@ vi.mock("idb", () => {
 	};
 });
 
+const makeTestSlice = () =>
+	createSlice({
+		name: "fileManager",
+		initialState: { value: 0 },
+		reducers: {
+			increment: (state) => {
+				state.value += 1;
+			},
+			setValue: (state, action: PayloadAction<number>) => {
+				state.value = action.payload;
+			},
+		},
+	});
+
 describe("persistMiddleware", () => {
 	let store: ReturnType<typeof configureStore>;
-	let testSlice: ReturnType<typeof createSlice>;
+	let testSlice: ReturnType<typeof makeTestSlice>;
 
 	beforeEach(() => {
-		testSlice = createSlice({
-			name: "fileManager",
-			initialState: { value: 0 },
-			reducers: {
-				increment: (state) => {
-					state.value += 1;
-				},
-				setValue: (state, action: PayloadAction<number>) => {
-					state.value = action.payload;
-				},
-			},
-		});
+		testSlice = makeTestSlice();
 
 		store = configureStore({
 			reducer: {
@@ -53,7 +56,7 @@ describe("persistMiddleware", () => {
 
 		await new Promise((r) => setTimeout(r, 1100)); // Wait for debounce to flush
 
-		const db = await openDB();
+		const db = await (openDB as unknown as () => Promise<{ put: unknown }>)();
 		expect(db.put).toHaveBeenCalledWith(
 			"data",
 			{ value: 42 },

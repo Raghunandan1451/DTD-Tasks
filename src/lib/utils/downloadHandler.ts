@@ -26,6 +26,10 @@ import {
 import { renderExpenseReportPdf } from "@src/features/finance/lib/expenseReportPdf";
 import { formatISODate } from "@src/lib/utils/isoDate";
 import { SCHEMA_VERSION } from "@src/lib/utils/schemaVersion";
+import {
+	TIMELINE_BACKUP_FILE,
+	type TimelineBackup,
+} from "@src/features/home/lib/timelineBackup";
 
 export type FinanceExportReportScope = "allMonths" | "lastTwoMonths";
 
@@ -455,9 +459,27 @@ export const handleQRExport = async (
 	}
 };
 
+/** Timeline (journal notes with images, plus markdown activity) as one JSON file. */
+export const handleTimelineExport = async (
+	backup: TimelineBackup,
+	showNotification?: ShowNotificationFn,
+): Promise<void> => {
+	try {
+		const blob = new Blob([JSON.stringify(backup, null, 2)], {
+			type: "application/json",
+		});
+		saveAs(blob, `timeline-backup_${formatTimestamp()}.json`);
+		showNotification?.("Timeline exported successfully", "success");
+	} catch (error) {
+		console.error("Timeline export error:", error);
+		showNotification?.("Failed to export timeline", "error");
+	}
+};
+
 export const handleFullAppExport = async (
 	appState: AppState,
 	showNotification?: ShowNotificationFn,
+	timeline?: TimelineBackup,
 ): Promise<void> => {
 	try {
 		const zip = new JSZip();
@@ -534,6 +556,18 @@ export const handleFullAppExport = async (
 			);
 		}
 
+		// Timeline (journal + markdown activity; expenses export with Finance)
+		const timelineRows =
+			(timeline?.journal.length ?? 0) + (timeline?.markdownLog.length ?? 0);
+		if (timeline && timelineRows > 0) {
+			hasData = true;
+			zip.folder("Timeline")?.file(
+				TIMELINE_BACKUP_FILE,
+				JSON.stringify(timeline, null, 2),
+			);
+			totalItems += timelineRows;
+		}
+
 		// QR - Skip (user exports manually from QR page)
 
 		if (!hasData) {
@@ -555,11 +589,13 @@ Total Items: ${totalItems}
 Folders:
 - Finance: Balance, expenses, and PDF report
 - Markdown: Files and folders
+- Timeline: Journal notes (with images) and markdown activity
 
 To restore data:
 1. Go to the specific page (Finance/Markdown)
 2. Click "Upload JSON" and select the file (Finance: finance-backup.json)
-3. QR codes must be regenerated manually
+3. Timeline: on Home, click "Import" and select ${TIMELINE_BACKUP_FILE}
+4. QR codes must be regenerated manually
 `,
 		);
 

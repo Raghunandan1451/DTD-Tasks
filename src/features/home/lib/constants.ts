@@ -9,4 +9,8 @@ export const SECTION_META: Record<Section, { label: string; color: string }> = {
 		label: "Files",
 		color: "from-purple-500/20 to-purple-600/10 border-purple-500/30",
 	},
+	timeline: {
+		label: "Timeline (notes & activity)",
+		color: "from-cyan-500/20 to-cyan-600/10 border-cyan-500/30",
+	},
 };

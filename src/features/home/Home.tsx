@@ -1,14 +1,18 @@
-import React from "react";
+import React, { useState } from "react";
 import NotificationCenter from "@src/components/ui/toast/NotificationCenter";
 import useNotifications from "@src/lib/hooks/useNotifications";
 import { useHomeDownload } from "@src/features/home/lib/useHomeDownload";
 import { SECTIONS } from "@src/features/home/lib/types";
 import DownloadMenu from "@src/features/home/components/DownloadMenu";
 import ProgressBar from "@src/features/home/components/ProgressBar";
+import TimelineImportButton from "@src/features/home/components/TimelineImportButton";
 import LegacyEventsNotice from "@src/features/home/components/LegacyEventsNotice";
+import Timeline from "@src/features/home/components/timeline/Timeline";
 
 const Home: React.FC = () => {
 	const { notifications, showNotification } = useNotifications();
+	// Bumped after an import: remounting the feed makes it reload its data.
+	const [feedVersion, setFeedVersion] = useState(0);
 
 	const {
 		isDownloading,
@@ -20,17 +24,26 @@ const Home: React.FC = () => {
 		handleDownloadSelected,
 		getButtonText,
 		setSelected,
+		refreshTimelineCount,
 	} = useHomeDownload(showNotification);
 
 	return (
-		<>
-			<div className="frosted-panel relative z-20 flex-col md:flex-row gap-3 md:gap-0 items-start md:items-center">
+		<div className="flex h-full min-h-0 flex-col overflow-hidden">
+			<div className="frosted-panel relative z-20 shrink-0 flex-row flex-wrap items-center gap-x-2 gap-y-1">
 				<div>
-					<h1 className="panel-title text-2xl md:text-4xl">HOME</h1>
-					<p className="text-sm text-gray-500 dark:text-gray-400">
+					<h1 className="panel-title text-xl md:text-4xl">HOME</h1>
+					<p className="text-xs md:text-sm text-gray-500 dark:text-gray-400">
 						Activity &amp; Journal
 					</p>
 				</div>
+				<div className="flex items-center gap-2">
+				<TimelineImportButton
+					showNotification={showNotification}
+					onImported={() => {
+						refreshTimelineCount();
+						setFeedVersion((value) => value + 1);
+					}}
+				/>
 				<DownloadMenu
 					selected={selected}
 					isDataLoaded={isDataLoaded}
@@ -39,31 +52,26 @@ const Home: React.FC = () => {
 					buttonText={getButtonText()}
 					onToggle={toggleSection}
 					onSelectAll={() => setSelected(new Set(SECTIONS))}
+					onDeselectAll={() => setSelected(new Set())}
 					onDownload={handleDownloadSelected}
 				/>
+				</div>
 			</div>
 
-			<div className="px-2 pt-2">
+			<div className="shrink-0 px-2 pt-2 empty:hidden">
 				<LegacyEventsNotice showNotification={showNotification} />
 			</div>
 
 			{isDownloading && (
-				<div className="flex justify-center px-2 pt-4">
+				<div className="flex shrink-0 justify-center px-2 pt-4">
 					<ProgressBar progress={downloadProgress} />
 				</div>
 			)}
 
-			<div className="flex flex-col items-center justify-center h-full glassmorphic-bg rounded-l-lg p-6 text-center">
-				<h2 className="text-xl font-semibold text-gray-800 dark:text-gray-200 mb-1">
-					Your timeline will appear here
-				</h2>
-				<p className="text-sm text-gray-500 dark:text-gray-400">
-					Journal notes, expenses and file activity are coming soon.
-				</p>
-			</div>
+			<Timeline key={feedVersion} showNotification={showNotification} />
 
 			<NotificationCenter notifications={notifications} />
-		</>
+		</div>
 	);
 };
 

@@ -1,6 +1,9 @@
 import store, { type RootState } from "@src/lib/store/store";
-import { getJournalInRange } from "@src/lib/db/journalRepo";
-import { getMarkdownLogInRange } from "@src/lib/db/markdownLogRepo";
+import { getJournalInRange, getJournalTimeBefore } from "@src/lib/db/journalRepo";
+import {
+	getMarkdownLogDayBefore,
+	getMarkdownLogInRange,
+} from "@src/lib/db/markdownLogRepo";
 import type { JournalEntry, MarkdownLogEntry } from "@src/lib/db/types";
 import {
 	expenseDaysInRange,
@@ -143,4 +146,37 @@ export const getTimelineDays = async (
 		expenseDays: includes(filter, "expenses") ? selectExpenseDays(state) : [],
 		liveFileIds: fileManager?.loaded ? collectItemIds(fileManager.files) : null,
 	});
+};
+
+/**
+ * The newest day older than beforeDay that has anything to show for this
+ * filter, or null when nothing older exists. Powers "Load more": it tells the
+ * UI whether more history exists and how far back the next page must reach.
+ */
+export const getOlderDay = async (
+	beforeDay: string,
+	filter: TimelineFilter = "all",
+	getState: () => RootState = store.getState,
+): Promise<string | null> => {
+	if (!DAY_PATTERN.test(beforeDay)) return null;
+	const candidates: string[] = [];
+
+	if (includes(filter, "journal")) {
+		const time = await getJournalTimeBefore(parseISODate(beforeDay).getTime());
+		if (time !== null) candidates.push(toLocalDay(time));
+	}
+	if (includes(filter, "files")) {
+		const day = await getMarkdownLogDayBefore(beforeDay);
+		if (day) candidates.push(day);
+	}
+	if (includes(filter, "expenses")) {
+		// Newest first, so the first day before the cut-off is the answer.
+		const older = selectExpenseDays(getState()).find((entry) => entry.day < beforeDay);
+		if (older) candidates.push(older.day);
+	}
+
+	return candidates.reduce<string | null>(
+		(newest, day) => (newest === null || day > newest ? day : newest),
+		null,
+	);
 };

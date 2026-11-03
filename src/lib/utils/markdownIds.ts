@@ -26,3 +26,20 @@ export const collectItemIds = (items: (File | Folder)[]): Set<string> => {
 	visit(items);
 	return ids;
 };
+
+/** Current full path (e.g. "Notes/Idea.md") of the item with this id, or null if it is gone. */
+export const findPathById = (
+	items: (File | Folder)[],
+	id: string,
+	parent = "",
+): string | null => {
+	for (const item of items) {
+		const fullPath = parent ? `${parent}/${item.path}` : item.path;
+		if (item.id === id) return fullPath;
+		if (item.type === "folder") {
+			const found = findPathById(item.children, id, fullPath);
+			if (found) return found;
+		}
+	}
+	return null;
+};

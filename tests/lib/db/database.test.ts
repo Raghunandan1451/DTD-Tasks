@@ -7,6 +7,7 @@ import {
 	LEGACY_CALENDAR_KEY,
 	LEGACY_EVENTS_PENDING_KEY,
 	deleteValue,
+	getDB,
 	getDbStatus,
 	getValue,
 	resetDBForTests,
@@ -60,5 +61,61 @@ describe("database v2 upgrade", () => {
 		expect(await getValue("k")).toEqual({ a: 1 });
 		await deleteValue("k");
 		expect(await getValue("k")).toBeNull();
+	});
+});
+
+describe("database timeline stores", () => {
+	beforeEach(async () => {
+		await resetDBForTests();
+		globalThis.indexedDB = new IDBFactory();
+	});
+
+	const timelineStores = ["data", "journal", "journalImages", "markdownLog"];
+
+	it("repairs a v3 database that was opened before the timeline stores existed", async () => {
+		const stale = await openDB(DB_NAME, 3, {
+			upgrade(upgradeDb) {
+				upgradeDb.createObjectStore("data");
+			},
+		});
+		await stale.put("data", { keep: true }, "redux_expenses_data");
+		stale.close();
+
+		const db = await getDB();
+
+		expect([...db.objectStoreNames].sort()).toEqual(timelineStores);
+		expect(await getValue("redux_expenses_data")).toEqual({ keep: true });
+		await expect(db.getAllFromIndex("journal", "createdAt")).resolves.toEqual([]);
+		await expect(db.getAllFromIndex("markdownLog", "day")).resolves.toEqual([]);
+	});
+
+	it("adds the stores when upgrading from v2 and keeps existing data", async () => {
+		const old = await openDB(DB_NAME, 2, {
+			upgrade(upgradeDb) {
+				upgradeDb.createObjectStore("data");
+			},
+		});
+		await old.put("data", [1, 2], "redux_markdown_data");
+		old.close();
+
+		const db = await getDB();
+
+		expect([...db.objectStoreNames].sort()).toEqual(timelineStores);
+		expect(await getValue("redux_markdown_data")).toEqual([1, 2]);
+	});
+
+	it("adds missing indexes to a partially created store", async () => {
+		const partial = await openDB(DB_NAME, 3, {
+			upgrade(upgradeDb) {
+				upgradeDb.createObjectStore("data");
+				upgradeDb.createObjectStore("markdownLog", { keyPath: "id" });
+			},
+		});
+		partial.close();
+
+		const db = await getDB();
+		const tx = db.transaction("markdownLog");
+
+		expect([...tx.store.indexNames].sort()).toEqual(["day", "fileId_day_action"]);
 	});
 });

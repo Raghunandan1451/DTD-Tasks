@@ -1,4 +1,10 @@
-import { openDB, DBSchema, IDBPDatabase } from "idb";
+import {
+	openDB,
+	DBSchema,
+	IDBPDatabase,
+	IDBPTransaction,
+	StoreNames,
+} from "idb";
 import type {
 	JournalEntry,
 	JournalImage,
@@ -7,7 +13,9 @@ import type {
 } from "@src/lib/db/types";
 
 export const DB_NAME = "AIO-List";
-export const DB_VERSION = 3;
+// v4 re-runs the (now idempotent) timeline store setup: a local database that
+// reached v3 before those stores were being created would otherwise never get them.
+export const DB_VERSION = 4;
 
 /** Unique index that makes [fileId, day, action] a natural upsert key. */
 export const MARKDOWN_LOG_UNIQUE_INDEX = "fileId_day_action";
@@ -70,6 +78,36 @@ const hasEvents = (value: unknown): boolean =>
 	Array.isArray(value.events) &&
 	value.events.length > 0;
 
+type UpgradeTx = IDBPTransaction<AppDB, StoreNames<AppDB>[], "versionchange">;
+
+/** Creates any missing timeline store or index; safe to run on any existing database. */
+const ensureTimelineStores = (db: IDBPDatabase<AppDB>, tx: UpgradeTx): void => {
+	const journal = db.objectStoreNames.contains("journal")
+		? tx.objectStore("journal")
+		: db.createObjectStore("journal", { keyPath: "id" });
+	if (!journal.indexNames.contains("createdAt")) {
+		journal.createIndex("createdAt", "createdAt");
+	}
+
+	if (!db.objectStoreNames.contains("journalImages")) {
+		db.createObjectStore("journalImages", { keyPath: "id" });
+	}
+
+	const markdownLog = db.objectStoreNames.contains("markdownLog")
+		? tx.objectStore("markdownLog")
+		: db.createObjectStore("markdownLog", { keyPath: "id" });
+	if (!markdownLog.indexNames.contains("day")) {
+		markdownLog.createIndex("day", "day");
+	}
+	if (!markdownLog.indexNames.contains(MARKDOWN_LOG_UNIQUE_INDEX)) {
+		markdownLog.createIndex(
+			MARKDOWN_LOG_UNIQUE_INDEX,
+			["fileId", "day", "action"],
+			{ unique: true },
+		);
+	}
+};
+
 let dbPromise: Promise<IDBPDatabase<AppDB>> | null = null;
 
 export const getDB = (): Promise<IDBPDatabase<AppDB>> => {
@@ -80,26 +118,9 @@ export const getDB = (): Promise<IDBPDatabase<AppDB>> => {
 					db.createObjectStore("data");
 				}
 
-				// v2 -> v3: timeline stores. Created before any await so the
-				// versionchange transaction is still active.
-				if (oldVersion < 3) {
-					const journal = db.createObjectStore("journal", {
-						keyPath: "id",
-					});
-					journal.createIndex("createdAt", "createdAt");
-
-					db.createObjectStore("journalImages", { keyPath: "id" });
-
-					const markdownLog = db.createObjectStore("markdownLog", {
-						keyPath: "id",
-					});
-					markdownLog.createIndex("day", "day");
-					markdownLog.createIndex(
-						MARKDOWN_LOG_UNIQUE_INDEX,
-						["fileId", "day", "action"],
-						{ unique: true },
-					);
-				}
+				// Timeline stores. Created before any await so the versionchange
+				// transaction is still active.
+				ensureTimelineStores(db, tx);
 
 				// v1 -> v2: Events was removed. Keep its data aside for a
 				// one-time download, then drop the old key.
