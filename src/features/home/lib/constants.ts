@@ -13,4 +13,8 @@ export const SECTION_META: Record<Section, { label: string; color: string }> = {
 		label: "Timeline (notes & activity)",
 		color: "from-cyan-500/20 to-cyan-600/10 border-cyan-500/30",
 	},
+	boards: {
+		label: "Boards (nodes & notes)",
+		color: "from-amber-500/20 to-amber-600/10 border-amber-500/30",
+	},
 };

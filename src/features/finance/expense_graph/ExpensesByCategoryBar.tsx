@@ -23,9 +23,15 @@ import DateFilterPills from "@src/features/finance/expense_graph/DateFilterPills
 const formatCurrency = (val: number) => val.toLocaleString();
 const MIN_COLUMN_WIDTH = 90;
 
-const ExpensesByCategoryBar: React.FC<{ expenses: Expense[] }> = ({
-	expenses,
-}) => {
+const ExpensesByCategoryBar: React.FC<{
+	expenses: Expense[];
+	/** Chart height in px */
+	height?: number;
+	/** Shown at the end of the header (the zoom button) */
+	headerExtra?: React.ReactNode;
+	/** Date filter pills; the Overview hides them until the chart is opened large */
+	showFilters?: boolean;
+}> = ({ expenses, height = 360, headerExtra, showFilters = true }) => {
 	const [filter, setFilter] = useState<DateFilter>("weekly");
 
 	const data = useMemo(() => {
@@ -41,20 +47,21 @@ const ExpensesByCategoryBar: React.FC<{ expenses: Expense[] }> = ({
 	const maxLabelLength = data.length > 6 ? 8 : 14;
 
 	return (
-		<div className="rounded-lg p-6 backdrop-blur-xl border shadow-lg bg-white/20 dark:bg-black/20">
-			<div className="flex justify-between items-center mb-4 flex-wrap gap-3">
-				<h4 className="text-lg font-semibold flex items-center gap-2 text-gray-800 dark:text-white">
-					<Calendar className="w-5 h-5" />
+		<div className="rounded-lg p-3 backdrop-blur-xl border shadow-lg bg-white/20 dark:bg-black/20">
+			<div className="flex justify-between items-center mb-2 flex-wrap gap-3">
+				<h4 className="text-sm font-semibold flex items-center gap-2 text-gray-800 dark:text-white">
+					<Calendar className="w-4 h-4" />
 					Expenses by Category
 				</h4>
-				<DateFilterPills value={filter} onChange={setFilter} />
+				{showFilters && <DateFilterPills value={filter} onChange={setFilter} />}
+				{headerExtra}
 			</div>
 
 			<div className="overflow-x-auto scrollbar-hide">
 				<ResponsiveContainer
 					width="100%"
 					minWidth={chartWidth}
-					height={360}
+					height={height}
 				>
 					<BarChart
 						data={data}

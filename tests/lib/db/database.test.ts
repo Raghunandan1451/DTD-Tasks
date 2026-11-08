@@ -70,7 +70,13 @@ describe("database timeline stores", () => {
 		globalThis.indexedDB = new IDBFactory();
 	});
 
-	const timelineStores = ["data", "journal", "journalImages", "markdownLog"];
+	const timelineStores = [
+		"boards",
+		"data",
+		"journal",
+		"journalImages",
+		"markdownLog",
+	];
 
 	it("repairs a v3 database that was opened before the timeline stores existed", async () => {
 		const stale = await openDB(DB_NAME, 3, {
@@ -117,5 +123,50 @@ describe("database timeline stores", () => {
 		const tx = db.transaction("markdownLog");
 
 		expect([...tx.store.indexNames].sort()).toEqual(["day", "fileId_day_action"]);
+	});
+});
+
+describe("database v5 boards store", () => {
+	beforeEach(async () => {
+		await resetDBForTests();
+		globalThis.indexedDB = new IDBFactory();
+	});
+
+	it("adds the boards store and its updatedAt index when upgrading from v4, keeping existing data", async () => {
+		const v4 = await openDB(DB_NAME, 4, {
+			upgrade(upgradeDb) {
+				upgradeDb.createObjectStore("data");
+				upgradeDb.createObjectStore("journal", { keyPath: "id" });
+			},
+		});
+		await v4.put("data", { keep: true }, "redux_expenses_data");
+		await v4.put("journal", { id: "j1", text: "hi", createdAt: 1 });
+		v4.close();
+
+		const db = await getDB();
+
+		expect(db.objectStoreNames.contains("boards")).toBe(true);
+		const tx = db.transaction("boards");
+		expect(tx.store.keyPath).toBe("id");
+		expect([...tx.store.indexNames]).toEqual(["updatedAt"]);
+		expect(await getValue("redux_expenses_data")).toEqual({ keep: true });
+		expect((await db.get("journal", "j1"))?.text).toBe("hi");
+	});
+
+	it("is a no-op for the boards store on a database that already has it", async () => {
+		const first = await getDB();
+		await first.put("boards", {
+			id: "b1",
+			name: "Keep me",
+			nodes: [],
+			edges: [],
+			viewport: { x: 0, y: 0, zoom: 1 },
+			createdAt: 1,
+			updatedAt: 1,
+		});
+		await resetDBForTests();
+
+		const again = await getDB();
+		expect((await again.get("boards", "b1"))?.name).toBe("Keep me");
 	});
 });

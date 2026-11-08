@@ -23,6 +23,10 @@ interface TitleWithButtonProps {
 	) => Promise<string | void> | string | void;
 	buttonText: string;
 	showUpload?: boolean;
+	/** File types the picker accepts. Defaults to ".json". */
+	uploadAccept?: string;
+	/** Label of the upload button. Defaults to "Upload JSON". */
+	uploadText?: string;
 	containerClass?: string;
 	showNotification?: ShowNotificationFn;
 }
@@ -34,6 +38,8 @@ const TitleWithButton: React.FC<TitleWithButtonProps> = ({
 	onUploadFiles,
 	buttonText,
 	showUpload = false,
+	uploadAccept = ".json",
+	uploadText = "Upload JSON",
 	containerClass,
 	showNotification,
 }) => {
@@ -82,7 +88,7 @@ const TitleWithButton: React.FC<TitleWithButtonProps> = ({
 	};
 
 	const { open: handleUploadClick, inputProps } = useFilePicker({
-		accept: ".json",
+		accept: uploadAccept,
 		multiple: Boolean(onUploadFiles),
 		onFiles: handleFiles,
 	});
@@ -110,7 +116,7 @@ const TitleWithButton: React.FC<TitleWithButtonProps> = ({
 							type="button"
 							className="btn-secondary text-xs md:text-base py-1.5 md:py-2 px-2.5 md:px-4"
 							onClick={handleUploadClick}
-							text={isUploading ? "Uploading..." : "Upload JSON"}
+							text={isUploading ? "Uploading..." : uploadText}
 							disabled={isDownloading || isUploading}
 						/>
 						<Input

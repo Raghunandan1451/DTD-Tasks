@@ -67,7 +67,7 @@ const TimelineEntryRow: React.FC<TimelineEntryRowProps> = ({ entry }) => {
 					icon={icon}
 					summary={summary}
 					muted={muted}
-					to={item.isLive ? "/markdown" : undefined}
+					to={item.isLive ? "/notes" : undefined}
 					onNavigate={() => actions.openFile(item.entry.fileId)}
 				/>
 			);
@@ -83,7 +83,7 @@ const TimelineEntryRow: React.FC<TimelineEntryRowProps> = ({ entry }) => {
 						<li key={item.id} title={item.entry.name}>
 							{item.isLive ? (
 								<Link
-									to="/markdown"
+									to="/notes"
 									onClick={() => actions.openFile(item.entry.fileId)}
 									className={linkClasses}
 								>

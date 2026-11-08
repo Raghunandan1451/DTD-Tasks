@@ -1,4 +1,4 @@
-export const SECTIONS = ["finance", "files", "timeline"] as const;
+export const SECTIONS = ["finance", "files", "timeline", "boards"] as const;
 export type Section = (typeof SECTIONS)[number];
 
 export interface StatCard {

@@ -19,12 +19,15 @@ import { RootState } from "@src/lib/store/store";
 import { updateFileContent } from "@src/lib/store/slices/markdownSlice";
 import {
 	DiaryPage,
+	formatPageDate,
 	paginateText,
 	parsePages,
 	serializePages,
 	todayKey,
 } from "@src/features/markdown/lib/pages";
 import PageCard from "@src/features/markdown/PageCard";
+import { ConfirmationModal } from "@src/components/shared/dialog/ConfirmModal";
+import { useConfirmationModal } from "@src/lib/hooks/useConfirmDialog";
 import ModeSelector, {
 	EditorMode,
 } from "@src/components/shared/preview_editor/ModeSelector";
@@ -74,6 +77,7 @@ const DiaryEditor: FC<DiaryEditorProps> = ({ className = "", onBack }) => {
 		(state: RootState) => state.fileManager,
 	);
 	const dispatch = useDispatch();
+	const confirmation = useConfirmationModal();
 
 	const [mode, setMode] = useState<EditorMode>("preview");
 	const [index, setIndex] = useState(0);
@@ -186,9 +190,17 @@ const DiaryEditor: FC<DiaryEditorProps> = ({ className = "", onBack }) => {
 		setIndex(pages.length);
 	};
 
-	const deletePage = (i: number) => {
+	const deletePage = async (i: number) => {
 		if (pages.length < 2) return;
-		if (!window.confirm("Delete this page?")) return;
+		const label = formatPageDate(pages[i].date);
+		const confirmed = await confirmation.confirm({
+			title: "Delete page",
+			message: `Delete page ${i + 1} of ${pages.length}? Its text will be removed from this file. This cannot be undone.`,
+			itemName: label || undefined,
+			confirmText: "Delete",
+			type: "danger",
+		});
+		if (!confirmed) return;
 		save(pages.filter((_, n) => n !== i));
 		setIndex(Math.max(0, i - 1));
 	};
@@ -235,66 +247,74 @@ const DiaryEditor: FC<DiaryEditorProps> = ({ className = "", onBack }) => {
 	);
 
 	return (
-		<div
-			className={`flex-1 min-w-0 p-2 bg-white/30 dark:bg-black/30 text-gray-900 dark:text-gray-100 backdrop-blur-md shadow-sm flex-col min-h-0 ${className}`}
-		>
-			<div className="flex items-center justify-between gap-2 mb-2">
-				{onBack && (
-					<Button
-						type="button"
-						onClick={onBack}
-						aria-label="Back to files"
-						className="md:hidden p-2 -ml-1 rounded-md hover:bg-gray-500/20"
+		<>
+			<div
+				className={`flex-1 min-w-0 p-2 bg-white/30 dark:bg-black/30 text-gray-900 dark:text-gray-100 backdrop-blur-md shadow-sm flex-col min-h-0 ${className}`}
+			>
+				<div className="flex items-center justify-between gap-2 mb-2">
+					{onBack && (
+						<Button
+							type="button"
+							onClick={onBack}
+							aria-label="Back to files"
+							className="md:hidden p-2 -ml-1 rounded-md hover:bg-gray-500/20"
+						>
+							<ArrowLeft className="h-5 w-5" />
+						</Button>
+					)}
+					<h2 className="text-lg font-bold break-all min-w-0 flex-1 truncate">
+						{selectedFile}
+					</h2>
+					{mode === "edit" && (
+						<Button
+							type="button"
+							onClick={addPage}
+							aria-label="Add page"
+							title="Add page dated today"
+							className="p-2 rounded-lg bg-gray-700/50 text-gray-300 hover:bg-gray-600"
+						>
+							<FilePlus2 className="h-5 w-5" />
+						</Button>
+					)}
+					<div
+						role="group"
+						aria-label="Pages shown"
+						className="hidden md:flex gap-1 bg-gray-700/50 rounded-lg p-1"
 					>
-						<ArrowLeft className="h-5 w-5" />
-					</Button>
-				)}
-				<h2 className="text-lg font-bold break-all min-w-0 flex-1 truncate">
-					{selectedFile}
-				</h2>
-				{mode === "edit" && (
-					<Button
-						type="button"
-						onClick={addPage}
-						aria-label="Add page"
-						title="Add page dated today"
-						className="p-2 rounded-lg bg-gray-700/50 text-gray-300 hover:bg-gray-600"
-					>
-						<FilePlus2 className="h-5 w-5" />
-					</Button>
-				)}
-				<div
-					role="group"
-					aria-label="Pages shown"
-					className="hidden md:flex gap-1 bg-gray-700/50 rounded-lg p-1"
-				>
-					{viewButton(1)}
-					{viewButton(2)}
-				</div>
-				<ModeSelector
-					currentMode={mode}
-					allowedModes={["preview", "edit"]}
-					onModeChange={setMode}
-				/>
-			</div>
-
-			<div className="flex flex-1 min-h-0 gap-2">
-				{visible.map((i, slot) => (
-					<PageCard
-						key={i}
-						page={pages[i] ?? null}
-						index={i}
-						total={pages.length}
-						mode={mode}
-						onEdit={handleEdit}
-						onDelete={deletePage}
-						registerTextarea={registerTextarea}
-						leftSlot={slot === 0 ? prev : undefined}
-						rightSlot={slot === view - 1 ? next : undefined}
+						{viewButton(1)}
+						{viewButton(2)}
+					</div>
+					<ModeSelector
+						currentMode={mode}
+						allowedModes={["preview", "edit"]}
+						onModeChange={setMode}
 					/>
-				))}
+				</div>
+
+				<div className="flex flex-1 min-h-0 gap-2">
+					{visible.map((i, slot) => (
+						<PageCard
+							key={i}
+							page={pages[i] ?? null}
+							index={i}
+							total={pages.length}
+							mode={mode}
+							onEdit={handleEdit}
+							onDelete={deletePage}
+							registerTextarea={registerTextarea}
+							leftSlot={slot === 0 ? prev : undefined}
+							rightSlot={slot === view - 1 ? next : undefined}
+						/>
+					))}
+				</div>
 			</div>
-		</div>
+			<ConfirmationModal
+				isOpen={confirmation.isOpen}
+				options={confirmation.options}
+				onConfirm={confirmation.handleConfirm}
+				onCancel={confirmation.handleCancel}
+			/>
+		</>
 	);
 };
 

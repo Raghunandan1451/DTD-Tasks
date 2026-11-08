@@ -1,10 +1,22 @@
 import React, { useState } from "react";
 import { Link, useLocation } from "react-router-dom";
+import {
+	Home as HomeIcon,
+	Network,
+	NotebookPen,
+	PanelLeftClose,
+	PanelLeftOpen,
+	QrCode,
+	Wallet,
+	type LucideIcon,
+} from "lucide-react";
 import ThemeToggle from "@src/components/shared/theme_toggler/ThemeToggle";
+import { useNavCollapsed } from "@src/lib/hooks/useNavCollapsed";
 
 export interface NavItem {
 	id: string; // route segment
 	name: string;
+	icon: LucideIcon;
 	description: string;
 	mobileReady?: boolean;
 	group?: string; // reserved for grouping later
@@ -14,25 +26,36 @@ const navigationData: NavItem[] = [
 	{
 		id: "home",
 		name: "Home",
+		icon: HomeIcon,
 		description: "Activity & Journal",
 		mobileReady: true,
 	},
 	{
 		id: "expenses",
 		name: "Expenses",
+		icon: Wallet,
 		description: "Track spending & budgets",
 		mobileReady: false,
 	},
 	{
 		id: "qrgen",
 		name: "QR Code",
+		icon: QrCode,
 		description: "Create QR codes",
 		mobileReady: true,
 	},
 	{
-		id: "markdown",
-		name: "Markdown",
+		id: "notes",
+		name: "Notes",
+		icon: NotebookPen,
 		description: "Write & export notes",
+		mobileReady: true,
+	},
+	{
+		id: "boards",
+		name: "Boards",
+		icon: Network,
+		description: "Trees, graphs & grids",
 		mobileReady: true,
 	},
 ];
@@ -47,6 +70,7 @@ const DesktopOnlyBadge: React.FC = () => (
 const ListSelector: React.FC = () => {
 	const location = useLocation();
 	const [isOpen, setIsOpen] = useState(false);
+	const { collapsed, toggle: toggleCollapsed } = useNavCollapsed();
 
 	const isActive = (
 		currentPath: { pathname: string },
@@ -146,7 +170,7 @@ const ListSelector: React.FC = () => {
 					{/* Navigation Links */}
 					<div className="flex-1 overflow-y-auto py-4 px-2">
 						{navigationData.map(
-							({ id, name, description, mobileReady }) => (
+							({ id, name, description, mobileReady, icon: Icon }) => (
 								<Link
 									key={id}
 									to={toPath(id)}
@@ -158,6 +182,7 @@ const ListSelector: React.FC = () => {
 									}`}
 								>
 									<span className="flex items-center gap-2 font-semibold">
+										<Icon className="h-4 w-4 shrink-0" aria-hidden />
 										{name}
 										{mobileReady === false && (
 											<DesktopOnlyBadge />
@@ -173,25 +198,63 @@ const ListSelector: React.FC = () => {
 				</div>
 			</nav>
 
-			{/* Desktop Navigation (existing glass-nav) */}
-			<nav className="hidden md:block glass-nav scrollbar-hide">
-				<div className="flex justify-between items-center px-2 mb-4">
-					<h2 className="text-lg font-semibold text-gray-800 dark:text-gray-200">
-						DTD Tasks
-					</h2>
-					<ThemeToggle />
+			{/* Desktop Navigation: full list, or an icon rail when collapsed */}
+			<nav
+				aria-label="Main"
+				className={`hidden md:block glass-nav scrollbar-hide ${collapsed ? "collapsed" : ""}`}
+			>
+				<div
+					className={`flex items-center mb-4 px-2 ${
+						collapsed ? "flex-col gap-2" : "justify-between"
+					}`}
+				>
+					{!collapsed && (
+						<h2 className="text-lg font-semibold text-gray-800 dark:text-gray-200">
+							DTD Tasks
+						</h2>
+					)}
+					<div className={`flex items-center gap-1 ${collapsed ? "flex-col" : ""}`}>
+						<ThemeToggle />
+						<button
+							type="button"
+							onClick={toggleCollapsed}
+							aria-expanded={!collapsed}
+							aria-label={collapsed ? "Expand navigation" : "Collapse navigation"}
+							title={collapsed ? "Expand navigation" : "Collapse navigation"}
+							className="rounded-lg p-1.5 text-gray-700 hover:bg-white/20 dark:text-gray-200 dark:hover:bg-white/10"
+						>
+							{collapsed ? (
+								<PanelLeftOpen className="h-5 w-5" />
+							) : (
+								<PanelLeftClose className="h-5 w-5" />
+							)}
+						</button>
+					</div>
 				</div>
 				<div className="flex flex-col gap-1">
-					{navigationData.map(({ id, name, mobileReady }) => (
+					{navigationData.map(({ id, name, mobileReady, icon: Icon }) => (
 						<Link
 							key={id}
 							to={toPath(id)}
+							title={collapsed ? name : undefined}
+							aria-label={collapsed ? name : undefined}
 							className={`${
 								isActive(location, toPath(id)) ? "active" : ""
-							} glass-link flex items-center justify-between gap-2`}
+							} glass-link flex items-center gap-2 ${
+								collapsed ? "justify-center" : "justify-between"
+							}`}
 						>
-							{name}
-							{mobileReady === false && <DesktopOnlyBadge />}
+							{collapsed ? (
+								<Icon className="h-5 w-5" aria-hidden />
+							) : (
+								<>
+									<span className="flex items-center gap-2">
+										<Icon className="h-4 w-4 shrink-0" aria-hidden />
+										{name}
+									</span>
+									{mobileReady === false && <DesktopOnlyBadge />}
+								</>
+							)}
 						</Link>
 					))}
 				</div>

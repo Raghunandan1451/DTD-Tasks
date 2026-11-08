@@ -3,19 +3,17 @@ import { FC, lazy } from "react";
 import {
 	ExpenseEntry,
 	BudgetCategory,
+	RecurringItem,
 	SalaryHistoryEntry,
 	ViewMode,
 } from "@src/features/finance/type";
 import { Suspense } from "react";
 import { Loader } from "lucide-react";
 
-import SalaryForm from "@src/features/finance/base_setup/FinanceSetup";
+import FinanceOverview from "@src/features/finance/base_setup/FinanceOverview";
 import { ShowNotificationFn } from "@src/lib/types/downloadHandlerTypes";
 const ExpenseList = lazy(
 	() => import("@src/features/finance/expense_list/ExpenseList")
-);
-const ExpenseGraphs = lazy(
-	() => import("@src/features/finance/expense_graph/ExpenseGraphs")
 );
 const BudgetPlanner = lazy(
 	() => import("@src/features/finance/budget_planning/BudgetPlanner")
@@ -31,8 +29,11 @@ export const ExpenseSections: FC<{
 		categories: BudgetCategory[],
 	) => void;
 	currentBalance?: number;
+	/** Balance right now, after all entries */
+	balance?: number;
 	monthlyIncome?: number;
 	salaryHistory?: SalaryHistoryEntry[];
+	recurring?: RecurringItem[];
 	showNotification?: ShowNotificationFn;
 }> = ({
 	viewMode,
@@ -41,8 +42,10 @@ export const ExpenseSections: FC<{
 	budgetPlansByMonth,
 	onBudgetPlanChange,
 	currentBalance,
+	balance,
 	monthlyIncome = 0,
 	salaryHistory,
+	recurring,
 	showNotification,
 }) => {
 	return (
@@ -55,18 +58,15 @@ export const ExpenseSections: FC<{
 				</Suspense>
 			)}
 
-			{viewMode === "graph" && (
-				<Suspense
-					fallback={<Loader className="animate-spin text-gray-500" />}
-				>
-					<ExpenseGraphs
-						expenses={allExpenses}
-						initialBalance={currentBalance}
-					/>
-				</Suspense>
+			{viewMode === "salary" && (
+				<FinanceOverview
+					expenses={allExpenses}
+					salaryHistory={salaryHistory}
+					monthlyIncome={monthlyIncome}
+					startingBalance={currentBalance}
+					balance={balance}
+				/>
 			)}
-
-			{viewMode === "salary" && <SalaryForm />}
 
 			{viewMode === "budget" && (
 				<Suspense
@@ -79,6 +79,7 @@ export const ExpenseSections: FC<{
 						plansByMonth={budgetPlansByMonth}
 						onPlanChange={onBudgetPlanChange}
 						expenses={allExpenses}
+						recurring={recurring}
 					/>
 				</Suspense>
 			)}

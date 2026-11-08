@@ -6,6 +6,10 @@
 			   rounded-r-xl shadow-lg;
 	}
 
+	.glass-nav.collapsed {
+		@apply w-14 min-w-0 items-center overflow-x-hidden;
+	}
+
 	.nav-badge {
 		@apply shrink-0 rounded-full border border-current/30 px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wide text-gray-600 dark:text-gray-400;
 	}

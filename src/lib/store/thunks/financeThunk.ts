@@ -2,7 +2,8 @@ import { createAsyncThunk } from "@reduxjs/toolkit";
 import { getFromIndexedDB } from "@src/lib/utils/persistMiddleware";
 import { FinanceState } from "@src/features/finance/type";
 import { setFinanceState } from "@src/lib/store/slices/financeSlice";
-import { addSalaryForMissedMonths } from "@src/lib/utils/finance";
+import { addRecurringForMissedMonths, addSalaryForMissedMonths } from "@src/lib/utils/finance";
+import { todayISO } from "@src/lib/utils/isoDate";
 import type { AppDispatch, RootState } from "@src/lib/store/store";
 
 export const hydrateFinance = createAsyncThunk(
@@ -30,6 +31,22 @@ export const backfillMissedSalaries = createAsyncThunk(
 			dispatch as AppDispatch,
 			finance.lastUpdatedDate,
 			6,
+		);
+	}
+);
+
+/** Adds entries for recurring payments that have fallen due. Safe to re-run: it never adds a date twice. */
+export const postRecurringExpenses = createAsyncThunk(
+	"finance/postRecurringExpenses",
+	async (_, { dispatch, getState }) => {
+		const { finance, expenses } = getState() as RootState;
+		if (!finance.loaded || !expenses.loaded || !finance.recurring?.length) return 0;
+
+		return addRecurringForMissedMonths(
+			finance.recurring,
+			expenses.expenses,
+			dispatch as AppDispatch,
+			todayISO(),
 		);
 	}
 );

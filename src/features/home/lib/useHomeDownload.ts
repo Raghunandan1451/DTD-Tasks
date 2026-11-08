@@ -5,9 +5,17 @@ import {
 	handleMarkdownExport,
 	handleFullAppExport,
 	handleTimelineExport,
+	handleBoardsExport,
 } from "@src/lib/utils/downloadHandler";
 import { buildTimelineBackup } from "@src/features/home/lib/timelineBackup";
 import { countTimelineData } from "@src/lib/db/timelineBackupRepo";
+import { countBoards } from "@src/lib/db/boardsRepo";
+import { buildBoardsBackup } from "@src/features/nodes/lib/boardBackup";
+import {
+	buildBoardExports,
+	buildScenes,
+	type BoardExports,
+} from "@src/features/nodes/lib/boardExport";
 import { hydrateFinance } from "@src/lib/store/thunks/financeThunk";
 import { hydrateExpenses } from "@src/lib/store/thunks/expenseThunk";
 import { hydrateMarkdown } from "@src/lib/store/thunks/markdownThunk";
@@ -32,6 +40,8 @@ export const useHomeDownload = (
 	const [downloadProgress, setDownloadProgress] = useState(0);
 	// null until counted: the timeline lives in IndexedDB, not in Redux.
 	const [timelineCount, setTimelineCount] = useState<number | null>(null);
+	// Same for boards.
+	const [boardsCount, setBoardsCount] = useState<number | null>(null);
 	const [selected, setSelected] = useState<Set<Section>>(new Set(SECTIONS));
 
 	const refreshTimelineCount = useCallback(() => {
@@ -46,22 +56,32 @@ export const useHomeDownload = (
 		refreshTimelineCount();
 	}, [refreshTimelineCount]);
 
+	useEffect(() => {
+		countBoards()
+			.then(setBoardsCount)
+			.catch((error: unknown) => {
+				console.warn("[home] Could not count boards", error);
+			});
+	}, []);
+
 	const isDataLoaded = useMemo(
 		() => ({
 			finance: (finance?.loaded || false) && (expenses?.loaded || false),
 			files: fileManager?.loaded || false,
-			timeline: timelineCount !== null,
+				timeline: timelineCount !== null,
+			boards: boardsCount !== null,
 		}),
-		[finance, expenses, fileManager, timelineCount],
+		[finance, expenses, fileManager, timelineCount, boardsCount],
 	);
 
 	const stats: Record<Section, string | number> = useMemo(
 		() => ({
 			finance: expenses?.expenses?.length || 0,
 			files: fileManager?.files?.length || 0,
-			timeline: timelineCount ?? 0,
+				timeline: timelineCount ?? 0,
+			boards: boardsCount ?? 0,
 		}),
-		[expenses, fileManager, timelineCount],
+		[expenses, fileManager, timelineCount, boardsCount],
 	);
 
 	const toggleSection = (section: Section) => {
@@ -97,6 +117,8 @@ export const useHomeDownload = (
 			},
 			// Read straight from IndexedDB when the export is built.
 			timeline: async () => {},
+			// Boards are also read straight from IndexedDB at export time.
+			boards: async () => {},
 		};
 
 		await loaders[section]();
@@ -130,10 +152,29 @@ export const useHomeDownload = (
 			const timeline = selected.has("timeline")
 				? await buildTimelineBackup()
 				: undefined;
+			const boards = selected.has("boards")
+				? await buildBoardsBackup()
+				: undefined;
+			// A PNG of every board. The JSON still goes out if they fail.
+			let boardPictures: BoardExports | undefined;
+			if (boards && boards.boards.length > 0) {
+				try {
+					boardPictures = await buildBoardExports(buildScenes(boards.boards));
+				} catch (error) {
+					console.warn("[home] Could not draw board pictures", error);
+					showNotification("Board pictures could not be created", "info");
+				}
+			}
 
 			if (selected.size === SECTIONS.length) {
 				showNotification("Creating full export...", "info");
-				await handleFullAppExport(appState, showNotification, timeline);
+				await handleFullAppExport(
+					appState,
+					showNotification,
+					timeline,
+					boards,
+					boardPictures,
+				);
 			} else {
 				showNotification("Creating export...", "info");
 
@@ -154,6 +195,9 @@ export const useHomeDownload = (
 				}
 				if (timeline) {
 					await handleTimelineExport(timeline, showNotification);
+				}
+				if (boards) {
+					await handleBoardsExport(boards, boardPictures, showNotification);
 				}
 			}
 

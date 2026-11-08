@@ -29,6 +29,7 @@ describe("v3 schema", () => {
 	it("creates the timeline stores and indexes", async () => {
 		const db = await getDB();
 		expect([...db.objectStoreNames].sort()).toEqual([
+			"boards",
 			"data",
 			"journal",
 			"journalImages",

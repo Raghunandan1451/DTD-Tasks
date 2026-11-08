@@ -1,6 +1,8 @@
 // import { TimeUnit } from "@src/lib/types/finance";
 
-import { DatedSalary, ExpenseEntry } from "@src/features/finance/type";
+import { DatedSalary, ExpenseEntry, RecurringItem } from "@src/features/finance/type";
+import { planRecurringPostings } from "@src/features/finance/lib/recurring";
+import { markRecurringPosted } from "@src/lib/store/slices/financeSlice";
 import { AppDispatch } from "@src/lib/store/store";
 import { addExpense } from "@src/lib/store/slices/expensesSlice";
 
@@ -131,4 +133,48 @@ export const addSalaryForMissedMonths = (
 	});
 
 	return salariesToAdd.length;
+};
+
+/**
+ * Adds an entry for every recurring payment that has fallen due since it was
+ * last posted. Entries are real, editable expenses tagged with recurringId.
+ * Returns how many were added.
+ */
+export const addRecurringForMissedMonths = (
+	items: readonly RecurringItem[],
+	expenses: readonly ExpenseEntry[],
+	dispatch: AppDispatch,
+	today: string,
+): number => {
+	const byId = new Map(items.map((item) => [item.id, item]));
+	const existing = new Set(
+		expenses
+			.filter((expense) => expense.recurringId)
+			.map((expense) => `${expense.recurringId}|${expense.date}`),
+	);
+	let added = 0;
+	const latest = new Map<string, string>();
+
+	for (const { itemId, date } of planRecurringPostings(items, today)) {
+		const item = byId.get(itemId);
+		if (!item) continue;
+		// Move lastPosted forward even for dates already present, so they aren't retried.
+		if ((latest.get(itemId) ?? "") < date) latest.set(itemId, date);
+		if (existing.has(`${itemId}|${date}`)) continue;
+		dispatch(
+			addExpense({
+				name: item.name,
+				amount: item.amount,
+				date,
+				group: item.group,
+				type: "Dr",
+				quantity: 1,
+				unit: "pcs",
+				recurringId: item.id,
+			}),
+		);
+		added++;
+	}
+	latest.forEach((date, id) => dispatch(markRecurringPosted({ id, date })));
+	return added;
 };

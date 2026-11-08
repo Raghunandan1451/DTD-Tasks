@@ -1,8 +1,5 @@
 import { describe, it, expect } from "vitest";
-import {
-	buildMonthGrid,
-	formatCompactAmount,
-} from "@src/features/finance/lib/calendarGrid";
+import { buildMonthGrid, formatCompactAmount } from "@src/features/finance/lib/calendarGrid";
 
 describe("buildMonthGrid", () => {
 	it("builds Monday-first weeks padded with neighbouring days", () => {

@@ -31,6 +31,12 @@ import {
 	type TimelineBackup,
 } from "@src/features/home/lib/timelineBackup";
 
+import {
+	BOARDS_BACKUP_FILE,
+	type BoardsBackup,
+} from "@src/features/nodes/lib/boardBackup";
+import type { BoardExports } from "@src/features/nodes/lib/boardExport";
+
 export type FinanceExportReportScope = "allMonths" | "lastTwoMonths";
 
 const formatTimestamp = (): string => {
@@ -434,9 +440,23 @@ export const handleMarkdownExport = async (
 	}
 };
 
+/** JPG has no transparency, so the picture is drawn on white first (it would turn black otherwise). */
+const flattenOnWhite = (canvas: HTMLCanvasElement): HTMLCanvasElement => {
+	const flat = document.createElement("canvas");
+	flat.width = canvas.width;
+	flat.height = canvas.height;
+	const ctx = flat.getContext("2d");
+	if (!ctx) return canvas;
+	ctx.fillStyle = "#ffffff";
+	ctx.fillRect(0, 0, flat.width, flat.height);
+	ctx.drawImage(canvas, 0, 0);
+	return flat;
+};
+
 export const handleQRExport = async (
 	canvas: HTMLCanvasElement | null,
 	showNotification?: ShowNotificationFn,
+	format: "png" | "jpg" = "png",
 ): Promise<void> => {
 	if (!canvas) {
 		showNotification?.("QR Code not generated yet", "error");
@@ -444,15 +464,18 @@ export const handleQRExport = async (
 	}
 
 	try {
-		canvas.toBlob((blob) => {
+		const source = format === "jpg" ? flattenOnWhite(canvas) : canvas;
+		const done = (blob: Blob | null) => {
 			if (blob) {
-				saveAs(blob, `qr-code_${formatTimestamp()}.png`);
+				saveAs(blob, `qr-code_${formatTimestamp()}.${format}`);
 				showNotification?.(
 					"QR Code downloaded successfully",
 					"success",
 				);
 			}
-		});
+		};
+		if (format === "jpg") source.toBlob(done, "image/jpeg", 0.92);
+		else source.toBlob(done);
 	} catch (error) {
 		console.error("QR export error:", error);
 		showNotification?.("Failed to export QR code", "error");
@@ -476,10 +499,34 @@ export const handleTimelineExport = async (
 	}
 };
 
+/**
+ * Boards as one ZIP: the JSON backup (always) and a picture of each board in
+ * Images/. Only the JSON is used to restore.
+ */
+export const handleBoardsExport = async (
+	backup: BoardsBackup,
+	pictures?: BoardExports,
+	showNotification?: ShowNotificationFn,
+): Promise<void> => {
+	try {
+		const zip = new JSZip();
+		zip.file(BOARDS_BACKUP_FILE, JSON.stringify(backup, null, 2));
+		const imagesFolder = zip.folder("Images");
+		pictures?.images.forEach((file) => imagesFolder?.file(file.fileName, file.blob));
+		saveAs(await zip.generateAsync({ type: "blob" }), `boards-export_${formatTimestamp()}.zip`);
+		showNotification?.("Boards exported successfully", "success");
+	} catch (error) {
+		console.error("Boards export error:", error);
+		showNotification?.("Failed to export boards", "error");
+	}
+};
+
 export const handleFullAppExport = async (
 	appState: AppState,
 	showNotification?: ShowNotificationFn,
 	timeline?: TimelineBackup,
+	boards?: BoardsBackup,
+	boardPictures?: BoardExports,
 ): Promise<void> => {
 	try {
 		const zip = new JSZip();
@@ -568,6 +615,22 @@ export const handleFullAppExport = async (
 			totalItems += timelineRows;
 		}
 
+		// Boards (Nodes page)
+		if (boards && boards.boards.length > 0) {
+			hasData = true;
+			const boardsFolder = zip.folder("Boards");
+			boardsFolder?.file(
+				BOARDS_BACKUP_FILE,
+				JSON.stringify(boards, null, 2),
+			);
+			// Pictures sit beside the JSON; only the JSON is used to restore.
+			const imagesFolder = boardsFolder?.folder("Images");
+			boardPictures?.images.forEach((file) =>
+				imagesFolder?.file(file.fileName, file.blob),
+			);
+			totalItems += boards.boards.length;
+		}
+
 		// QR - Skip (user exports manually from QR page)
 
 		if (!hasData) {
@@ -590,12 +653,14 @@ Folders:
 - Finance: Balance, expenses, and PDF report
 - Markdown: Files and folders
 - Timeline: Journal notes (with images) and markdown activity
+- Boards: Nodes & Notes boards
 
 To restore data:
 1. Go to the specific page (Finance/Markdown)
 2. Click "Upload JSON" and select the file (Finance: finance-backup.json)
 3. Timeline: on Home, click "Import" and select ${TIMELINE_BACKUP_FILE}
-4. QR codes must be regenerated manually
+4. Boards: on the Nodes page, click "Upload JSON" and select ${BOARDS_BACKUP_FILE}
+5. QR codes must be regenerated manually
 `,
 		);
 
@@ -633,8 +698,3 @@ export const handleJSONUpload = async <T = unknown>(
 	}
 };
 
-/** @deprecated Use handleMarkdownExport instead */
-export const handleZIPExport = handleMarkdownExport;
-
-/** @deprecated Use handleQRExport instead */
-export const handleDownloadImage = handleQRExport;

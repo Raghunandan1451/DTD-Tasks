@@ -41,7 +41,7 @@ const EMPTY_COPY: Record<TimelineFilter, { title: string; text: string }> = {
 	},
 	files: {
 		title: "No file activity yet",
-		text: "Creating, editing, renaming or deleting Markdown files shows up here.",
+		text: "Creating, editing, renaming or deleting notes shows up here.",
 	},
 };
 

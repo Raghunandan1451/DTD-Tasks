@@ -1,8 +1,5 @@
 import { describe, expect, it } from "vitest";
-import {
-	BudgetCategory,
-	ExpenseEntry,
-} from "@src/features/finance/type";
+import { BudgetCategory, ExpenseEntry } from "@src/features/finance/type";
 import { DEFAULT_BUDGET_CATEGORIES } from "@src/features/finance/lib/budgetCategories";
 import {
 	buildSnapshotEntry,
@@ -18,12 +15,14 @@ import { financeReducerForTest } from "./savingsTestUtils";
 
 const today = new Date("2026-10-15T12:00:00");
 
-const debit = (
-	id: string,
-	date: string,
-	amount: number,
-	group = "Food",
-): ExpenseEntry => ({ id, date, name: id, amount, group, type: "Dr" });
+const debit = (id: string, date: string, amount: number, group = "Food"): ExpenseEntry => ({
+	id,
+	date,
+	name: id,
+	amount,
+	group,
+	type: "Dr",
+});
 
 const salary = (date: string, amount: number): ExpenseEntry => ({
 	id: `salary-${date}`,
@@ -130,10 +129,7 @@ describe("calculatePotentialSavings", () => {
 			income: 1000,
 			monthlyExpenses: [],
 		});
-		expect(result.breakdown.map((item) => item.name)).toEqual([
-			"Essentials",
-			"Travel",
-		]);
+		expect(result.breakdown.map((item) => item.name)).toEqual(["Essentials", "Travel"]);
 		expect(result.total).toBe(1000);
 	});
 });
@@ -165,22 +161,14 @@ describe("resolveMonthlyIncome", () => {
 	});
 
 	it("adds manual credits to the estimated salary when no salary credit exists yet", () => {
-		const result = resolveMonthlyIncome(
-			"2026-09",
-			[credit("2026-09-12", 400, "Gift")],
-			4200,
-		);
+		const result = resolveMonthlyIncome("2026-09", [credit("2026-09-12", 400, "Gift")], 4200);
 		expect(result).toEqual({ amount: 4600, isEstimated: true });
 	});
 
 	it("ignores debits and credits from other months", () => {
 		const result = resolveMonthlyIncome(
 			"2026-09",
-			[
-				salary("2026-09-01", 3000),
-				credit("2026-08-30", 700, "Gift"),
-				debit("d", "2026-09-05", 50),
-			],
+			[salary("2026-09-01", 3000), credit("2026-08-30", 700, "Gift"), debit("d", "2026-09-05", 50)],
 			9999,
 		);
 		expect(result.amount).toBe(3000);
@@ -222,16 +210,12 @@ describe("upsertSnapshot", () => {
 	it("replaces in place, keeps manual entries and collapses duplicates", () => {
 		const manual = { id: "manual-1", name: "Bonus", amount: 10 };
 		const first = buildSnapshotEntry("2026-09", 100, false);
-		const categories: BudgetCategory[] = DEFAULT_BUDGET_CATEGORIES.map(
-			(category) =>
-				category.id === "savings"
-					? { ...category, expenses: [first, manual, { ...first }] }
-					: category,
+		const categories: BudgetCategory[] = DEFAULT_BUDGET_CATEGORIES.map((category) =>
+			category.id === "savings"
+				? { ...category, expenses: [first, manual, { ...first }] }
+				: category,
 		);
-		const next = upsertSnapshot(
-			categories,
-			buildSnapshotEntry("2026-09", 250, true),
-		);
+		const next = upsertSnapshot(categories, buildSnapshotEntry("2026-09", 250, true));
 		const savings = next.find((category) => category.id === "savings");
 		expect(savings?.expenses).toHaveLength(2);
 		expect(savings?.expenses?.[0]).toMatchObject({
@@ -281,9 +265,7 @@ describe("reconcileSavingsSnapshots", () => {
 			plansByMonth: {},
 			expenses: [debit("b", "2026-08-04", 100)],
 		});
-		const entry = changes["2026-08"]
-			.find((category) => category.id === "savings")
-			?.expenses?.[0];
+		const entry = changes["2026-08"].find((category) => category.id === "savings")?.expenses?.[0];
 		expect(entry?.isEstimated).toBe(true);
 		expect(entry?.amount).toBe(5000);
 	});
@@ -294,10 +276,7 @@ describe("reconcileSavingsSnapshots", () => {
 			debit("a", "2026-09-04", 100),
 			debit("b", "2026-08-04", 100),
 		];
-		const plans = apply(
-			{},
-			reconcileSavingsSnapshots({ ...baseArgs, plansByMonth: {}, expenses }),
-		);
+		const plans = apply({}, reconcileSavingsSnapshots({ ...baseArgs, plansByMonth: {}, expenses }));
 		// Link a debit to Needs in September so its snapshot changes
 		const linked = link(plans["2026-09"], "needs", expenses[1]);
 		const updatedPlans = { ...plans, "2026-09": linked };
@@ -397,9 +376,7 @@ describe("salary raises do not rewrite earlier months", () => {
 			salaryHistory: history,
 		});
 		expect(after).toEqual({});
-		const entry = plans["2026-09"]
-			.find((category) => category.id === "savings")
-			?.expenses?.[0];
+		const entry = plans["2026-09"].find((category) => category.id === "savings")?.expenses?.[0];
 		expect(entry?.amount).toBe(4000);
 	});
 

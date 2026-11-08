@@ -21,6 +21,29 @@ describe("highlightMarkdown", () => {
 	it("styles bold in place", () => {
 		expect(text("a **b** c").querySelector(".font-bold")?.textContent).toBe("b");
 	});
+	it("styles ***bold italic*** as one span, with all three asterisks as marks", () => {
+		const view = text("see ***live*** now");
+		const styled = view.querySelector(".font-bold.italic");
+		expect(styled?.textContent).toBe("live");
+		// No stray asterisks are left outside the marks.
+		const marks = [...view.querySelectorAll(".text-gray-500")].map((m) => m.textContent);
+		expect(marks).toEqual(["***", "***"]);
+		expect(view.textContent).toBe("see ***live*** now");
+	});
+	it("handles italic inside bold and the other nesting orders", () => {
+		const view = text("**a *b* c**");
+		expect(view.querySelector(".font-bold")?.textContent).toBe("a *b* c");
+		expect(view.querySelector(".italic")?.textContent).toBe("b");
+		expect(text("~~**x**~~").querySelector(".line-through .font-bold")?.textContent).toBe("x");
+		expect(text("__**x**__").querySelector(".underline .font-bold")?.textContent).toBe("x");
+		expect(text("**__x__**").querySelector(".font-bold .underline")?.textContent).toBe("x");
+	});
+	it("does not style things that only look like marks", () => {
+		const view = text("2 * 3 * 4 and snake_case_name and **unclosed");
+		expect(view.querySelector(".font-bold")).toBeNull();
+		expect(view.querySelector(".italic")).toBeNull();
+		expect(view.textContent).toBe("2 * 3 * 4 and snake_case_name and **unclosed");
+	});
 });
 
 describe("pages", () => {

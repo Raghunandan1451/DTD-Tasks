@@ -1,4 +1,9 @@
 import { Fragment, ReactNode } from "react";
+import {
+	parseInlineTree,
+	type FormatKind,
+	type InlineNode,
+} from "@src/lib/utils/inlineMarkdown";
 
 /**
  * Inline-styles markdown *in place* for the diary editor (Discord-style):
@@ -8,77 +13,53 @@ import { Fragment, ReactNode } from "react";
 
 const MARK = "text-gray-500 dark:text-gray-500";
 
-const INLINE =
-	/(`[^`\n]+`)|(\*\*[^*\n]+?\*\*)|(__[^_\n]+?__)|(~~[^~\n]+?~~)|(\*[^*\n]+?\*)|(\[[^\]\n]+\]\([^)\n]+\))/g;
+const FORMAT_CLASS: Record<FormatKind, string> = {
+	bold: "font-bold",
+	italic: "italic",
+	bolditalic: "font-bold italic",
+	underline: "underline",
+	strike: "line-through",
+};
 
-function wrap(
-	open: string,
-	inner: string,
-	close: string,
-	className: string,
-	key: string,
-	depth: number,
-): ReactNode {
-	return (
-		<Fragment key={key}>
-			<span className={MARK}>{open}</span>
-			<span className={className}>{renderInline(inner, key, depth + 1)}</span>
-			<span className={MARK}>{close}</span>
-		</Fragment>
-	);
+function renderNodes(nodes: readonly InlineNode[], keyPrefix: string): ReactNode[] {
+	return nodes.map((node, index): ReactNode => {
+		const key = `${keyPrefix}-${index}`;
+		switch (node.type) {
+			case "text":
+				return node.text;
+			case "code":
+				return (
+					<span
+						key={key}
+						className="rounded bg-gray-500/25 text-gray-900 dark:text-gray-100"
+					>
+						{`\`${node.text}\``}
+					</span>
+				);
+			case "format":
+				return (
+					<Fragment key={key}>
+						<span className={MARK}>{node.marker}</span>
+						<span className={FORMAT_CLASS[node.kind]}>
+							{renderNodes(node.children, key)}
+						</span>
+						<span className={MARK}>{node.marker}</span>
+					</Fragment>
+				);
+			case "link":
+				return (
+					<Fragment key={key}>
+						<span className={MARK}>[</span>
+						<span className="text-blue-500">{renderNodes(node.label, key)}</span>
+						<span className={MARK}>{`](${node.href})`}</span>
+					</Fragment>
+				);
+		}
+	});
 }
 
-export function renderInline(
-	text: string,
-	keyPrefix = "i",
-	depth = 0,
-): ReactNode[] {
-	const nodes: ReactNode[] = [];
-	let last = 0;
-	let n = 0;
-
-	for (const m of text.matchAll(INLINE)) {
-		const start = m.index ?? 0;
-		if (start > last) nodes.push(text.slice(last, start));
-		const raw = m[0];
-		const key = `${keyPrefix}-${n++}`;
-
-		if (m[1]) {
-			nodes.push(
-				<span
-					key={key}
-					className="rounded bg-gray-500/25 text-gray-900 dark:text-gray-100"
-				>
-					{raw}
-				</span>,
-			);
-		} else if (depth > 2) {
-			nodes.push(raw);
-		} else if (m[2]) {
-			nodes.push(wrap("**", raw.slice(2, -2), "**", "font-bold", key, depth));
-		} else if (m[3]) {
-			nodes.push(wrap("__", raw.slice(2, -2), "__", "underline", key, depth));
-		} else if (m[4]) {
-			nodes.push(
-				wrap("~~", raw.slice(2, -2), "~~", "line-through", key, depth),
-			);
-		} else if (m[5]) {
-			nodes.push(wrap("*", raw.slice(1, -1), "*", "italic", key, depth));
-		} else if (m[6]) {
-			const split = raw.indexOf("](");
-			nodes.push(
-				<Fragment key={key}>
-					<span className={MARK}>[</span>
-					<span className="text-blue-500">{raw.slice(1, split)}</span>
-					<span className={MARK}>{raw.slice(split)}</span>
-				</Fragment>,
-			);
-		}
-		last = start + raw.length;
-	}
-
-	if (last < text.length) nodes.push(text.slice(last));
-	return nodes;
+export function renderInline(text: string, keyPrefix = "i"): ReactNode[] {
+	return renderNodes(parseInlineTree(text), keyPrefix);
 }
 
 const HEADING_CLASS = [

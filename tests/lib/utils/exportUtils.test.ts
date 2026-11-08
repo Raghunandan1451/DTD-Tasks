@@ -1,6 +1,7 @@
 import { describe, it, vi, expect, beforeEach, type Mock } from "vitest";
 import { saveAs } from "file-saver";
 import {
+	handleBoardsExport,
 	handleFullAppExport,
 	handleMarkdownExport,
 	handleQRExport,
@@ -90,6 +91,18 @@ describe("handleQRExport", () => {
 		expect(notify).toHaveBeenCalledWith("QR Code downloaded successfully", "success");
 	});
 
+	it("saves a jpg when asked", async () => {
+		const jpg = new Blob(["jpg"], { type: "image/jpeg" });
+		const toBlob = vi.fn((done: (blob: Blob | null) => void) => done(jpg));
+		const canvas = { toBlob, width: 10, height: 10 } as unknown as HTMLCanvasElement;
+
+		await handleQRExport(canvas, notify, "jpg");
+
+		// jsdom can't draw, so the picture is read from the original canvas here.
+		expect(toBlob).toHaveBeenCalledWith(expect.any(Function), "image/jpeg", 0.92);
+		expect(saveAs).toHaveBeenCalledWith(jpg, expect.stringMatching(/^qr-code_.*\.jpg$/));
+	});
+
 	it("reports a failure to read the canvas", async () => {
 		const canvas = {
 			toBlob: () => {
@@ -100,6 +113,30 @@ describe("handleQRExport", () => {
 		await handleQRExport(canvas, notify);
 
 		expect(notify).toHaveBeenCalledWith("Failed to export QR code", "error");
+	});
+});
+
+describe("handleBoardsExport", () => {
+	const notify = vi.fn();
+	const backup = { schemaVersion: 2, boards: [] };
+
+	it("always puts the JSON backup in the ZIP, with the images beside it", async () => {
+		const image = new Blob(["png"], { type: "image/png" });
+
+		await handleBoardsExport(backup, { images: [{ fileName: "Plan.png", blob: image }] }, notify);
+
+		const zip = lastZip();
+		expect(zip.file).toHaveBeenCalledWith("boards-backup.json", JSON.stringify(backup, null, 2));
+		expect(zip.folders.Images.file).toHaveBeenCalledWith("Plan.png", image);
+		expect(saveAs).toHaveBeenCalledWith(expect.any(Blob), expect.stringMatching(/^boards-export_.*\.zip$/));
+		expect(notify).toHaveBeenCalledWith("Boards exported successfully", "success");
+	});
+
+	it("still downloads the JSON when there are no images", async () => {
+		await handleBoardsExport(backup, undefined, notify);
+
+		expect(lastZip().file).toHaveBeenCalledWith("boards-backup.json", expect.any(String));
+		expect(saveAs).toHaveBeenCalled();
 	});
 });
 

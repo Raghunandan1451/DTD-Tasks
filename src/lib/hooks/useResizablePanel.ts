@@ -4,26 +4,44 @@ const DEFAULT_WIDTH = 240; // px, matches old w-60
 const MIN_WIDTH = 180; // px
 const MAX_WIDTH_RATIO = 0.25; // 25% of parent container
 
+export interface ResizablePanelOptions {
+	/** "left": the panel's left edge is fixed and the handle is on its right edge. "right": the reverse. */
+	anchor?: "left" | "right";
+	defaultWidth?: number;
+	minWidth?: number;
+	/** Largest width as a share of the parent container. */
+	maxRatio?: number;
+}
+
 /**
- * Drag-to-resize for the file tree panel. Width is clamped between
- * MIN_WIDTH and 25% of the parent container's width.
+ * Drag-to-resize for a side panel. Width is clamped between minWidth and
+ * maxRatio of the parent container's width. With anchor "right" the panel grows
+ * leftwards, for panels that sit on the right of their container.
  */
-export const useResizablePanel = () => {
-	const [width, setWidth] = useState(DEFAULT_WIDTH);
+export const useResizablePanel = ({
+	anchor = "left",
+	defaultWidth = DEFAULT_WIDTH,
+	minWidth = MIN_WIDTH,
+	maxRatio = MAX_WIDTH_RATIO,
+}: ResizablePanelOptions = {}) => {
+	const [width, setWidth] = useState(defaultWidth);
 	const containerRef = useRef<HTMLDivElement>(null);
 	const isDragging = useRef(false);
 
-	const handlePointerMove = useCallback((e: PointerEvent) => {
-		if (!isDragging.current || !containerRef.current) return;
+	const handlePointerMove = useCallback(
+		(e: PointerEvent) => {
+			if (!isDragging.current || !containerRef.current) return;
 
-		const parent = containerRef.current.parentElement;
-		const containerWidth = parent?.clientWidth ?? window.innerWidth;
-		const maxWidth = containerWidth * MAX_WIDTH_RATIO;
-		const left = containerRef.current.getBoundingClientRect().left;
-		const next = e.clientX - left;
+			const parent = containerRef.current.parentElement;
+			const containerWidth = parent?.clientWidth ?? window.innerWidth;
+			const maxWidth = Math.max(containerWidth * maxRatio, minWidth);
+			const rect = containerRef.current.getBoundingClientRect();
+			const next = anchor === "left" ? e.clientX - rect.left : rect.right - e.clientX;
 
-		setWidth(Math.min(Math.max(next, MIN_WIDTH), maxWidth));
-	}, []);
+			setWidth(Math.min(Math.max(next, minWidth), maxWidth));
+		},
+		[anchor, maxRatio, minWidth],
+	);
 
 	const stopDragging = useCallback(() => {
 		isDragging.current = false;

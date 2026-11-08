@@ -37,7 +37,7 @@ const FileManager: React.FC = () => {
 			(data) => {
 				dispatch(setFileState(data));
 				showNotification(
-					"Markdown files restored successfully",
+					"Notes restored successfully",
 					"success"
 				);
 			},
@@ -50,7 +50,7 @@ const FileManager: React.FC = () => {
 		<>
 			<div className="h-full text-white flex flex-col">
 				<TitleWithButton
-					heading="Markdown Editor"
+					heading="Notes"
 					buttonText="Download"
 					onDownload={handleDownload}
 					onUpload={handleUpload}

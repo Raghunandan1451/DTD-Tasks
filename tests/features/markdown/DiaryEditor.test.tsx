@@ -1,4 +1,4 @@
-import { render, screen, fireEvent } from "@testing-library/react";
+import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import { Provider } from "react-redux";
 import { configureStore } from "@reduxjs/toolkit";
 import { describe, it, expect, vi, afterEach } from "vitest";
@@ -132,5 +132,56 @@ describe("DiaryEditor layout", () => {
 		expect(saved).toContain("<!-- page: 2026-11-01 -->\naaaa bbbb\n");
 		expect(saved).toMatch(/<!-- page: \d{4}-\d{2}-\d{2} -->\ncccc dddd\n/);
 		expect(saved.endsWith("second page")).toBe(true);
+	});
+});
+
+describe("DiaryEditor page deletion", () => {
+	afterEach(() => vi.restoreAllMocks());
+
+	const openDeleteDialog = () => {
+		const store = setup();
+		fireEvent.click(screen.getByLabelText("Edit mode"));
+		fireEvent.click(screen.getByLabelText("Delete page"));
+		return store;
+	};
+
+	it("asks with the app's own dialog, not the browser's", () => {
+		const nativeConfirm = vi.spyOn(window, "confirm");
+		openDeleteDialog();
+
+		expect(nativeConfirm).not.toHaveBeenCalled();
+		expect(screen.getByText("Delete page")).toBeInTheDocument();
+		expect(screen.getByText(/Delete page 1 of 2/)).toBeInTheDocument();
+		expect(screen.getByText("Item: Sunday, 1 November 2026")).toBeInTheDocument();
+		expect(screen.getByRole("button", { name: "Delete" })).toBeInTheDocument();
+	});
+
+	it("keeps the page when the dialog is cancelled", async () => {
+		const store = openDeleteDialog();
+		fireEvent.click(screen.getByRole("button", { name: "Cancel" }));
+
+		await waitFor(() => expect(screen.queryByText(/Delete page 1 of 2/)).toBeNull());
+		expect(store.getState().fileManager.content).toBe(CONTENT);
+		expect(screen.getByTestId("page-counter")).toHaveTextContent("Page 1 of 2");
+	});
+
+	it("keeps the page when the dialog is dismissed with Escape", async () => {
+		const store = openDeleteDialog();
+		fireEvent.keyDown(document, { key: "Escape" });
+
+		await waitFor(() => expect(screen.queryByText(/Delete page 1 of 2/)).toBeNull());
+		expect(store.getState().fileManager.content).toBe(CONTENT);
+	});
+
+	it("removes the page once confirmed", async () => {
+		const store = openDeleteDialog();
+		fireEvent.click(screen.getByRole("button", { name: "Delete" }));
+
+		await waitFor(() =>
+			expect(store.getState().fileManager.content).toBe(
+				"<!-- page: 2026-11-03 -->\nsecond page",
+			),
+		);
+		expect(screen.getByTestId("page-counter")).toHaveTextContent("Page 1 of 1");
 	});
 });

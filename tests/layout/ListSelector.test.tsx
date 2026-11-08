@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { render, screen } from "@testing-library/react";
+import { fireEvent, render, screen } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
 import ListSelector from "@src/layout/ListSelector";
 import "@testing-library/jest-dom";
@@ -22,6 +22,7 @@ const desktopLink = (name: string) =>
 
 describe("ListSelector component", () => {
 	beforeEach(() => {
+		localStorage.clear();
 		global.matchMedia = vi.fn().mockImplementation((query) => ({
 			matches: query === "(prefers-color-scheme: dark)",
 			media: query,
@@ -35,7 +36,7 @@ describe("ListSelector component", () => {
 	it("renders a flat list without Events or group titles", () => {
 		renderAt("/");
 
-		["Home", "Expenses", "QR Code", "Markdown"].forEach((name) => {
+		["Home", "Expenses", "QR Code", "Notes", "Boards"].forEach((name) => {
 			expect(desktopLink(name)).toBeInTheDocument();
 		});
 		expect(screen.queryByText("Events")).not.toBeInTheDocument();
@@ -68,8 +69,36 @@ describe("ListSelector component", () => {
 		renderAt("/");
 
 		expect(desktopLink("Expenses")).toHaveTextContent("Desktop only");
-		expect(desktopLink("Markdown")).not.toHaveTextContent("Desktop only");
+		expect(desktopLink("Notes")).not.toHaveTextContent("Desktop only");
+		expect(desktopLink("Boards")).not.toHaveTextContent("Desktop only");
 		expect(desktopLink("Home")).not.toHaveTextContent("Desktop only");
 		expect(desktopLink("QR Code")).not.toHaveTextContent("Desktop only");
+	});
+
+	it("links Notes and Boards to their new routes", () => {
+		renderAt("/");
+
+		expect(desktopLink("Notes")).toHaveAttribute("href", "/notes");
+		expect(desktopLink("Boards")).toHaveAttribute("href", "/boards");
+	});
+
+	it("collapses to icons and remembers it in localStorage", () => {
+		const { unmount } = renderAt("/");
+		expect(screen.getByLabelText("Collapse navigation")).toHaveAttribute("aria-expanded", "true");
+
+		fireEvent.click(screen.getByLabelText("Collapse navigation"));
+
+		expect(screen.getByRole("navigation", { name: "Main" })).toHaveClass("collapsed");
+		expect(localStorage.getItem("nav_collapsed")).toBe("1");
+		// Names stay available to screen readers through aria-label.
+		expect(desktopLink("Expenses")).toHaveAttribute("aria-label", "Expenses");
+
+		unmount();
+		renderAt("/");
+		expect(screen.getByRole("navigation", { name: "Main" })).toHaveClass("collapsed");
+
+		fireEvent.click(screen.getByLabelText("Expand navigation"));
+		expect(screen.getByRole("navigation", { name: "Main" })).not.toHaveClass("collapsed");
+		expect(localStorage.getItem("nav_collapsed")).toBe("0");
 	});
 });

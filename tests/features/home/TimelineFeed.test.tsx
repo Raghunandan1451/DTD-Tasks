@@ -251,7 +251,7 @@ describe("row links", () => {
 		const { user } = renderFeed();
 
 		const link = await screen.findByRole("link", { name: /Created a\.md/ });
-		expect(link).toHaveAttribute("href", "/markdown");
+		expect(link).toHaveAttribute("href", "/notes");
 		expect(screen.getByText("Deleted Old.md")).toBeInTheDocument();
 		expect(screen.queryByRole("link", { name: /Deleted Old\.md/ })).toBeNull();
 

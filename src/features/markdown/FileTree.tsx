@@ -5,7 +5,7 @@ import EditFileFolder from "@src/features/markdown/EditFileFolder";
 import NotificationCenter from "@src/components/ui/toast/NotificationCenter";
 import { useResizablePanel } from "@src/lib/hooks/useResizablePanel";
 import { useTreeActions } from "@src/lib/hooks/useTreeActions";
-import ResizeHandle from "@src/features/markdown/ResizeHandle";
+import ResizeHandle from "@src/components/ui/ResizeHandle";
 
 interface FileTreeProps {
 	className?: string;

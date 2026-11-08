@@ -6,6 +6,7 @@ import {
 	StoreNames,
 } from "idb";
 import type {
+	Board,
 	JournalEntry,
 	JournalImage,
 	MarkdownAction,
@@ -13,9 +14,10 @@ import type {
 } from "@src/lib/db/types";
 
 export const DB_NAME = "AIO-List";
+// v5 adds the `boards` store for Nodes & Notes.
 // v4 re-runs the (now idempotent) timeline store setup: a local database that
 // reached v3 before those stores were being created would otherwise never get them.
-export const DB_VERSION = 4;
+export const DB_VERSION = 5;
 
 /** Unique index that makes [fileId, day, action] a natural upsert key. */
 export const MARKDOWN_LOG_UNIQUE_INDEX = "fileId_day_action";
@@ -46,6 +48,11 @@ interface AppDB extends DBSchema {
 			day: string;
 			fileId_day_action: [string, string, MarkdownAction];
 		};
+	};
+	boards: {
+		key: string;
+		value: Board;
+		indexes: { updatedAt: number };
 	};
 }
 
@@ -108,6 +115,16 @@ const ensureTimelineStores = (db: IDBPDatabase<AppDB>, tx: UpgradeTx): void => {
 	}
 };
 
+/** Creates the boards store and its index if missing; safe on any existing database. */
+const ensureBoardsStore = (db: IDBPDatabase<AppDB>, tx: UpgradeTx): void => {
+	const boards = db.objectStoreNames.contains("boards")
+		? tx.objectStore("boards")
+		: db.createObjectStore("boards", { keyPath: "id" });
+	if (!boards.indexNames.contains("updatedAt")) {
+		boards.createIndex("updatedAt", "updatedAt");
+	}
+};
+
 let dbPromise: Promise<IDBPDatabase<AppDB>> | null = null;
 
 export const getDB = (): Promise<IDBPDatabase<AppDB>> => {
@@ -121,6 +138,7 @@ export const getDB = (): Promise<IDBPDatabase<AppDB>> => {
 				// Timeline stores. Created before any await so the versionchange
 				// transaction is still active.
 				ensureTimelineStores(db, tx);
+				ensureBoardsStore(db, tx);
 
 				// v1 -> v2: Events was removed. Keep its data aside for a
 				// one-time download, then drop the old key.

@@ -19,8 +19,7 @@ const entry = (
 	type,
 });
 
-const salary = (date: string, amount = 50000) =>
-	entry(date, amount, "Salary", "Cr");
+const salary = (date: string, amount = 50000) => entry(date, amount, "Salary", "Cr");
 
 const baseFinance = (overrides: Partial<FinanceState> = {}): FinanceState => ({
 	salary: { amount: 50000, dayOfMonth: 1 },
@@ -55,17 +54,13 @@ const finance = baseFinance({
 				id: "needs",
 				name: "Needs",
 				percentage: 50,
-				expenses: [
-					{ id: "b1", name: "Rent", amount: 15000, expenseId: rent.id },
-				],
+				expenses: [{ id: "b1", name: "Rent", amount: 15000, expenseId: rent.id }],
 			},
 			{
 				id: "wants",
 				name: "Wants",
 				percentage: 30,
-				expenses: [
-					{ id: "b2", name: "Concert", amount: 3500, expenseId: concert.id },
-				],
+				expenses: [{ id: "b2", name: "Concert", amount: 3500, expenseId: concert.id }],
 			},
 			{ id: "savings", name: "Savings", percentage: 20 },
 		],
@@ -84,11 +79,7 @@ const report = (monthKey?: string, data: FinanceState | undefined = finance) =>
 describe("buildExpenseReport", () => {
 	it("lists months and days newest first with overall totals", () => {
 		const all = report();
-		expect(all.months.map((m) => m.monthKey)).toEqual([
-			"2026-10",
-			"2026-09",
-			"2026-08",
-		]);
+		expect(all.months.map((m) => m.monthKey)).toEqual(["2026-10", "2026-09", "2026-08"]);
 		const september = all.months[1];
 		expect(september.days.map((d) => d.date)).toEqual([
 			"2026-09-20",
@@ -108,9 +99,7 @@ describe("buildExpenseReport", () => {
 		expect(august.closingBalance).toBe(20000 + 50000 - 15000);
 		expect(september.openingBalance).toBe(august.closingBalance);
 		expect(october.openingBalance).toBe(september.closingBalance);
-		expect(september.closingBalance).toBe(
-			september.openingBalance + 58000 - 19700,
-		);
+		expect(september.closingBalance).toBe(september.openingBalance + 58000 - 19700);
 	});
 
 	it("counts manually added credits as budget income, on top of salary", () => {
@@ -160,9 +149,7 @@ describe("buildExpenseReport", () => {
 		expect(september.months[0].trend.openingBalance).toBe(20000 + 35000);
 		expect(september.balanceSeries[0].date).toBe("2026-09-01");
 		expect(september.balanceSeries.at(-1)?.date).toBe("2026-09-30");
-		expect(september.balanceSeries.at(-1)?.balance).toBe(
-			september.months[0].trend.closingBalance,
-		);
+		expect(september.balanceSeries.at(-1)?.balance).toBe(september.months[0].trend.closingBalance);
 	});
 
 	it("still reports a requested month that has no entries", () => {
@@ -179,9 +166,7 @@ describe("buildExpenseReport", () => {
 
 	it("sums the trend totals across months", () => {
 		const { trendTotals, months } = report();
-		expect(trendTotals.income).toBe(
-			months.reduce((sum, m) => sum + m.trend.income.amount, 0),
-		);
+		expect(trendTotals.income).toBe(months.reduce((sum, m) => sum + m.trend.income.amount, 0));
 		expect(trendTotals.potentialSavings).toBe(
 			months.reduce((sum, m) => sum + m.trend.potentialSavings, 0),
 		);
@@ -201,9 +186,7 @@ describe("buildExpenseReport", () => {
 			title: "No finance",
 			today: TODAY,
 		});
-		expect(months[0].trend.openingBalance).toBe(
-			months[1].trend.closingBalance,
-		);
+		expect(months[0].trend.openingBalance).toBe(months[1].trend.closingBalance);
 		expect(months.at(-1)?.trend.openingBalance).toBe(0);
 		// No salary configured, so estimated income is zero
 		expect(months.at(-1)?.trend.income.isEstimated).toBe(false);

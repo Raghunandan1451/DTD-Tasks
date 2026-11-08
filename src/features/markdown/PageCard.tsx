@@ -7,9 +7,13 @@ import MarkdownPreview from "@src/components/shared/preview_editor/MarkdownPrevi
 import Button from "@src/components/ui/button/Button";
 
 // Mirror, probe and textarea MUST share these metrics or the caret drifts
-// and the "does it fit" measurement lies.
+// and the "does it fit" measurement lies. The font is monospaced on purpose:
+// the mirror shows bold, italic and headings, and in a proportional font those
+// glyphs are wider than the plain ones the textarea lays out, so the caret ends
+// up off the text after any formatting. In a monospaced font every weight and
+// style has the same advance, so the two always line up.
 export const TEXT_METRICS =
-	"px-3 py-2 text-base leading-7 font-sans whitespace-pre-wrap break-words";
+	"px-3 py-2 text-[15px] leading-7 font-mono whitespace-pre-wrap break-words";
 
 interface PageCardProps {
 	/** null renders an empty sheet (second slot of the last spread). */

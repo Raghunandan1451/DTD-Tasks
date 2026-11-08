@@ -1,3 +1,4 @@
+import type { RecurringItem } from "@src/features/finance/type";
 import { RootState } from "@src/lib/store/store";
 import { DEFAULT_BUDGET_CATEGORIES } from "@src/features/finance/lib/budgetCategories";
 
@@ -13,6 +14,9 @@ export const selectCurrentBalance = (state: RootState) =>
 	state.finance.currentBalance;
 export const selectManualOverride = (state: RootState) =>
 	state.finance.manualOverride;
+const NO_RECURRING: RecurringItem[] = [];
+export const selectRecurring = (state: RootState) =>
+	state.finance.recurring ?? NO_RECURRING;
 export const selectFinanceGroups = (state: RootState) =>
 	state.finance.groups ?? NO_GROUPS;
 

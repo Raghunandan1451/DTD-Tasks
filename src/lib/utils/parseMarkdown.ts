@@ -1,300 +1,52 @@
-// parseMarkdown.ts - Updated with combination support
+// parseMarkdown.ts - block parsing; inline marks come from the shared parser
 import { createElement, ReactElement, ReactNode } from "react";
+import { parseInlineTree, type InlineNode } from "@src/lib/utils/inlineMarkdown";
 
-interface MarkdownRule {
-	pattern: RegExp;
-	component: (key: string, ...matches: string[]) => ReactElement;
-}
+const CODE_CLASS =
+	"px-2 py-1 rounded text-sm font-mono " +
+	"bg-gray-800/60 text-gray-100 dark:bg-gray-100/20 dark:text-gray-200";
 
-const INLINE_RULES: readonly MarkdownRule[] = [
-	// Bold + Italic + Strikethrough + Underline (all four)
-	{
-		pattern: /\*\*_~~__([^_~*]+)__~~_\*\*/g,
-		component: (key, content) =>
-			createElement(
-				"strong",
-				{ key },
-				createElement(
-					"em",
-					{},
-					createElement("s", {}, createElement("u", {}, content))
-				)
-			),
-	},
-
-	// Bold + Italic + Strikethrough
-	{
-		pattern: /\*\*\*~~([^~*]+)~~\*\*\*/g,
-		component: (key, content) =>
-			createElement(
-				"strong",
-				{ key },
-				createElement("em", {}, createElement("s", {}, content))
-			),
-	},
-	{
-		pattern: /\*\*_~~([^~*]+)~~_\*\*/g,
-		component: (key, content) =>
-			createElement(
-				"strong",
-				{ key },
-				createElement("em", {}, createElement("s", {}, content))
-			),
-	},
-
-	// Bold + Italic + Underline
-	{
-		pattern: /\*\*\*__([^_*]+)__\*\*\*/g,
-		component: (key, content) =>
-			createElement(
-				"strong",
-				{ key },
-				createElement("em", {}, createElement("u", {}, content))
-			),
-	},
-	{
-		pattern: /\*\*___([^_*]+)___\*\*/g,
-		component: (key, content) =>
-			createElement(
-				"strong",
-				{ key },
-				createElement("em", {}, createElement("u", {}, content))
-			),
-	},
-
-	// Bold + Underline + Strikethrough
-	{
-		pattern: /\*\*__~~([^~_*]+)~~__\*\*/g,
-		component: (key, content) =>
-			createElement(
-				"strong",
-				{ key },
-				createElement("u", {}, createElement("s", {}, content))
-			),
-	},
-
-	// Italic + Underline + Strikethrough
-	{
-		pattern: /\*__~~([^~_*]+)~~__\*/g,
-		component: (key, content) =>
-			createElement(
-				"em",
-				{ key },
-				createElement("u", {}, createElement("s", {}, content))
-			),
-	},
-
-	// Bold + Italic
-	{
-		pattern: /\*\*\*([^*]+)\*\*\*/g,
-		component: (key, content) =>
-			createElement("strong", { key }, createElement("em", {}, content)),
-	},
-	{
-		pattern: /\*\*_([^_*]+)_\*\*/g,
-		component: (key, content) =>
-			createElement("strong", { key }, createElement("em", {}, content)),
-	},
-
-	// Bold + Underline
-	{
-		pattern: /\*\*__([^_*]+)__\*\*/g,
-		component: (key, content) =>
-			createElement("strong", { key }, createElement("u", {}, content)),
-	},
-
-	// Bold + Strikethrough
-	{
-		pattern: /\*\*~~([^~*]+)~~\*\*/g,
-		component: (key, content) =>
-			createElement("strong", { key }, createElement("s", {}, content)),
-	},
-
-	// Bold + Code
-	{
-		pattern: /\*\*`([^`*]+)`\*\*/g,
-		component: (key, content) =>
-			createElement(
-				"strong",
-				{ key },
-				createElement(
-					"code",
+/** Turns parsed inline nodes into elements. Nested marks become nested elements. */
+const renderInline = (nodes: readonly InlineNode[], keyPrefix: string): ReactNode[] =>
+	nodes.map((node, index): ReactNode => {
+		const key = `${keyPrefix}-${index}`;
+		switch (node.type) {
+			case "text":
+				return node.text;
+			case "code":
+				return createElement("code", { key, className: CODE_CLASS }, node.text);
+			case "link":
+				return createElement(
+					"a",
 					{
-						className:
-							"px-2 py-1 rounded text-sm font-mono " +
-							"bg-gray-800/60 text-gray-100 dark:bg-gray-100/20 dark:text-gray-200",
+						key,
+						href: node.href,
+						target: "_blank",
+						rel: "noopener noreferrer",
+						className: "text-blue-500 hover:underline",
 					},
-					content
-				)
-			),
-	},
-
-	// Italic + Underline
-	{
-		pattern: /\*__([^_*]+)__\*/g,
-		component: (key, content) =>
-			createElement("em", { key }, createElement("u", {}, content)),
-	},
-
-	// Italic + Strikethrough
-	{
-		pattern: /\*~~([^~*]+)~~\*/g,
-		component: (key, content) =>
-			createElement("em", { key }, createElement("s", {}, content)),
-	},
-
-	// Italic + Code
-	{
-		pattern: /\*`([^`*]+)`\*/g,
-		component: (key, content) =>
-			createElement(
-				"em",
-				{ key },
-				createElement(
-					"code",
-					{
-						className:
-							"px-2 py-1 rounded text-sm font-mono " +
-							"bg-gray-800/60 text-gray-100 dark:bg-gray-100/20 dark:text-gray-200",
-					},
-					content
-				)
-			),
-	},
-
-	// Underline + Strikethrough
-	{
-		pattern: /__~~([^~_]+)~~__/g,
-		component: (key, content) =>
-			createElement("u", { key }, createElement("s", {}, content)),
-	},
-
-	// Underline + Code
-	{
-		pattern: /__`([^`_]+)`__/g,
-		component: (key, content) =>
-			createElement(
-				"u",
-				{ key },
-				createElement(
-					"code",
-					{
-						className:
-							"px-2 py-1 rounded text-sm font-mono " +
-							"bg-gray-800/60 text-gray-100 dark:bg-gray-100/20 dark:text-gray-200",
-					},
-					content
-				)
-			),
-	},
-
-	// Strikethrough + Code
-	{
-		pattern: /~~`([^`~]+)`~~/g,
-		component: (key, content) =>
-			createElement(
-				"s",
-				{ key },
-				createElement(
-					"code",
-					{
-						className:
-							"px-2 py-1 rounded text-sm font-mono " +
-							"bg-gray-800/60 text-gray-100 dark:bg-gray-100/20 dark:text-gray-200",
-					},
-					content
-				)
-			),
-	},
-
-	// SINGLE FORMATTING (Original rules - must come after combinations)
-	{
-		pattern: /\[([^\]]+)\]\(([^)]+)\)/g,
-		component: (key, text, href) =>
-			createElement(
-				"a",
-				{
-					key,
-					href,
-					target: "_blank",
-					rel: "noopener noreferrer",
-					className: "text-blue-500 hover:underline",
-				},
-				text
-			),
-	},
-	{
-		pattern: /`([^`]+)`/g,
-		component: (key, content) =>
-			createElement(
-				"code",
-				{
-					key,
-					className:
-						"px-2 py-1 rounded text-sm font-mono " +
-						"bg-gray-800/60 text-gray-100 dark:bg-gray-100/20 dark:text-gray-200",
-				},
-				content
-			),
-	},
-	{
-		pattern: /\*\*(?!\*)([^*]+?)\*\*(?!\*)/g,
-		component: (key, content) => createElement("strong", { key }, content),
-	},
-	{
-		pattern: /__(?!_)([^_]+?)__(?!_)/g,
-		component: (key, content) => createElement("u", { key }, content),
-	},
-	{
-		pattern: /~~(?!~)([^~]+?)~~(?!~)/g,
-		component: (key, content) => createElement("s", { key }, content),
-	},
-	{
-		pattern: /(?<!\*)\*(?!\*)([^*]+?)\*(?!\*)/g,
-		component: (key, content) => createElement("em", { key }, content),
-	},
-];
-
-// Rest of the code remains the same...
-function parseInline(text: string, baseKey: string = ""): ReactNode[] {
-	let processedText = text;
-	const replacements: Array<{ placeholder: string; node: ReactNode }> = [];
-	let placeholderIndex = 0;
-
-	INLINE_RULES.forEach((rule, ruleIndex) => {
-		const regex = new RegExp(rule.pattern.source, rule.pattern.flags);
-
-		processedText = processedText.replace(regex, (_match, ...args) => {
-			const captures = args.slice(0, -2);
-
-			const key = `${baseKey}-r${ruleIndex}-${placeholderIndex}`;
-			const node = rule.component(key, ...captures);
-
-			const placeholder = `\u0000PLACEHOLDER_${placeholderIndex}\u0000`;
-			replacements.push({ placeholder, node });
-			placeholderIndex++;
-
-			return placeholder;
-		});
-	});
-
-	const nodes: ReactNode[] = [];
-	// eslint-disable-next-line no-control-regex
-	const parts = processedText.split(/(\u0000PLACEHOLDER_\d+\u0000)/);
-
-	parts.forEach((part) => {
-		if (part.startsWith("\u0000PLACEHOLDER_")) {
-			const replacement = replacements.find(
-				(r) => r.placeholder === part
-			);
-			if (replacement) {
-				nodes.push(replacement.node);
+					renderInline(node.label, key)
+				);
+			case "format": {
+				const children = renderInline(node.children, key);
+				switch (node.kind) {
+					case "bold":
+						return createElement("strong", { key }, children);
+					case "italic":
+						return createElement("em", { key }, children);
+					case "bolditalic":
+						return createElement("strong", { key }, createElement("em", {}, children));
+					case "underline":
+						return createElement("u", { key }, children);
+					case "strike":
+						return createElement("s", { key }, children);
+				}
 			}
-		} else if (part) {
-			nodes.push(part);
 		}
 	});
 
+function parseInline(text: string, baseKey: string = ""): ReactNode[] {
+	const nodes = renderInline(parseInlineTree(text), baseKey);
 	return nodes.length > 0 ? nodes : [text];
 }
 
