@@ -42,13 +42,13 @@ export interface PotentialSavings {
 	unassignedSpend: number;
 }
 
-const getCategoryAllocation = (
+export const getCategoryAllocation = (
 	category: BudgetCategory,
 	income: number,
 ): number => (income * category.percentage) / 100;
 
 /** Spend linked to a category. Synthetic savings snapshots are never spend. */
-const getCategorySpent = (
+export const getCategorySpent = (
 	category: BudgetCategory,
 	monthlyExpenses: ExpenseEntry[],
 ): number =>

@@ -2,7 +2,7 @@ import { FC, FormEvent, useRef } from "react";
 import Button from "@src/components/ui/button/Button";
 import Input from "@src/components/ui/input/Input";
 import { BudgetCategory } from "@src/features/finance/type";
-import { ModalLayout } from "@src/features/event/components/forms/ModalLayout";
+import { ModalLayout } from "@src/components/shared/dialog/ModalLayout";
 import { CategoryDraft } from "@src/features/finance/budget_planning/types";
 import { clampPercentage } from "@src/features/finance/budget_planning/lib/budgetPlanUtils";
 

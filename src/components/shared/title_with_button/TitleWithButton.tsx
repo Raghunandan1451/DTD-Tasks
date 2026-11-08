@@ -1,5 +1,7 @@
-import React, { useState, useRef } from "react";
+import React, { useState } from "react";
 import Button from "@src/components/ui/button/Button";
+import Input from "@src/components/ui/input/Input";
+import { useFilePicker } from "@src/lib/hooks/useFilePicker";
 import { UploadError } from "@src/lib/utils/uploadError";
 
 type ShowNotificationFn = (
@@ -21,6 +23,10 @@ interface TitleWithButtonProps {
 	) => Promise<string | void> | string | void;
 	buttonText: string;
 	showUpload?: boolean;
+	/** File types the picker accepts. Defaults to ".json". */
+	uploadAccept?: string;
+	/** Label of the upload button. Defaults to "Upload JSON". */
+	uploadText?: string;
 	containerClass?: string;
 	showNotification?: ShowNotificationFn;
 }
@@ -32,12 +38,13 @@ const TitleWithButton: React.FC<TitleWithButtonProps> = ({
 	onUploadFiles,
 	buttonText,
 	showUpload = false,
+	uploadAccept = ".json",
+	uploadText = "Upload JSON",
 	containerClass,
 	showNotification,
 }) => {
 	const [isDownloading, setIsDownloading] = useState(false);
 	const [isUploading, setIsUploading] = useState(false);
-	const fileInputRef = useRef<HTMLInputElement | null>(null);
 
 	const handleDownloadClick = async () => {
 		setIsDownloading(true);
@@ -57,9 +64,8 @@ const TitleWithButton: React.FC<TitleWithButtonProps> = ({
 		}
 	};
 
-	const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
-		const files = Array.from(e.target.files ?? []);
-		if (files.length === 0 || !(onUploadFiles || onUpload)) return;
+	const handleFiles = async (files: File[]) => {
+		if (!(onUploadFiles || onUpload)) return;
 
 		setIsUploading(true);
 		try {
@@ -77,31 +83,29 @@ const TitleWithButton: React.FC<TitleWithButtonProps> = ({
 				"error"
 			);
 		} finally {
-			// Reset so picking the same file again after a failure still fires onChange
-			if (fileInputRef.current) {
-				fileInputRef.current.value = "";
-			}
 			setIsUploading(false);
 		}
 	};
 
-	const handleUploadClick = () => {
-		fileInputRef.current?.click();
-	};
+	const { open: handleUploadClick, inputProps } = useFilePicker({
+		accept: uploadAccept,
+		multiple: Boolean(onUploadFiles),
+		onFiles: handleFiles,
+	});
 
 	return (
 		<div
-			className={`frosted-panel flex-col md:flex-row gap-3 md:gap-0 items-start md:items-center ${
+			className={`frosted-panel flex-row flex-wrap items-center gap-x-2 gap-y-1 ${
 				containerClass || ""
 			}`}
 		>
-			<h1 className="panel-title text-2xl md:text-4xl">
+			<h1 className="panel-title text-xl md:text-4xl">
 				{heading.toUpperCase()}
 			</h1>
-			<div className="flex gap-2 md:gap-3 items-center w-full md:w-auto">
+			<div className="flex gap-1.5 md:gap-3 items-center">
 				<Button
 					type="button"
-					className="btn-primary flex-1 md:flex-initial text-sm md:text-base py-2 px-3 md:px-4"
+					className="btn-primary text-xs md:text-base py-1.5 md:py-2 px-2.5 md:px-4"
 					onClick={handleDownloadClick}
 					text={isDownloading ? "Downloading..." : buttonText}
 					disabled={isDownloading || isUploading}
@@ -110,18 +114,15 @@ const TitleWithButton: React.FC<TitleWithButtonProps> = ({
 					<>
 						<Button
 							type="button"
-							className="btn-secondary flex-1 md:flex-initial text-sm md:text-base py-2 px-3 md:px-4"
+							className="btn-secondary text-xs md:text-base py-1.5 md:py-2 px-2.5 md:px-4"
 							onClick={handleUploadClick}
-							text={isUploading ? "Uploading..." : "Upload JSON"}
+							text={isUploading ? "Uploading..." : uploadText}
 							disabled={isDownloading || isUploading}
 						/>
-						<input
-							ref={fileInputRef}
-							type="file"
-							accept=".json"
-							multiple={Boolean(onUploadFiles)}
-							className="hidden"
-							onChange={handleFileChange}
+						<Input
+							id={`upload-${heading}`}
+							aria-label={`Upload ${heading} JSON`}
+							{...inputProps}
 							disabled={isDownloading || isUploading}
 						/>
 					</>

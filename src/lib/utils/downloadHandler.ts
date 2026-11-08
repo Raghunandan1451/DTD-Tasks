@@ -3,7 +3,6 @@ import JSZip from "jszip";
 import { saveAs } from "file-saver";
 import {
 	AppState,
-	CalendarData,
 	ExpensesData,
 	FileTree,
 	Metadata,
@@ -15,8 +14,6 @@ import {
 	FinanceState,
 	SimulatedExpense,
 } from "@src/features/finance/type";
-import { Event } from "@src/features/event/type";
-import { generateWeeklyCalendarScreenshot } from "@src/features/event/lib/utils";
 import { generateIndividualFilePDF } from "@src/features/markdown/lib/enhancedPDFGenerator";
 import {
 	buildFinanceBackup,
@@ -28,6 +25,17 @@ import {
 } from "@src/features/finance/lib/expenseReport";
 import { renderExpenseReportPdf } from "@src/features/finance/lib/expenseReportPdf";
 import { formatISODate } from "@src/lib/utils/isoDate";
+import { SCHEMA_VERSION } from "@src/lib/utils/schemaVersion";
+import {
+	TIMELINE_BACKUP_FILE,
+	type TimelineBackup,
+} from "@src/features/home/lib/timelineBackup";
+
+import {
+	BOARDS_BACKUP_FILE,
+	type BoardsBackup,
+} from "@src/features/nodes/lib/boardBackup";
+import type { BoardExports } from "@src/features/nodes/lib/boardExport";
 
 export type FinanceExportReportScope = "allMonths" | "lastTwoMonths";
 
@@ -39,28 +47,13 @@ const formatTimestamp = (): string => {
 	return timestamp;
 };
 
-const createICS = (events: Event[]): string => {
-	const header = `BEGIN:VCALENDAR\nVERSION:2.0\nPRODID:-//ListManager//EN\nCALSCALE:GREGORIAN`;
-	const body = events
-		.map((ev) => {
-			const formatDate = (date: string) => date.replace(/-/g, "");
-			return `BEGIN:VEVENT\nUID:${ev.id}@listmanager\nSUMMARY:${
-				ev.title || "Event"
-			}\nDTSTART;VALUE=DATE:${formatDate(ev.startDate)}\nDTEND;VALUE=DATE:${formatDate(ev.endDate)}\nDESCRIPTION:${
-				ev.content || ""
-			}\nCATEGORIES:${ev.tag}\nSTATUS:CONFIRMED\nEND:VEVENT`;
-		})
-		.join("\n");
-	const footer = "END:VCALENDAR";
-	return `${header}\n${body}\n${footer}`;
-};
-
 const createMetadata = (section: string, dataCount: number): Metadata => {
 	return {
 		section,
 		exportDate: new Date().toISOString(),
 		itemCount: dataCount,
 		version: "1.0.0",
+		schemaVersion: SCHEMA_VERSION,
 		appName: "List Manager",
 	};
 };
@@ -187,62 +180,6 @@ const generateEstimatedPDF = ({
 	);
 
 	return doc;
-};
-
-export const handleCalendarExport = async (
-	calendarData: CalendarData,
-	showNotification?: ShowNotificationFn,
-): Promise<void> => {
-	const events = calendarData?.events || [];
-
-	if (!events.length) {
-		showNotification?.("No calendar events to export", "error");
-		return;
-	}
-
-	try {
-		const zip = new JSZip();
-
-		// Add calendar JSON
-		zip.file("calendar-data.json", JSON.stringify(calendarData, null, 2));
-
-		// Add ICS file
-		const icsContent = createICS(events);
-		zip.file("calendar.ics", icsContent);
-
-		// Add weekly screenshot
-		const screenshot = await generateWeeklyCalendarScreenshot(
-			events,
-			calendarData.currentDate,
-		);
-		if (screenshot) {
-			zip.file("weekly-schedule.png", screenshot);
-		} else {
-			console.warn("Screenshot generation failed");
-		}
-
-		// Add metadata
-		zip.file(
-			"meta.json",
-			JSON.stringify(
-				{
-					type: "Calendar",
-					count: events.length,
-					exportedAt: new Date().toISOString(),
-				},
-				null,
-				2,
-			),
-		);
-
-		const blob = await zip.generateAsync({ type: "blob" });
-
-		saveAs(blob, `calendar-export_${formatTimestamp()}.zip`);
-		showNotification?.("Calendar exported successfully", "success");
-	} catch (error) {
-		console.error("Calendar export error:", error);
-		showNotification?.("Failed to export calendar", "error");
-	}
 };
 
 interface ExpenseReportFile {
@@ -454,8 +391,7 @@ export const handleMarkdownExport = async (
 					zip.file(fullPath, item.content);
 
 					// Generate individual PDF with proper encoding
-					const fileObj: File = {
-						type: "file",
+					const fileObj = {
 						path: item.path,
 						content: item.content,
 					};
@@ -480,18 +416,10 @@ export const handleMarkdownExport = async (
 		processFileTree(fileTree);
 
 		// Add JSON for re-import (in root)
-		zip.file("file-manager-data.json", JSON.stringify({ files }, null, 2));
-
-		// Add metadata
-		const createMetadata = (section: string, dataCount: number) => {
-			return {
-				section,
-				exportDate: new Date().toISOString(),
-				itemCount: dataCount,
-				version: "1.0.0",
-				appName: "List Manager",
-			};
-		};
+		zip.file(
+			"file-manager-data.json",
+			JSON.stringify({ schemaVersion: SCHEMA_VERSION, files }, null, 2),
+		);
 
 		zip.file(
 			"meta.json",
@@ -512,9 +440,23 @@ export const handleMarkdownExport = async (
 	}
 };
 
+/** JPG has no transparency, so the picture is drawn on white first (it would turn black otherwise). */
+const flattenOnWhite = (canvas: HTMLCanvasElement): HTMLCanvasElement => {
+	const flat = document.createElement("canvas");
+	flat.width = canvas.width;
+	flat.height = canvas.height;
+	const ctx = flat.getContext("2d");
+	if (!ctx) return canvas;
+	ctx.fillStyle = "#ffffff";
+	ctx.fillRect(0, 0, flat.width, flat.height);
+	ctx.drawImage(canvas, 0, 0);
+	return flat;
+};
+
 export const handleQRExport = async (
 	canvas: HTMLCanvasElement | null,
 	showNotification?: ShowNotificationFn,
+	format: "png" | "jpg" = "png",
 ): Promise<void> => {
 	if (!canvas) {
 		showNotification?.("QR Code not generated yet", "error");
@@ -522,55 +464,74 @@ export const handleQRExport = async (
 	}
 
 	try {
-		canvas.toBlob((blob) => {
+		const source = format === "jpg" ? flattenOnWhite(canvas) : canvas;
+		const done = (blob: Blob | null) => {
 			if (blob) {
-				saveAs(blob, `qr-code_${formatTimestamp()}.png`);
+				saveAs(blob, `qr-code_${formatTimestamp()}.${format}`);
 				showNotification?.(
 					"QR Code downloaded successfully",
 					"success",
 				);
 			}
-		});
+		};
+		if (format === "jpg") source.toBlob(done, "image/jpeg", 0.92);
+		else source.toBlob(done);
 	} catch (error) {
 		console.error("QR export error:", error);
 		showNotification?.("Failed to export QR code", "error");
 	}
 };
 
+/** Timeline (journal notes with images, plus markdown activity) as one JSON file. */
+export const handleTimelineExport = async (
+	backup: TimelineBackup,
+	showNotification?: ShowNotificationFn,
+): Promise<void> => {
+	try {
+		const blob = new Blob([JSON.stringify(backup, null, 2)], {
+			type: "application/json",
+		});
+		saveAs(blob, `timeline-backup_${formatTimestamp()}.json`);
+		showNotification?.("Timeline exported successfully", "success");
+	} catch (error) {
+		console.error("Timeline export error:", error);
+		showNotification?.("Failed to export timeline", "error");
+	}
+};
+
+/**
+ * Boards as one ZIP: the JSON backup (always) and a picture of each board in
+ * Images/. Only the JSON is used to restore.
+ */
+export const handleBoardsExport = async (
+	backup: BoardsBackup,
+	pictures?: BoardExports,
+	showNotification?: ShowNotificationFn,
+): Promise<void> => {
+	try {
+		const zip = new JSZip();
+		zip.file(BOARDS_BACKUP_FILE, JSON.stringify(backup, null, 2));
+		const imagesFolder = zip.folder("Images");
+		pictures?.images.forEach((file) => imagesFolder?.file(file.fileName, file.blob));
+		saveAs(await zip.generateAsync({ type: "blob" }), `boards-export_${formatTimestamp()}.zip`);
+		showNotification?.("Boards exported successfully", "success");
+	} catch (error) {
+		console.error("Boards export error:", error);
+		showNotification?.("Failed to export boards", "error");
+	}
+};
+
 export const handleFullAppExport = async (
 	appState: AppState,
 	showNotification?: ShowNotificationFn,
+	timeline?: TimelineBackup,
+	boards?: BoardsBackup,
+	boardPictures?: BoardExports,
 ): Promise<void> => {
 	try {
 		const zip = new JSZip();
 		let totalItems = 0;
 		let hasData = false;
-
-		// Calendar
-		if (appState.calendar?.events?.length) {
-			hasData = true;
-			const calendarFolder = zip.folder("Calendar");
-
-			calendarFolder?.file(
-				"calendar-data.json",
-				JSON.stringify(appState.calendar, null, 2),
-			);
-			calendarFolder?.file(
-				"calendar.ics",
-				createICS(appState.calendar.events),
-			);
-
-			// Add weekly screenshot
-			const screenshot = await generateWeeklyCalendarScreenshot(
-				appState.calendar.events,
-				appState.calendar.currentDate,
-			);
-			if (screenshot) {
-				calendarFolder?.file("weekly-schedule.png", screenshot);
-			}
-
-			totalItems += appState.calendar.events.length;
-		}
 
 		// Finance & Expenses
 		if (appState.finance || appState.expenses?.expenses?.length) {
@@ -634,8 +595,40 @@ export const handleFullAppExport = async (
 			processFiles(fileTree);
 			fileManagerFolder?.file(
 				"file-manager-data.json",
-				JSON.stringify(appState.fileManager, null, 2),
+				JSON.stringify(
+					{ schemaVersion: SCHEMA_VERSION, ...appState.fileManager },
+					null,
+					2,
+				),
 			);
+		}
+
+		// Timeline (journal + markdown activity; expenses export with Finance)
+		const timelineRows =
+			(timeline?.journal.length ?? 0) + (timeline?.markdownLog.length ?? 0);
+		if (timeline && timelineRows > 0) {
+			hasData = true;
+			zip.folder("Timeline")?.file(
+				TIMELINE_BACKUP_FILE,
+				JSON.stringify(timeline, null, 2),
+			);
+			totalItems += timelineRows;
+		}
+
+		// Boards (Nodes page)
+		if (boards && boards.boards.length > 0) {
+			hasData = true;
+			const boardsFolder = zip.folder("Boards");
+			boardsFolder?.file(
+				BOARDS_BACKUP_FILE,
+				JSON.stringify(boards, null, 2),
+			);
+			// Pictures sit beside the JSON; only the JSON is used to restore.
+			const imagesFolder = boardsFolder?.folder("Images");
+			boardPictures?.images.forEach((file) =>
+				imagesFolder?.file(file.fileName, file.blob),
+			);
+			totalItems += boards.boards.length;
 		}
 
 		// QR - Skip (user exports manually from QR page)
@@ -657,14 +650,17 @@ Generated: ${new Date().toLocaleString()}
 Total Items: ${totalItems}
 
 Folders:
-- Calendar: Events and .ics file
 - Finance: Balance, expenses, and PDF report
 - Markdown: Files and folders
+- Timeline: Journal notes (with images) and markdown activity
+- Boards: Nodes & Notes boards
 
 To restore data:
-1. Go to the specific page (Calendar/Finance/Markdown)
+1. Go to the specific page (Finance/Markdown)
 2. Click "Upload JSON" and select the file (Finance: finance-backup.json)
-3. QR codes must be regenerated manually
+3. Timeline: on Home, click "Import" and select ${TIMELINE_BACKUP_FILE}
+4. Boards: on the Nodes page, click "Upload JSON" and select ${BOARDS_BACKUP_FILE}
+5. QR codes must be regenerated manually
 `,
 		);
 
@@ -702,8 +698,3 @@ export const handleJSONUpload = async <T = unknown>(
 	}
 };
 
-/** @deprecated Use handleMarkdownExport instead */
-export const handleZIPExport = handleMarkdownExport;
-
-/** @deprecated Use handleQRExport instead */
-export const handleDownloadImage = handleQRExport;

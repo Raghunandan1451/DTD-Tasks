@@ -38,10 +38,6 @@ const GroupManager = ({
 
 	return (
 		<div className="space-y-6 p-6 border rounded-xl bg-white/5 backdrop-blur-sm">
-			<h2 className="font-bold text-xl text-gray-800 dark:text-white">
-				Manage Groups
-			</h2>
-
 			<div className="flex gap-3">
 				<Input
 					id="groupName"
@@ -72,7 +68,7 @@ const GroupManager = ({
 							{groups.map((group) => {
 								// Check if group has any items in expenses
 								const hasItems = expenses.some(
-									(expense) => expense.group === group
+									(expense) => expense.group === group,
 								);
 
 								return (
@@ -90,11 +86,11 @@ const GroupManager = ({
 													if (hasItems) {
 														showNotification?.(
 															`Group: ${group} contains expenses, please remove or reassign them before deletion`,
-															"error"
+															"error",
 														);
 													} else {
 														dispatch(
-															removeGroup(group)
+															removeGroup(group),
 														);
 													}
 												}}

@@ -5,9 +5,13 @@ import EditFileFolder from "@src/features/markdown/EditFileFolder";
 import NotificationCenter from "@src/components/ui/toast/NotificationCenter";
 import { useResizablePanel } from "@src/lib/hooks/useResizablePanel";
 import { useTreeActions } from "@src/lib/hooks/useTreeActions";
-import ResizeHandle from "@src/features/markdown/ResizeHandle";
+import ResizeHandle from "@src/components/ui/ResizeHandle";
 
-const FileTree: React.FC = () => {
+interface FileTreeProps {
+	className?: string;
+}
+
+const FileTree: React.FC<FileTreeProps> = ({ className = "" }) => {
 	const [selectedItem, setSelectedItem] = useState<SelectedItem | null>(null);
 
 	const { width, containerRef, startDragging } = useResizablePanel();
@@ -28,8 +32,8 @@ const FileTree: React.FC = () => {
 	return (
 		<div
 			ref={containerRef}
-			className="relative flex flex-col max-h-full shrink-0"
-			style={{ width }}
+			className={`relative flex-col max-h-full w-full md:w-[var(--tree-width)] md:shrink-0 ${className}`}
+			style={{ "--tree-width": `${width}px` } as React.CSSProperties}
 		>
 			<div className="border-r border-gray-200 dark:border-gray-700 bg-white/30 dark:bg-black/30 backdrop-blur-md shadow-sm flex flex-col h-full rounded-bl-xl overflow-hidden">
 				<TreeToolbar
@@ -59,7 +63,9 @@ const FileTree: React.FC = () => {
 			)}
 
 			<NotificationCenter notifications={notifications} />
-			<ResizeHandle onPointerDown={startDragging} />
+			<div className="hidden md:block">
+				<ResizeHandle onPointerDown={startDragging} />
+			</div>
 		</div>
 	);
 };

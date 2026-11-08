@@ -8,15 +8,15 @@ import NotificationCenter from "@src/components/ui/toast/NotificationCenter";
 import useNotifications from "@src/lib/hooks/useNotifications";
 import TitleWithButton from "@src/components/shared/title_with_button/TitleWithButton";
 import FileTree from "@src/features/markdown/FileTree";
-import Editor from "@src/features/markdown/Editor";
+import DiaryEditor from "@src/features/markdown/DiaryEditor";
 import { AppDispatch, RootState } from "@src/lib/store/store";
 import { hydrateMarkdown } from "@src/lib/store/thunks/markdownThunk";
-import { setFileState } from "@src/lib/store/slices/markdownSlice";
+import { setFileState, deselectFile } from "@src/lib/store/slices/markdownSlice";
 import type { FileManagerData } from "@src/lib/types/downloadHandlerTypes";
 
 const FileManager: React.FC = () => {
 	const dispatch = useDispatch<AppDispatch>();
-	const { files, loaded } = useSelector(
+	const { files, loaded, selectedFile } = useSelector(
 		(state: RootState) => state.fileManager
 	);
 	const { notifications, showNotification } = useNotifications();
@@ -37,7 +37,7 @@ const FileManager: React.FC = () => {
 			(data) => {
 				dispatch(setFileState(data));
 				showNotification(
-					"Markdown files restored successfully",
+					"Notes restored successfully",
 					"success"
 				);
 			},
@@ -50,7 +50,7 @@ const FileManager: React.FC = () => {
 		<>
 			<div className="h-full text-white flex flex-col">
 				<TitleWithButton
-					heading="Markdown Editor"
+					heading="Notes"
 					buttonText="Download"
 					onDownload={handleDownload}
 					onUpload={handleUpload}
@@ -58,8 +58,13 @@ const FileManager: React.FC = () => {
 					showNotification={showNotification}
 				/>
 				<div className="flex flex-1 min-h-0 border border-white/20 dark:border-white/10">
-					<FileTree />
-					<Editor />
+					{/* On phones show one pane at a time: file list, or editor once a file is open */}
+					<FileTree className={selectedFile ? "hidden md:flex" : "flex"} />
+					<DiaryEditor
+						key={selectedFile ?? "none"}
+						className={selectedFile ? "flex" : "hidden md:flex"}
+						onBack={() => dispatch(deselectFile())}
+					/>
 				</div>
 			</div>
 			<NotificationCenter notifications={notifications} />

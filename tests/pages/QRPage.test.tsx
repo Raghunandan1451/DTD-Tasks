@@ -48,7 +48,7 @@ vi.mock("@src/components/ui/toast/NotificationCenter", () => ({
 }));
 
 vi.mock("@src/lib/utils/downloadHandler", () => ({
-	handleDownloadImage: vi.fn(),
+	handleQRExport: vi.fn(),
 }));
 
 // Mocks for QRCodeCanvas (optional - prevents canvas rendering issues)
@@ -63,7 +63,7 @@ describe("QRGenerator", () => {
 		vi.clearAllMocks();
 
 		// ✅ Return a mock state with valid shape
-		(useSelector as unknown as Mock).mockImplementation((selector: any) =>
+		(useSelector as unknown as Mock).mockImplementation((selector: (state: unknown) => unknown) =>
 			selector({
 				qr: {
 					qrData: "https://example.com",
@@ -121,6 +121,6 @@ describe("QRGenerator", () => {
 	it('calls download handler on "Download Image"', () => {
 		render(<QRGenerator />);
 		fireEvent.click(screen.getByText("Download Image"));
-		expect(downloadHandler.handleDownloadImage).toHaveBeenCalled();
+		expect(downloadHandler.handleQRExport).toHaveBeenCalled();
 	});
 });

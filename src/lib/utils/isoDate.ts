@@ -19,6 +19,10 @@ export const parseISODate = (date: string): Date => {
 /** Today's local date as YYYY-MM-DD. */
 export const todayISO = (): string => formatISODate(new Date());
 
+/** Local calendar day (YYYY-MM-DD) of an epoch-ms timestamp. Never uses toISOString, which shifts the day for users ahead of UTC. */
+export const toLocalDay = (timestamp: number): string =>
+	formatISODate(new Date(timestamp));
+
 /** Generates every YYYY-MM-DD date string from start to end, inclusive. */
 export const generateDateRange = (start: Date, end: Date): string[] => {
 	const dates: string[] = [];

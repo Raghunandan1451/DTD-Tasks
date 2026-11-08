@@ -1,12 +1,21 @@
-import { useState, useMemo } from "react";
-import { useSelector, useDispatch } from "react-redux";
+import { useState, useMemo, useEffect, useCallback } from "react";
+import { useSelector, useDispatch, useStore } from "react-redux";
 import {
-	handleCalendarExport,
 	handleFinanceExport,
 	handleMarkdownExport,
 	handleFullAppExport,
+	handleTimelineExport,
+	handleBoardsExport,
 } from "@src/lib/utils/downloadHandler";
-import { hydrateCalendar } from "@src/lib/store/thunks/calendarThunk";
+import { buildTimelineBackup } from "@src/features/home/lib/timelineBackup";
+import { countTimelineData } from "@src/lib/db/timelineBackupRepo";
+import { countBoards } from "@src/lib/db/boardsRepo";
+import { buildBoardsBackup } from "@src/features/nodes/lib/boardBackup";
+import {
+	buildBoardExports,
+	buildScenes,
+	type BoardExports,
+} from "@src/features/nodes/lib/boardExport";
 import { hydrateFinance } from "@src/lib/store/thunks/financeThunk";
 import { hydrateExpenses } from "@src/lib/store/thunks/expenseThunk";
 import { hydrateMarkdown } from "@src/lib/store/thunks/markdownThunk";
@@ -20,30 +29,59 @@ export const useHomeDownload = (
 	) => void,
 ) => {
 	const dispatch = useDispatch<AppDispatch>();
-	const appState = useSelector((state: RootState) => state);
+	const store = useStore<RootState>();
+	// Select slices individually: selecting the whole state re-renders on every
+	// store change and triggers react-redux's "returned the root state" warning.
+	const finance = useSelector((state: RootState) => state.finance);
+	const expenses = useSelector((state: RootState) => state.expenses);
+	const fileManager = useSelector((state: RootState) => state.fileManager);
 
 	const [isDownloading, setIsDownloading] = useState(false);
 	const [downloadProgress, setDownloadProgress] = useState(0);
+	// null until counted: the timeline lives in IndexedDB, not in Redux.
+	const [timelineCount, setTimelineCount] = useState<number | null>(null);
+	// Same for boards.
+	const [boardsCount, setBoardsCount] = useState<number | null>(null);
 	const [selected, setSelected] = useState<Set<Section>>(new Set(SECTIONS));
+
+	const refreshTimelineCount = useCallback(() => {
+		countTimelineData()
+			.then(setTimelineCount)
+			.catch((error: unknown) => {
+				console.warn("[home] Could not count timeline rows", error);
+			});
+	}, []);
+
+	useEffect(() => {
+		refreshTimelineCount();
+	}, [refreshTimelineCount]);
+
+	useEffect(() => {
+		countBoards()
+			.then(setBoardsCount)
+			.catch((error: unknown) => {
+				console.warn("[home] Could not count boards", error);
+			});
+	}, []);
 
 	const isDataLoaded = useMemo(
 		() => ({
-			events: appState.calendar?.loaded || false,
-			finance:
-				(appState.finance?.loaded || false) &&
-				(appState.expenses?.loaded || false),
-			files: appState.fileManager?.loaded || false,
+			finance: (finance?.loaded || false) && (expenses?.loaded || false),
+			files: fileManager?.loaded || false,
+				timeline: timelineCount !== null,
+			boards: boardsCount !== null,
 		}),
-		[appState],
+		[finance, expenses, fileManager, timelineCount, boardsCount],
 	);
 
 	const stats: Record<Section, string | number> = useMemo(
 		() => ({
-			events: appState.calendar?.events?.length || 0,
-			finance: appState.expenses?.expenses?.length || 0,
-			files: appState.fileManager?.files?.length || 0,
+			finance: expenses?.expenses?.length || 0,
+			files: fileManager?.files?.length || 0,
+				timeline: timelineCount ?? 0,
+			boards: boardsCount ?? 0,
 		}),
-		[appState],
+		[expenses, fileManager, timelineCount, boardsCount],
 	);
 
 	const toggleSection = (section: Section) => {
@@ -64,12 +102,6 @@ export const useHomeDownload = (
 		total: number,
 	) => {
 		const loaders: Record<Section, () => Promise<void>> = {
-			events: async () => {
-				if (!isDataLoaded.events) {
-					showNotification("Loading events data...", "info");
-					await dispatch(hydrateCalendar()).unwrap();
-				}
-			},
 			finance: async () => {
 				if (!isDataLoaded.finance) {
 					showNotification("Loading finance data...", "info");
@@ -83,6 +115,10 @@ export const useHomeDownload = (
 					await dispatch(hydrateMarkdown()).unwrap();
 				}
 			},
+			// Read straight from IndexedDB when the export is built.
+			timeline: async () => {},
+			// Boards are also read straight from IndexedDB at export time.
+			boards: async () => {},
 		};
 
 		await loaders[section]();
@@ -111,18 +147,37 @@ export const useHomeDownload = (
 
 			await new Promise((resolve) => setTimeout(resolve, 100));
 
+			// Read after hydration: the slices captured at render time are stale.
+			const appState = store.getState();
+			const timeline = selected.has("timeline")
+				? await buildTimelineBackup()
+				: undefined;
+			const boards = selected.has("boards")
+				? await buildBoardsBackup()
+				: undefined;
+			// A PNG of every board. The JSON still goes out if they fail.
+			let boardPictures: BoardExports | undefined;
+			if (boards && boards.boards.length > 0) {
+				try {
+					boardPictures = await buildBoardExports(buildScenes(boards.boards));
+				} catch (error) {
+					console.warn("[home] Could not draw board pictures", error);
+					showNotification("Board pictures could not be created", "info");
+				}
+			}
+
 			if (selected.size === SECTIONS.length) {
 				showNotification("Creating full export...", "info");
-				await handleFullAppExport(appState, showNotification);
+				await handleFullAppExport(
+					appState,
+					showNotification,
+					timeline,
+					boards,
+					boardPictures,
+				);
 			} else {
 				showNotification("Creating export...", "info");
 
-				if (selected.has("events")) {
-					await handleCalendarExport(
-						appState.calendar,
-						showNotification,
-					);
-				}
 				if (selected.has("finance")) {
 					await handleFinanceExport(
 						appState.finance,
@@ -137,6 +192,12 @@ export const useHomeDownload = (
 						appState.fileManager?.files || [],
 						showNotification,
 					);
+				}
+				if (timeline) {
+					await handleTimelineExport(timeline, showNotification);
+				}
+				if (boards) {
+					await handleBoardsExport(boards, boardPictures, showNotification);
 				}
 			}
 
@@ -162,7 +223,6 @@ export const useHomeDownload = (
 	};
 
 	return {
-		appState,
 		isDownloading,
 		downloadProgress,
 		selected,
@@ -172,5 +232,6 @@ export const useHomeDownload = (
 		handleDownloadSelected,
 		getButtonText,
 		setSelected,
+		refreshTimelineCount,
 	};
 };

@@ -1,6 +1,6 @@
 import React from "react";
 
-interface ButtonProps {
+interface ButtonProps extends React.AriaAttributes {
 	onClick?: (event: React.MouseEvent<HTMLButtonElement>) => void;
 	className?: string;
 	disabled?: boolean;

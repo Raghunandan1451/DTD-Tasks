@@ -9,6 +9,9 @@ import {
 	getMonthlyDebitExpenses,
 } from "@src/features/finance/budget_planning/lib/budgetPlanUtils";
 import { BudgetPlannerProps } from "@src/features/finance/budget_planning/types";
+import YearlySummary from "@src/features/finance/budget_planning/components/YearlySummary";
+import { buildYearlyTotals } from "@src/features/finance/budget_planning/lib/yearlyTotals";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 import BudgetMonthHeader from "@src/features/finance/budget_planning/components/BudgetMonthHeader";
 import BudgetCategoryCard from "@src/features/finance/budget_planning/components/BudgetCategoryCard";
 import CategoryFormModal from "@src/features/finance/budget_planning/components/CategoryFormModal";
@@ -26,8 +29,11 @@ const BudgetPlanner: FC<BudgetPlannerProps> = ({
 	plansByMonth = {},
 	onPlanChange,
 	expenses,
+	recurring,
 }) => {
 	const [monthDate, setMonthDate] = useState(() => new Date());
+	const [view, setView] = useState<"month" | "year">("month");
+	const [year, setYear] = useState(() => new Date().getFullYear());
 	const month = format(monthDate, "yyyy-MM");
 	const monthName = format(monthDate, "MMMM");
 	const categories =
@@ -77,13 +83,79 @@ const BudgetPlanner: FC<BudgetPlannerProps> = ({
 	const availableExpenses = monthlyExpenses.filter(
 		(expense) => !assignedExpenseIds.has(expense.id),
 	);
+	const yearly = useMemo(
+		() =>
+			view === "year"
+				? buildYearlyTotals({
+						year,
+						expenses,
+						salaryHistory,
+						currentSalary: monthlyIncome,
+						plansByMonth,
+						legacyCategories,
+						recurring,
+					})
+				: null,
+		[view, year, expenses, salaryHistory, monthlyIncome, plansByMonth, legacyCategories, recurring],
+	);
 	const totalPercentage = categories.reduce(
 		(total, category) => total + category.percentage,
 		0,
 	);
 
+	const viewSwitch = (
+		<div className="flex items-center gap-1" role="group" aria-label="Budget view">
+			{(["month", "year"] as const).map((option) => (
+				<button
+					key={option}
+					type="button"
+					aria-pressed={view === option}
+					onClick={() => setView(option)}
+					className={`rounded-md px-3 py-1.5 text-sm ${
+						view === option ? "btn-glass-selected" : "btn-glass-unselected"
+					}`}
+				>
+					{option === "month" ? "Month" : "Year"}
+				</button>
+			))}
+		</div>
+	);
+
+	if (view === "year" && yearly) {
+		return (
+			<section className="space-y-4" aria-label="Yearly budget summary">
+				<div className="flex flex-wrap items-center justify-between gap-3">
+					{viewSwitch}
+					<div className="flex items-center gap-1">
+						<button
+							type="button"
+							onClick={() => setYear((value) => value - 1)}
+							aria-label="Previous year"
+							className="rounded-md p-2 hover:bg-gray-100 dark:hover:bg-gray-700"
+						>
+							<ChevronLeft className="h-4 w-4" />
+						</button>
+						<h2 className="min-w-20 text-center font-semibold" aria-live="polite">
+							{year}
+						</h2>
+						<button
+							type="button"
+							onClick={() => setYear((value) => value + 1)}
+							aria-label="Next year"
+							className="rounded-md p-2 hover:bg-gray-100 dark:hover:bg-gray-700"
+						>
+							<ChevronRight className="h-4 w-4" />
+						</button>
+					</div>
+				</div>
+				<YearlySummary totals={yearly} />
+			</section>
+		);
+	}
+
 	return (
 		<section className="space-y-4" aria-label="Monthly income budget plan">
+			{viewSwitch}
 			<BudgetMonthHeader
 				monthDate={monthDate}
 				totalPercentage={totalPercentage}

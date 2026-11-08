@@ -61,7 +61,7 @@ describe("TreeView Component", () => {
 	it("renders TreeView with files and folders", () => {
 		render(
 			<Provider store={store}>
-				<TreeView showInput={false} setShowInput={() => {}} />
+				<TreeView showInput={false} setShowInput={() => {}} selectedItem={null} setSelectedItem={() => {}} />
 			</Provider>
 		);
 
@@ -72,13 +72,12 @@ describe("TreeView Component", () => {
 	it("shows input when showInput is true", () => {
 		render(
 			<Provider store={store}>
-				<TreeView showInput={true} setShowInput={() => {}} />
+				<TreeView showInput={true} setShowInput={() => {}} selectedItem={null} setSelectedItem={() => {}} />
 			</Provider>
 		);
 
-		// Assuming CreateFileFolder renders an input with a placeholder like "filename"
 		expect(
-			screen.getByPlaceholderText("Enter folder/file name")
+			screen.getByPlaceholderText("folder/file.md")
 		).toBeInTheDocument();
 	});
 });

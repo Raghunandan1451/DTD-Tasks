@@ -1,6 +1,7 @@
 import {
 	BudgetCategory,
 	ExpenseEntry,
+	RecurringItem,
 	SalaryHistoryEntry,
 } from "@src/features/finance/type";
 
@@ -16,4 +17,6 @@ export interface BudgetPlannerProps {
 	plansByMonth?: Record<string, BudgetCategory[]>;
 	onPlanChange: (month: string, categories: BudgetCategory[]) => void;
 	expenses: ExpenseEntry[];
+	/** Recurring payments, so the yearly view can include ones not yet posted */
+	recurring?: RecurringItem[];
 }

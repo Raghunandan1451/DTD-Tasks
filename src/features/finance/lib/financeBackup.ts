@@ -1,5 +1,6 @@
 import type { ExpenseEntry, FinanceState } from "@src/features/finance/type";
 import type { ExpensesState } from "@src/lib/store/slices/expensesSlice";
+import { SCHEMA_VERSION } from "@src/lib/utils/schemaVersion";
 
 export const FINANCE_BACKUP_FILE = "finance-backup.json";
 export const FINANCE_BACKUP_VERSION = 1;
@@ -7,6 +8,7 @@ export const FINANCE_BACKUP_VERSION = 1;
 /** One file holding both slices, so a restore is a single upload. */
 export interface FinanceBackup {
 	version: number;
+	schemaVersion: number;
 	finance?: FinanceState;
 	expenses?: ExpensesState;
 }
@@ -33,6 +35,7 @@ export const buildFinanceBackup = (
 	expenses?: ExpensesState,
 ): FinanceBackup => ({
 	version: FINANCE_BACKUP_VERSION,
+	schemaVersion: SCHEMA_VERSION,
 	...(finance ? { finance } : {}),
 	...(expenses ? { expenses } : {}),
 });
@@ -41,6 +44,25 @@ const looksLikeFinance = (value: JsonRecord): boolean =>
 	Array.isArray(value.groups) ||
 	typeof value.currentBalance === "number" ||
 	("salary" in value && (value.salary === null || isRecord(value.salary)));
+
+const MONTH_PATTERN = /^\d{4}-(0[1-9]|1[0-2])$/;
+
+const isValidRecurring = (value: unknown): boolean =>
+	isRecord(value) &&
+	typeof value.id === "string" &&
+	typeof value.name === "string" &&
+	typeof value.group === "string" &&
+	typeof value.amount === "number" &&
+	Number.isFinite(value.amount) &&
+	Number.isInteger(value.everyMonths) &&
+	(value.everyMonths as number) >= 1 &&
+	Number.isInteger(value.dayOfMonth) &&
+	(value.dayOfMonth as number) >= 1 &&
+	(value.dayOfMonth as number) <= 31 &&
+	typeof value.startMonth === "string" &&
+	MONTH_PATTERN.test(value.startMonth) &&
+	(value.endMonth === undefined ||
+		(typeof value.endMonth === "string" && MONTH_PATTERN.test(value.endMonth)));
 
 /** Throws on anything that would corrupt the slice if merged into it. */
 const validateFinance = (value: JsonRecord): FinanceState => {
@@ -62,6 +84,11 @@ const validateFinance = (value: JsonRecord): FinanceState => {
 		const { amount, dayOfMonth } = value.salary;
 		if (typeof amount !== "number" || typeof dayOfMonth !== "number") {
 			throw new Error("Finance data has an invalid salary");
+		}
+	}
+	if ("recurring" in value && value.recurring !== undefined) {
+		if (!Array.isArray(value.recurring) || !value.recurring.every(isValidRecurring)) {
+			throw new Error("Finance data has an invalid recurring payment");
 		}
 	}
 	return value as unknown as FinanceState;

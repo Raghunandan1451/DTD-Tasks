@@ -5,21 +5,19 @@ import FolderItem from "@src/features/markdown/FolderItem";
 
 describe("FolderItem", () => {
 	let mockOnToggle: ReturnType<typeof vi.fn>;
-	let mockOnDelete: ReturnType<typeof vi.fn>;
-	let mockOnRename: ReturnType<typeof vi.fn>;
+	let mockOnSelect: ReturnType<typeof vi.fn>;
 
 	beforeEach(() => {
 		mockOnToggle = vi.fn();
-		mockOnDelete = vi.fn();
-		mockOnRename = vi.fn();
+		mockOnSelect = vi.fn();
 
 		render(
 			<FolderItem
 				path="MyFolder"
 				isExpanded={false}
-				onToggle={mockOnToggle}
-				onDelete={mockOnDelete}
-				onRename={mockOnRename}
+				isSelected={false}
+				onToggleExpand={mockOnToggle}
+				onSelect={mockOnSelect}
 			/>
 		);
 	});
@@ -28,21 +26,16 @@ describe("FolderItem", () => {
 		expect(screen.getByText("MyFolder")).toBeInTheDocument();
 	});
 
-	it("calls onToggle when clicked", () => {
+	it("selects the folder when its name is clicked, without toggling", () => {
 		fireEvent.click(screen.getByText("MyFolder"));
-		expect(mockOnToggle).toHaveBeenCalled();
+		expect(mockOnSelect).toHaveBeenCalledTimes(1);
+		expect(mockOnToggle).not.toHaveBeenCalled();
 	});
 
-	it("calls onDelete when delete button is clicked", () => {
-		const deleteButton = screen.getByTestId("trash");
-		fireEvent.click(deleteButton);
-		expect(mockOnDelete).toHaveBeenCalled();
-	});
-
-	it("calls onRename when edit button is clicked", () => {
-		const editButton = screen.getByTestId("edit");
-		fireEvent.click(editButton);
-		expect(mockOnRename).toHaveBeenCalled();
+	it("toggles expansion from the chevron, without selecting", () => {
+		fireEvent.click(screen.getByTestId("chevron-right"));
+		expect(mockOnToggle).toHaveBeenCalledTimes(1);
+		expect(mockOnSelect).not.toHaveBeenCalled();
 	});
 
 	it("shows ChevronDown when expanded", () => {
@@ -50,9 +43,9 @@ describe("FolderItem", () => {
 			<FolderItem
 				path="MyFolder"
 				isExpanded={true}
-				onToggle={mockOnToggle}
-				onDelete={mockOnDelete}
-				onRename={mockOnRename}
+				isSelected={false}
+				onToggleExpand={mockOnToggle}
+				onSelect={mockOnSelect}
 			/>
 		);
 

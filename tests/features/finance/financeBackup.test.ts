@@ -7,6 +7,7 @@ import {
 	parseFinanceBackupText,
 } from "@src/features/finance/lib/financeBackup";
 import type { ExpenseEntry, FinanceState } from "@src/features/finance/type";
+import { SCHEMA_VERSION } from "@src/lib/utils/schemaVersion";
 
 const entry = (id: string, date = "2026-10-01"): ExpenseEntry => ({
 	id,
@@ -32,9 +33,18 @@ const expensesState = {
 };
 
 describe("buildFinanceBackup / parseFinanceBackup", () => {
+	it("ignores a leftover events key from old backups", () => {
+		const backup = { ...buildFinanceBackup(finance, expensesState), events: [{ id: 1 }] };
+
+		const parsed = parseFinanceBackup(JSON.parse(JSON.stringify(backup)));
+		expect(parsed.finance).toEqual(finance);
+		expect(parsed.expenses).toHaveLength(2);
+	});
+
 	it("round-trips a combined backup", () => {
 		const backup = buildFinanceBackup(finance, expensesState);
 		expect(backup.version).toBe(FINANCE_BACKUP_VERSION);
+		expect(backup.schemaVersion).toBe(SCHEMA_VERSION);
 
 		const parsed = parseFinanceBackup(JSON.parse(JSON.stringify(backup)));
 		expect(parsed.finance).toEqual(finance);
@@ -47,9 +57,7 @@ describe("buildFinanceBackup / parseFinanceBackup", () => {
 		expect(onlyFinance.finance).toEqual(finance);
 		expect(onlyFinance.expenses).toBeUndefined();
 
-		const onlyExpenses = parseFinanceBackup(
-			buildFinanceBackup(undefined, expensesState),
-		);
+		const onlyExpenses = parseFinanceBackup(buildFinanceBackup(undefined, expensesState));
 		expect(onlyExpenses.expenses).toHaveLength(2);
 		expect(onlyExpenses.finance).toBeUndefined();
 	});
@@ -67,9 +75,7 @@ describe("buildFinanceBackup / parseFinanceBackup", () => {
 	});
 
 	it("accepts an empty expense list", () => {
-		expect(
-			parseFinanceBackup({ ...expensesState, expenses: [] }).expenses,
-		).toEqual([]);
+		expect(parseFinanceBackup({ ...expensesState, expenses: [] }).expenses).toEqual([]);
 	});
 
 	it.each([
@@ -97,18 +103,16 @@ describe("buildFinanceBackup / parseFinanceBackup", () => {
 	});
 
 	it("rejects a file where every expense entry is malformed", () => {
-		expect(() =>
-			parseFinanceBackup({ ...expensesState, expenses: [{ nope: true }] }),
-		).toThrow(/No valid expense entries/);
+		expect(() => parseFinanceBackup({ ...expensesState, expenses: [{ nope: true }] })).toThrow(
+			/No valid expense entries/,
+		);
 	});
 
 	it("rejects finance data that would corrupt the slice", () => {
-		expect(() =>
-			parseFinanceBackup({ ...finance, groups: [1, 2] }),
-		).toThrow(/group list/);
-		expect(() =>
-			parseFinanceBackup({ ...finance, currentBalance: "lots" }),
-		).toThrow(/current balance/);
+		expect(() => parseFinanceBackup({ ...finance, groups: [1, 2] })).toThrow(/group list/);
+		expect(() => parseFinanceBackup({ ...finance, currentBalance: "lots" })).toThrow(
+			/current balance/,
+		);
 		expect(() =>
 			parseFinanceBackup({ ...finance, salary: { amount: "x", dayOfMonth: 1 } }),
 		).toThrow(/salary/);
@@ -123,9 +127,9 @@ describe("parseFinanceBackupText", () => {
 	});
 
 	it("names the file when the content isn't a backup", () => {
-		expect(() =>
-			parseFinanceBackupText(JSON.stringify({ events: [] }), "calendar.json"),
-		).toThrow(/^calendar\.json: /);
+		expect(() => parseFinanceBackupText(JSON.stringify({ events: [] }), "calendar.json")).toThrow(
+			/^calendar\.json: /,
+		);
 	});
 });
 

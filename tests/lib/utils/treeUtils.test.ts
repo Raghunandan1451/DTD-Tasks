@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import {
 	handleToggleFolder,
-	handleFileSelect,
+	handleFileToggleSelect,
 	handleCreateFile,
 	handleDeleteFile,
 	handleRenameFile,
@@ -48,9 +48,14 @@ describe("Markdown Handlers", () => {
 		expect(setter).toHaveBeenCalledWith(new Set());
 	});
 
-	it("handleFileSelect dispatches selectFile", () => {
-		handleFileSelect(dispatch, { path: "file.md", type: "file" }, "folder");
+	it("handleFileToggleSelect selects a file that is not selected", () => {
+		handleFileToggleSelect(dispatch, "folder/file.md", null);
 		expect(dispatch).toHaveBeenCalledWith(selectFile("folder/file.md"));
+	});
+
+	it("handleFileToggleSelect deselects the file that is already selected", () => {
+		handleFileToggleSelect(dispatch, "folder/file.md", "folder/file.md");
+		expect(dispatch).toHaveBeenCalledWith(selectFile(null));
 	});
 
 	it("handleCreateFile creates file with missing folders", () => {
@@ -71,6 +76,7 @@ describe("Markdown Handlers", () => {
 	it("handleCreateFile shows error for existing file", () => {
 		const files: File[] = [
 			{
+				id: "file.md",
 				path: "file.md",
 				type: "file",
 				content: "ANDERS",
@@ -122,13 +128,15 @@ describe("Markdown Handlers", () => {
 	it("findFileByPath returns file correctly", () => {
 		const files: (File | Folder)[] = [
 			{
+				id: "docs",
 				path: "docs",
 				type: "folder",
-				children: [{ path: "readme.md", type: "file", content: "" }],
+				children: [{ id: "readme.md", path: "readme.md", type: "file", content: "" }],
 			},
 		];
 		const result = findFileByPath(files, "docs/readme.md");
 		expect(result).toEqual({
+			id: "readme.md",
 			path: "readme.md",
 			type: "file",
 			content: "",
@@ -137,10 +145,10 @@ describe("Markdown Handlers", () => {
 
 	it("sortFilesAlphabetically sorts folders first and by name", () => {
 		const unsorted: (File | Folder)[] = [
-			{ path: "b.md", type: "file", content: "" },
-			{ path: "z", type: "folder", children: [] },
-			{ path: "a.md", type: "file", content: "" },
-			{ path: "a", type: "folder", children: [] },
+			{ id: "b.md", path: "b.md", type: "file", content: "" },
+			{ id: "z", path: "z", type: "folder", children: [] },
+			{ id: "a.md", path: "a.md", type: "file", content: "" },
+			{ id: "a", path: "a", type: "folder", children: [] },
 		];
 		const sorted = sortFilesAlphabetically(unsorted);
 		expect(sorted.map((i) => i.path)).toEqual(["a", "z", "a.md", "b.md"]);

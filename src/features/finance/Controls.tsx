@@ -6,10 +6,9 @@ import clsx from "clsx";
 import { ControlsProps, ViewMode } from "@src/features/finance/type";
 
 const views: { key: ViewMode; label: string }[] = [
-	{ key: "salary", label: "Salary & Recurring" },
+	{ key: "salary", label: "Overview" },
 	{ key: "list", label: "Expenses" },
 	{ key: "budget", label: "Budget Planning" },
-	{ key: "graph", label: "Graphs" },
 ];
 
 const Controls: FC<ControlsProps> = ({ viewMode, onChangeView }) => {

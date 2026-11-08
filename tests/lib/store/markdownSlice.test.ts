@@ -6,6 +6,7 @@ import reducer, {
 	selectFile,
 	deleteFile,
 	renameFile,
+	setFileState,
 } from "@src/lib/store/slices/markdownSlice";
 import { getFromIndexedDB } from "@src/lib/utils/persistMiddleware";
 import { File, FileState } from "@src/features/markdown/type";
@@ -33,6 +34,7 @@ describe("markdownSlice", () => {
 
 	it("should add a new folder to root", () => {
 		const folder = {
+			id: "folder-1",
 			path: "docs",
 			type: "folder" as const,
 			children: [],
@@ -49,16 +51,45 @@ describe("markdownSlice", () => {
 		const file = { path: "readme.md", content: "Hello", parentPath: "" };
 		const state = reducer(initialState, addFile(file));
 		expect(state.files).toContainEqual({
+			id: expect.any(String),
 			path: "readme.md",
 			type: "file",
 			content: "Hello",
 		});
 	});
 
+	it("should keep a file id when it is renamed", () => {
+		const added = reducer(
+			initialState,
+			addFile({ id: "file-1", path: "a.md", content: "", parentPath: "" })
+		);
+		const renamed = reducer(
+			added,
+			renameFile({ oldPath: "a.md", newName: "b.md" })
+		);
+		expect(renamed.files[0]).toMatchObject({ id: "file-1", path: "b.md" });
+	});
+
+	it("should assign ids to items loaded without one", () => {
+		const loaded = reducer(
+			initialState,
+			setFileState({
+				...initialState,
+				files: [
+					{ id: "a.md", path: "a.md", type: "file", content: "" } as File,
+					{ id: "keep", path: "b.md", type: "file", content: "" },
+				],
+			})
+		);
+		expect(loaded.files[0].id).toEqual(expect.any(String));
+		expect(loaded.files[0].id).not.toBe("");
+		expect(loaded.files[1].id).toBe("keep");
+	});
+
 	it("should update file content at root", () => {
 		const stateWithFile: FileState = {
 			...initialState,
-			files: [{ path: "readme.md", type: "file", content: "Old" }],
+			files: [{ id: "f1", path: "readme.md", type: "file", content: "Old" }],
 			selectedFile: "readme.md",
 			content: "Old",
 		};
@@ -74,7 +105,7 @@ describe("markdownSlice", () => {
 	});
 
 	it("should select a file and load its content", () => {
-		const file: File = { path: "notes.txt", type: "file", content: "abc" };
+		const file: File = { id: "notes.txt", path: "notes.txt", type: "file", content: "abc" };
 		const stateWithFile: FileState = { ...initialState, files: [file] };
 		const selected = reducer(stateWithFile, selectFile("notes.txt"));
 		expect(selected.selectedFile).toBe("notes.txt");
@@ -84,7 +115,7 @@ describe("markdownSlice", () => {
 	it("should rename a file inside root", () => {
 		const stateWithFile: FileState = {
 			...initialState,
-			files: [{ path: "todo.md", type: "file", content: "x" }],
+			files: [{ id: "todo.md", path: "todo.md", type: "file", content: "x" }],
 		};
 		const renamed = reducer(
 			stateWithFile,
@@ -95,7 +126,7 @@ describe("markdownSlice", () => {
 
 	it("should delete file and clear selection if selected", () => {
 		const stateWithFile: FileState = {
-			files: [{ path: "delete.md", type: "file", content: "" }],
+			files: [{ id: "delete.md", path: "delete.md", type: "file", content: "" }],
 			selectedFile: "delete.md",
 			content: "",
 			loaded: true,

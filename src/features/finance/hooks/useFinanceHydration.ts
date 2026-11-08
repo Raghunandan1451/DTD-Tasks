@@ -4,10 +4,12 @@ import { AppDispatch } from "@src/lib/store/store";
 import {
 	backfillMissedSalaries,
 	hydrateFinance,
+	postRecurringExpenses,
 } from "@src/lib/store/thunks/financeThunk";
 import { hydrateExpenses } from "@src/lib/store/thunks/expenseThunk";
 import {
 	selectFinanceLoaded,
+	selectRecurring,
 	selectSalary,
 } from "@src/lib/store/selectors/financeSelectors";
 import { selectExpensesLoaded } from "@src/lib/store/selectors/expenseSelectors";
@@ -22,6 +24,7 @@ export const useFinanceHydration = () => {
 	const loaded = useSelector(selectFinanceLoaded);
 	const expensesLoaded = useSelector(selectExpensesLoaded);
 	const salary = useSelector(selectSalary);
+	const recurring = useSelector(selectRecurring);
 
 	useEffect(() => {
 		if (!loaded) dispatch(hydrateFinance());
@@ -33,4 +36,11 @@ export const useFinanceHydration = () => {
 			dispatch(backfillMissedSalaries());
 		}
 	}, [dispatch, loaded, expensesLoaded, salary]);
+
+	// Re-runs when an item is added, edited or unpaused; it never adds a date twice.
+	useEffect(() => {
+		if (loaded && expensesLoaded && recurring.length > 0) {
+			dispatch(postRecurringExpenses());
+		}
+	}, [dispatch, loaded, expensesLoaded, recurring]);
 };

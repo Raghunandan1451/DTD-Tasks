@@ -15,6 +15,7 @@ const QRGenerator: React.FC = () => {
 	const qrContainerRef = useRef<HTMLDivElement | null>(null);
 	const dispatch = useDispatch();
 	const [input, setInput] = useState<string>("");
+	const [imageFormat, setImageFormat] = useState<"png" | "jpg">("png");
 	const { notifications, showNotification } = useNotifications();
 	const settings = useSelector((state: RootState) => state.qr);
 
@@ -32,7 +33,7 @@ const QRGenerator: React.FC = () => {
 
 	const handleDownload = () => {
 		const canvas = qrContainerRef.current?.querySelector("canvas");
-		handleQRExport(canvas as HTMLCanvasElement | null, showNotification);
+		handleQRExport(canvas as HTMLCanvasElement | null, showNotification, imageFormat);
 	};
 
 	return (
@@ -46,6 +47,25 @@ const QRGenerator: React.FC = () => {
 					showUpload={false}
 					showNotification={showNotification}
 				/>
+
+				<div
+					role="group"
+					aria-label="Download format"
+					className="mt-4 flex items-center justify-center gap-2 text-sm text-gray-800 dark:text-gray-100"
+				>
+					<span>Download as</span>
+					{(["png", "jpg"] as const).map((format) => (
+						<Button
+							key={format}
+							aria-pressed={imageFormat === format}
+							onClick={() => setImageFormat(format)}
+							className={`rounded-md px-3 py-1 bg-black/5 hover:bg-black/10 dark:bg-white/10 dark:hover:bg-white/20 ${
+								imageFormat === format ? "ring-2 ring-cyan-400" : ""
+							}`}
+							text={format.toUpperCase()}
+						/>
+					))}
+				</div>
 
 				{/* QRCodeSettings positioned here */}
 				<div className="flex justify-center mt-6">

@@ -1,6 +1,6 @@
 import { useDispatch, useSelector, useStore } from "react-redux";
 import { AppDispatch, RootState } from "@src/lib/store/store";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import ExpenseSummary from "@src/features/finance/ExpenseSummary";
 import TitleWithButton from "@src/components/shared/title_with_button/TitleWithButton";
 import { ExpenseSections } from "@src/features/finance/ExpenseSections";
@@ -16,7 +16,7 @@ import {
 	selectBudgetPlansByMonth,
 	selectCurrentBalance,
 	selectFinance,
-	selectFinanceLoaded,
+	selectRecurring,
 	selectSalary,
 	selectSalaryHistory,
 } from "@src/lib/store/selectors/financeSelectors";
@@ -40,9 +40,9 @@ const ExpenseTracker = () => {
 	const finance = useSelector(selectFinance);
 	const expenses = useSelector(selectExpenses);
 	const expensesLoaded = useSelector(selectExpensesLoaded);
-	const loaded = useSelector(selectFinanceLoaded);
 	const salary = useSelector(selectSalary);
 	const salaryHistory = useSelector(selectSalaryHistory);
+	const recurring = useSelector(selectRecurring);
 	const currentBalance = useSelector(selectCurrentBalance);
 	const budgetCategories = useSelector(selectBudgetCategories);
 	const budgetPlansByMonth = useSelector(selectBudgetPlansByMonth);
@@ -50,19 +50,13 @@ const ExpenseTracker = () => {
 	const calculatedBalance = useSelector(selectCalculatedBalance);
 	const totalAllExpenses = useSelector(selectTotalAllExpenses);
 
-	const [viewMode, setViewMode] = useState<ViewMode>("salary");
+	const [viewMode, setViewMode] = useState<ViewMode>("list");
 	const [showDownloadOptions, setShowDownloadOptions] = useState(false);
 	const [isExportingReports, setIsExportingReports] = useState(false);
 
 	useFinanceHydration();
 	useSavingsSnapshots({ finance, expenses, expensesLoaded });
 	const handleUpload = useFinanceUploadHandler();
-
-	useEffect(() => {
-		if (loaded && salary && currentBalance) {
-			setViewMode("list");
-		}
-	}, [loaded, salary, currentBalance]);
 
 	const handleDownloadSelection = async (
 		reportScope: FinanceExportReportScope,
@@ -108,8 +102,10 @@ const ExpenseTracker = () => {
 					dispatch(setBudgetPlanForMonth({ month, categories }))
 				}
 				currentBalance={currentBalance}
+				balance={calculatedBalance}
 				monthlyIncome={salary?.amount ?? 0}
 				salaryHistory={salaryHistory}
+				recurring={recurring}
 				showNotification={showNotification}
 			/>
 			{showDownloadOptions && (

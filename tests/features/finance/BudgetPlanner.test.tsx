@@ -147,7 +147,11 @@ describe("BudgetPlanner", () => {
 
 		fireEvent.click(screen.getByRole("button", { name: /Groceries/ }));
 		expect(screen.getByText("Groceries")).toBeTruthy();
-		expect(screen.getAllByText("125.50")).toHaveLength(1);
+		// Shown in the category's "Spent" total and on the selected expense row.
+		const where = screen
+			.getAllByText("125.50")
+			.map((element) => element.parentElement?.textContent);
+		expect(where).toEqual(["Spent: 125.50", "Groceries125.50"]);
 	});
 
 	it("requires confirmation before deleting a category", async () => {

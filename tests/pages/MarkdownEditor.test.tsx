@@ -1,10 +1,9 @@
-import { render, screen, fireEvent } from "@testing-library/react";
+import { render, screen } from "@testing-library/react";
 import { Provider } from "react-redux";
 import { configureStore } from "@reduxjs/toolkit";
 import fileManagerReducer from "@src/lib/store/slices/markdownSlice"; // example paths
 import qrReducer from "@src/lib/store/slices/qrSettingSlice";
 import MarkdownEditor from "@src/features/markdown/FileManager";
-import * as downloadHandler from "@src/lib/utils/downloadHandler";
 import { vi, describe, it, beforeEach, expect } from "vitest";
 import "@testing-library/jest-dom";
 
@@ -29,7 +28,7 @@ vi.mock("@src/features/markdown/FileTree", () => ({
 	default: () => <div>File Tree</div>,
 }));
 
-vi.mock("@src/features/markdown/Editor", () => ({
+vi.mock("@src/features/markdown/DiaryEditor", () => ({
 	default: () => <div>Editor</div>,
 }));
 
@@ -47,8 +46,8 @@ const store = configureStore({
 	preloadedState: {
 		fileManager: {
 			files: [
-				{ type: "file", path: "README.md", content: "# Hello" },
-				{ type: "file", path: "index.md", content: "Welcome" },
+				{ id: "README.md", type: "file" as const, path: "README.md", content: "# Hello" },
+				{ id: "index.md", type: "file" as const, path: "index.md", content: "Welcome" },
 			],
 			selectedFile: null,
 			content: "",

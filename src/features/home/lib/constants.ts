@@ -1,10 +1,6 @@
 import { Section } from "@src/features/home/lib/types";
 
 export const SECTION_META: Record<Section, { label: string; color: string }> = {
-	events: {
-		label: "Events",
-		color: "from-blue-500/20 to-blue-600/10 border-blue-500/30",
-	},
 	finance: {
 		label: "Finance & Expenses",
 		color: "from-emerald-500/20 to-emerald-600/10 border-emerald-500/30",
@@ -12,5 +8,13 @@ export const SECTION_META: Record<Section, { label: string; color: string }> = {
 	files: {
 		label: "Files",
 		color: "from-purple-500/20 to-purple-600/10 border-purple-500/30",
+	},
+	timeline: {
+		label: "Timeline (notes & activity)",
+		color: "from-cyan-500/20 to-cyan-600/10 border-cyan-500/30",
+	},
+	boards: {
+		label: "Boards (nodes & notes)",
+		color: "from-amber-500/20 to-amber-600/10 border-amber-500/30",
 	},
 };

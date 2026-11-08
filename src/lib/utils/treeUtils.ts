@@ -1,5 +1,5 @@
 import { Dispatch } from "react";
-import { Action } from "@reduxjs/toolkit";
+import { Action, nanoid } from "@reduxjs/toolkit";
 import {
 	addFolder,
 	addFile,
@@ -75,6 +75,7 @@ export const handleCreateFile = (
 			if (!folder) {
 				// Create missing folder structure
 				const newFolder: Folder = {
+					id: nanoid(),
 					path: folderName,
 					type: "folder",
 					children: [],
