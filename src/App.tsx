@@ -1,4 +1,4 @@
-import { Navigate, RouterProvider, createBrowserRouter } from "react-router-dom";
+import { RouterProvider, createBrowserRouter } from "react-router-dom";
 import { FC, lazy } from "react";
 
 import Layout from "@src/layout/Layout";
@@ -21,9 +21,6 @@ const router = createBrowserRouter([
 			{ path: "/notes", element: withSuspense(FileManager) },
 			{ path: "/expenses", element: withSuspense(ExpenseTracker) },
 			{ path: "/boards", element: withSuspense(NodesPage) },
-			// Old addresses keep working.
-			{ path: "/markdown", element: <Navigate to="/notes" replace /> },
-			{ path: "/nodes", element: <Navigate to="/boards" replace /> },
 		],
 	},
 ]);
