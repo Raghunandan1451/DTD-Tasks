@@ -1,6 +1,12 @@
 import { useState } from "react";
-import { useDispatch } from "react-redux";
-import { handleDeleteFile, handleRenameFile } from "@src/lib/utils/treeUtils";
+import { useDispatch, useSelector } from "react-redux";
+import {
+	handleDeleteFile,
+	handleRenameFile,
+	handleMoveItem,
+	listFolderPaths,
+} from "@src/lib/utils/treeUtils";
+import { RootState } from "@src/lib/store/store";
 import useNotifications from "@src/lib/hooks/useNotifications";
 import { SelectedItem } from "@src/features/markdown/TreeView";
 
@@ -14,13 +20,49 @@ export const useTreeActions = (
 	setSelectedItem: (item: SelectedItem | null) => void,
 ) => {
 	const dispatch = useDispatch();
+	const files = useSelector((state: RootState) => state.fileManager.files);
 	const { notifications, showNotification } = useNotifications();
 
 	const [showInput, setShowInput] = useState(false);
 	const [showRenameInput, setShowRenameInput] = useState(false);
 	const [renameValue, setRenameValue] = useState("");
+	const [showMove, setShowMove] = useState(false);
+	const [moveDestination, setMoveDestination] = useState("");
 
 	const onAdd = () => setShowInput(true);
+
+	// Folders the selected item can go into: not itself or its own subfolders.
+	const moveTargets = selectedItem
+		? listFolderPaths(files).filter(
+				(path) =>
+					path !== selectedItem.fullPath &&
+					!path.startsWith(`${selectedItem.fullPath}/`),
+			)
+		: [];
+
+	const onMove = () => {
+		if (!selectedItem) return;
+		setMoveDestination("");
+		setShowMove(true);
+	};
+
+	const onConfirmMove = () => {
+		if (!selectedItem) return;
+		const moved = handleMoveItem(
+			dispatch,
+			files,
+			selectedItem.fullPath,
+			moveDestination,
+			showNotification,
+		);
+		if (moved) {
+			// The item's path changed, so the old selection no longer points at it.
+			setSelectedItem(null);
+			setShowMove(false);
+		}
+	};
+
+	const onCancelMove = () => setShowMove(false);
 
 	const onEdit = () => {
 		if (!selectedItem) return;
@@ -41,6 +83,7 @@ export const useTreeActions = (
 			selectedItem.fullPath,
 			renameValue,
 			showNotification,
+			selectedItem.type,
 		);
 		setShowRenameInput(false);
 		setRenameValue("");
@@ -64,5 +107,12 @@ export const useTreeActions = (
 		onDelete,
 		onConfirmRename,
 		onCancelRename,
+		showMove,
+		moveTargets,
+		moveDestination,
+		setMoveDestination,
+		onMove,
+		onConfirmMove,
+		onCancelMove,
 	};
 };

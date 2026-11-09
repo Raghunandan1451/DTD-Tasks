@@ -29,12 +29,19 @@ import LabeledEdge from "@src/features/nodes/components/edges/LabeledEdge";
 import NoteNode from "@src/features/nodes/components/nodes/NoteNode";
 import ShapeNode from "@src/features/nodes/components/nodes/ShapeNode";
 import TextNode from "@src/features/nodes/components/nodes/TextNode";
+import GridHeaderCell from "@src/features/nodes/components/nodes/GridHeaderNode";
+import {
+	GRID_HEADER_TYPE,
+	toGridHeaderNode,
+	type GridHeaderNode,
+} from "@src/features/nodes/components/nodes/gridHeader";
 
 // Defined once at module level: React Flow re-mounts every node if these change identity.
 const nodeTypes: NodeTypes = {
 	note: NoteNode,
 	shape: ShapeNode,
 	text: TextNode,
+	[GRID_HEADER_TYPE]: GridHeaderCell,
 };
 const edgeTypes: EdgeTypes = { labeled: LabeledEdge };
 
@@ -57,6 +64,12 @@ const isDesktop = (): boolean =>
  */
 const useLayoutInput = (
 	enabled: boolean,
+	/**
+	 * Grid cells are stretched to their column and row, so the size React Flow
+	 * measures is the stretched one. Using it would make columns grow and never
+	 * shrink back; the grid reads the nodes' own sizes instead.
+	 */
+	ignoreMeasured: boolean,
 	nodes: FlowNode[],
 	edges: FlowEdge[],
 ): { nodes: LayoutNode[]; edges: LayoutEdge[] } => {
@@ -72,8 +85,8 @@ const useLayoutInput = (
 		const fallback = DEFAULT_NODE_SIZE[node.type ?? "note"];
 		return {
 			id: node.id,
-			width: node.width ?? node.measured?.width ?? fallback.width,
-			height: node.height ?? node.measured?.height ?? fallback.height,
+			width: node.width ?? (ignoreMeasured ? undefined : node.measured?.width) ?? fallback.width,
+			height: node.height ?? (ignoreMeasured ? undefined : node.measured?.height) ?? fallback.height,
 		};
 	});
 	const layoutEdges = edges.map((edge) => ({
@@ -162,18 +175,36 @@ const BoardCanvas: React.FC<BoardCanvasProps> = ({
 	});
 
 	const nodeActions = useMemo(
-		() => ({ updateNodeData: editor.updateNodeData }),
-		[editor.updateNodeData],
+		() => ({ updateNodeData: editor.updateNodeData, setGridLabel: editor.setGridLabel }),
+		[editor.updateNodeData, editor.setGridLabel],
 	);
 
-	const { layoutMode, treeRootId, gridColumns } = editor;
-	const layoutInput = useLayoutInput(layoutMode !== "free", editor.nodes, editor.edges);
+	const { layoutMode, treeRootId, gridColumns, gridRowLabels, gridColumnLabels, gridCornerLabel } =
+		editor;
+	const layoutInput = useLayoutInput(
+		layoutMode !== "free",
+		layoutMode === "grid",
+		editor.nodes,
+		editor.edges,
+	);
 	const layout = useMemo(
 		() =>
 			layoutMode === "free"
 				? null
-				: computeLayout(layoutMode, layoutInput.nodes, layoutInput.edges, treeRootId, gridColumns),
-		[layoutMode, layoutInput, treeRootId, gridColumns],
+				: computeLayout(layoutMode, layoutInput.nodes, layoutInput.edges, treeRootId, gridColumns, {
+						rows: gridRowLabels,
+						columns: gridColumnLabels,
+						corner: gridCornerLabel,
+					}),
+		[
+			layoutMode,
+			layoutInput,
+			treeRootId,
+			gridColumns,
+			gridRowLabels,
+			gridColumnLabels,
+			gridCornerLabel,
+		],
 	);
 
 	// While a node is dragged on a laid-out board it follows the pointer here,
@@ -185,13 +216,21 @@ const BoardCanvas: React.FC<BoardCanvasProps> = ({
 	const [dropTargetId, setDropTargetId] = useState<string | null>(null);
 
 	// Non-free modes only change what is shown: the saved positions stay untouched.
-	const shownNodes = useMemo(() => {
+	const shownNodes = useMemo((): (FlowNode | GridHeaderNode)[] => {
 		if (!layout) return editor.nodes;
-		return editor.nodes.map((node) => {
+		const cells = editor.nodes.map((node) => {
 			const at = dragging?.id === node.id ? dragging.position : layout.positions[node.id];
-			const base = at ? { ...node, position: at } : node;
+			const size = layout.sizes?.[node.id];
+			const base = {
+				...node,
+				...(at ? { position: at } : {}),
+				...(size ? { width: size.width, height: size.height } : {}),
+			};
 			return node.id === dropTargetId ? { ...base, className: DROP_TARGET_CLASS } : base;
 		});
+		// Grid boards also show the row and column names; they exist only on screen.
+		const headers = (layout.headers ?? []).map(toGridHeaderNode);
+		return [...headers, ...cells];
 	}, [editor.nodes, layout, dragging, dropTargetId]);
 	const shownEdges = useMemo(() => {
 		if (!layout || layout.crossLinks.size === 0) return editor.edges;
@@ -204,7 +243,9 @@ const BoardCanvas: React.FC<BoardCanvasProps> = ({
 		(_event: unknown, node: FlowNode) => {
 			if (layoutMode === "free") return;
 			setDragging({ id: node.id, position: node.position });
-			const hit = getIntersectingNodes(node).find((other) => other.id !== node.id);
+			const hit = getIntersectingNodes(node).find(
+				(other) => other.id !== node.id && other.type !== GRID_HEADER_TYPE,
+			);
 			setDropTargetId(hit?.id ?? null);
 		},
 		[getIntersectingNodes, layoutMode],
@@ -319,7 +360,8 @@ const BoardCanvas: React.FC<BoardCanvasProps> = ({
 				<div className="min-h-0 min-w-0 flex-1">
 					<BoardActionsContext.Provider value={nodeActions}>
 						<ReactFlow
-							nodes={shownNodes}
+							// Header cells are display-only nodes; the editor never sees them as FlowNodes.
+							nodes={shownNodes as FlowNode[]}
 							edges={shownEdges}
 							nodeTypes={nodeTypes}
 							edgeTypes={edgeTypes}
@@ -369,6 +411,8 @@ const BoardCanvas: React.FC<BoardCanvasProps> = ({
 							edges={editor.edges}
 							treeRootId={treeRootId}
 							gridColumns={gridColumns}
+							gridRowLabels={gridRowLabels}
+							gridColumnLabels={gridColumnLabels}
 							onTreeRoot={onTreeRoot}
 							outline={editor.outline}
 							onOutlineChange={onOutlineChange}

@@ -272,3 +272,105 @@ describe("layout mode and outline", () => {
 		expect(result.current.treeRootId).toBeNull();
 	});
 });
+
+describe("grid names", () => {
+	const gridBoard: Board = { ...board, layoutMode: "grid", gridColumns: 2 };
+	const setupGrid = () => {
+		const onDirty = vi.fn();
+		const wrapper = ({ children }: { children: React.ReactNode }) => (
+			<ReactFlowProvider>{children}</ReactFlowProvider>
+		);
+		const view = renderHook(() => useBoardEditor({ board: gridBoard, onDirty }), { wrapper });
+		return { ...view, onDirty };
+	};
+
+	it("names a row and a column and saves them", () => {
+		const { result, onDirty } = setupGrid();
+		act(() => result.current.setGridLabel("row", 0, "Mon"));
+		act(() => result.current.setGridLabel("column", 1, "Owner"));
+
+		expect(onDirty).toHaveBeenCalledWith("content");
+		expect(result.current.gridRowLabels).toEqual(["Mon"]);
+		expect(result.current.gridColumnLabels).toEqual(["", "Owner"]);
+		expect(result.current.getContent()).toMatchObject({
+			gridRowLabels: ["Mon"],
+			gridColumnLabels: ["", "Owner"],
+		});
+	});
+
+	it("undoes and redoes a rename as one step", () => {
+		const { result } = setupGrid();
+		act(() => result.current.setGridLabel("row", 0, "Mon"));
+		act(() => result.current.undo());
+		expect(result.current.gridRowLabels).toEqual([]);
+		act(() => result.current.redo());
+		expect(result.current.gridRowLabels).toEqual(["Mon"]);
+	});
+
+	it("does not record a step when the name is unchanged", () => {
+		const { result } = setupGrid();
+		act(() => result.current.setGridLabel("row", 0, ""));
+		expect(result.current.canUndo).toBe(false);
+	});
+
+	it("moves names with their rows and columns when one is removed", () => {
+		const { result } = setupGrid();
+		act(() => result.current.addGridRow()); // 2 nodes, 2 columns -> rows: 1 -> 2
+		act(() => result.current.setGridLabel("row", 0, "A"));
+		act(() => result.current.setGridLabel("row", 1, "B"));
+		act(() => result.current.removeGridRow(0));
+		expect(result.current.gridRowLabels).toEqual(["B"]);
+
+		act(() => result.current.undo());
+		expect(result.current.gridRowLabels).toEqual(["A", "B"]);
+	});
+});
+
+describe("grid cleanup and corner title", () => {
+	const threeCells: Board = {
+		...board,
+		layoutMode: "grid",
+		gridColumns: 3,
+		gridColumnLabels: ["A", "B", "C"],
+		nodes: ["x", "y", "z"].map((id, i) => ({
+			id,
+			type: "shape" as const,
+			position: { x: i * 100, y: 0 },
+			data: { color: "slate" as const },
+		})),
+	};
+	const open = (b: Board) => {
+		const wrapper = ({ children }: { children: React.ReactNode }) => (
+			<ReactFlowProvider>{children}</ReactFlowProvider>
+		);
+		return renderHook(() => useBoardEditor({ board: b, onDirty: vi.fn() }), { wrapper });
+	};
+
+	it("drops columns with no cell left, with their names, and undo brings them back", () => {
+		const { result } = open(threeCells);
+		act(() => result.current.removeNodes(["y", "z"]));
+		expect(result.current.gridColumns).toBe(1);
+		expect(result.current.gridColumnLabels).toEqual(["A"]);
+
+		act(() => result.current.undo());
+		expect(result.current.gridColumns).toBe(3);
+		expect(result.current.gridColumnLabels).toEqual(["A", "B", "C"]);
+	});
+
+	it("a row added afterwards has one cell, not the old three", () => {
+		const { result } = open(threeCells);
+		act(() => result.current.removeNodes(["y", "z"]));
+		act(() => result.current.addGridRow());
+		expect(result.current.nodes).toHaveLength(2);
+	});
+
+	it("titles the corner as one undoable step and saves it", () => {
+		const { result } = open(threeCells);
+		act(() => result.current.setGridLabel("corner", 0, "Days x Exercise"));
+		expect(result.current.gridCornerLabel).toBe("Days x Exercise");
+		expect(result.current.getContent()).toMatchObject({ gridCornerLabel: "Days x Exercise" });
+
+		act(() => result.current.undo());
+		expect(result.current.gridCornerLabel).toBe("");
+	});
+});

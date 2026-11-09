@@ -5,6 +5,8 @@ import {
 	handleCreateFile,
 	handleDeleteFile,
 	handleRenameFile,
+	handleMoveItem,
+	listFolderPaths,
 	findFileByPath,
 	sortFilesAlphabetically,
 } from "@src/lib/utils/treeUtils";
@@ -14,6 +16,7 @@ import {
 	selectFile,
 	deleteFile,
 	renameFile,
+	moveItem,
 } from "@src/lib/store/slices/markdownSlice";
 import { File, Folder } from "@src/features/markdown/type";
 
@@ -115,6 +118,70 @@ describe("Markdown Handlers", () => {
 			"File renamed successfully",
 			"success"
 		);
+	});
+
+	it("handleRenameFile adds .md to a file name that lacks it", () => {
+		handleRenameFile(dispatch, "file.md", "notes", showNotification, "file");
+		expect(dispatch).toHaveBeenCalledWith(
+			renameFile({ oldPath: "file.md", newName: "notes.md" })
+		);
+	});
+
+	it("handleRenameFile does not add .md to a folder name", () => {
+		handleRenameFile(dispatch, "docs", "papers", showNotification, "folder");
+		expect(dispatch).toHaveBeenCalledWith(
+			renameFile({ oldPath: "docs", newName: "papers" })
+		);
+		expect(showNotification).toHaveBeenCalledWith(
+			"Folder renamed successfully",
+			"success"
+		);
+	});
+
+	describe("handleMoveItem", () => {
+		const files: (File | Folder)[] = [
+			{ id: "a", path: "a.md", type: "file", content: "" },
+			{
+				id: "docs",
+				path: "docs",
+				type: "folder",
+				children: [
+					{ id: "a2", path: "a.md", type: "file", content: "" },
+					{ id: "sub", path: "sub", type: "folder", children: [] },
+				],
+			},
+			{ id: "arch", path: "archive", type: "folder", children: [] },
+		];
+
+		it("dispatches moveItem for a valid move", () => {
+			const ok = handleMoveItem(dispatch, files, "a.md", "archive", showNotification);
+			expect(ok).toBe(true);
+			expect(dispatch).toHaveBeenCalledWith(
+				moveItem({ sourcePath: "a.md", destFolderPath: "archive" })
+			);
+		});
+
+		it("rejects moving into the current folder, itself, or a clash", () => {
+			expect(handleMoveItem(dispatch, files, "a.md", "", showNotification)).toBe(false);
+			expect(handleMoveItem(dispatch, files, "docs", "docs/sub", showNotification)).toBe(false);
+			expect(handleMoveItem(dispatch, files, "a.md", "docs", showNotification)).toBe(false);
+			expect(handleMoveItem(dispatch, files, "a.md", "missing", showNotification)).toBe(false);
+			expect(dispatch).not.toHaveBeenCalled();
+		});
+	});
+
+	it("listFolderPaths lists nested folders depth-first", () => {
+		const tree: (File | Folder)[] = [
+			{ id: "f", path: "f.md", type: "file", content: "" },
+			{
+				id: "b",
+				path: "b",
+				type: "folder",
+				children: [{ id: "c", path: "c", type: "folder", children: [] }],
+			},
+			{ id: "a", path: "a", type: "folder", children: [] },
+		];
+		expect(listFolderPaths(tree)).toEqual(["a", "b", "b/c"]);
 	});
 
 	it("handleRenameFile shows error for slash in name", () => {

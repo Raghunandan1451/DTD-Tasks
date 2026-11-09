@@ -1,5 +1,5 @@
 import React from "react";
-import { Edit, Trash2, Plus } from "lucide-react";
+import { Edit, Trash2, Plus, FolderInput } from "lucide-react";
 import Button from "@src/components/ui/button/Button";
 import { SelectedItem } from "@src/features/markdown/TreeView";
 
@@ -7,6 +7,7 @@ interface TreeToolbarProps {
 	selectedItem: SelectedItem | null;
 	onAdd: () => void;
 	onEdit: () => void;
+	onMove: () => void;
 	onDelete: () => void;
 }
 
@@ -14,6 +15,7 @@ const TreeToolbar: React.FC<TreeToolbarProps> = ({
 	selectedItem,
 	onAdd,
 	onEdit,
+	onMove,
 	onDelete,
 }) => {
 	const disabled = !selectedItem;
@@ -35,6 +37,16 @@ const TreeToolbar: React.FC<TreeToolbarProps> = ({
 							: "text-gray-500 dark:text-gray-300 hover:text-yellow-500"
 					}`}
 					children={<Edit size={16} data-testid="edit" />}
+				/>
+				<Button
+					onClick={onMove}
+					disabled={disabled}
+					className={`p-1.5 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-300 ${
+						disabled
+							? "text-gray-300 dark:text-gray-600 cursor-not-allowed"
+							: "text-gray-500 dark:text-gray-300 hover:text-blue-500"
+					}`}
+					children={<FolderInput size={16} data-testid="move" />}
 				/>
 				<Button
 					onClick={onDelete}

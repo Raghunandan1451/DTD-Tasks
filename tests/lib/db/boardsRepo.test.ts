@@ -88,6 +88,40 @@ describe("boards", () => {
 		await expect(renameBoard("ghost", "x")).rejects.toThrow("That board no longer exists.");
 	});
 
+	it("saves grid row and column names, clears them when absent, and copies them on duplicate", async () => {
+		const created = await createBoard("Table", "grid");
+		const content = {
+			nodes: [],
+			edges: [],
+			viewport: { x: 0, y: 0, zoom: 1 },
+			layoutMode: "grid" as const,
+			gridColumns: 2,
+			gridRowLabels: ["Mon"],
+			gridColumnLabels: ["Task", "Owner"],
+			gridCornerLabel: "Days x Exercise",
+		};
+		await saveBoardContent(created.id, content);
+		const stored = await getBoard(created.id);
+		expect(stored?.gridCornerLabel).toBe("Days x Exercise");
+		expect(stored?.gridRowLabels).toEqual(["Mon"]);
+		expect(stored?.gridColumnLabels).toEqual(["Task", "Owner"]);
+
+		const copy = await duplicateBoard(created.id);
+		expect(copy.gridColumnLabels).toEqual(["Task", "Owner"]);
+
+		// Removing every name removes the field instead of keeping an empty list.
+		await saveBoardContent(created.id, {
+			...content,
+			gridRowLabels: [],
+			gridColumnLabels: [],
+			gridCornerLabel: "",
+		});
+		const cleared = await getBoard(created.id);
+		expect(cleared?.gridRowLabels).toBeUndefined();
+		expect(cleared?.gridColumnLabels).toBeUndefined();
+		expect(cleared?.gridCornerLabel).toBeUndefined();
+	});
+
 	it("duplicates a board under a new id with a copy of its content", async () => {
 		const created = await createBoard("Original");
 		const content = {

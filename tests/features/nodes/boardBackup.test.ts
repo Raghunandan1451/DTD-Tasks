@@ -410,3 +410,45 @@ describe("v2 layout fields", () => {
 		expect(() => parseBoardsBackup(backup([board({ layoutMode: "spiral" })]))).toThrow(UploadError);
 	});
 });
+
+describe("grid names", () => {
+	it("keeps row and column names, clamped and without trailing blanks", () => {
+		const [parsed] = parseBoardsBackup(
+			backup([
+				board({
+					layoutMode: "grid",
+					gridRowLabels: [" Mon ", "Tue", ""],
+					gridColumnLabels: ["Task", "x".repeat(300)],
+				}),
+			]),
+		);
+		expect(parsed.gridRowLabels).toEqual(["Mon", "Tue"]);
+		expect(parsed.gridColumnLabels?.[0]).toBe("Task");
+		expect(parsed.gridColumnLabels?.[1]).toHaveLength(80);
+	});
+
+	it("opens boards without names", () => {
+		const [parsed] = parseBoardsBackup(backup());
+		expect(parsed.gridRowLabels).toBeUndefined();
+		expect(parsed.gridColumnLabels).toBeUndefined();
+	});
+
+	it("rejects names that are not a list of strings", () => {
+		expect(() => parseBoardsBackup(backup([board({ gridRowLabels: "Mon" })]))).toThrow(UploadError);
+		expect(() => parseBoardsBackup(backup([board({ gridColumnLabels: [1, 2] })]))).toThrow(
+			UploadError,
+		);
+	});
+});
+
+describe("grid corner title", () => {
+	it("keeps it trimmed and clamped, and rejects a non-string", () => {
+		const [parsed] = parseBoardsBackup(
+			backup([board({ layoutMode: "grid", gridCornerLabel: "  Days x Exercise  " })]),
+		);
+		expect(parsed.gridCornerLabel).toBe("Days x Exercise");
+		const [long] = parseBoardsBackup(backup([board({ gridCornerLabel: "x".repeat(300) })]));
+		expect(long.gridCornerLabel).toHaveLength(80);
+		expect(() => parseBoardsBackup(backup([board({ gridCornerLabel: 5 })]))).toThrow(UploadError);
+	});
+});

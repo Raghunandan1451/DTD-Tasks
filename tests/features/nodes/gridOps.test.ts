@@ -4,7 +4,9 @@ import {
 	addRow,
 	defaultColumns,
 	removeColumn,
+	removeLabel,
 	removeRow,
+	setLabel,
 } from "@src/features/nodes/lib/gridOps";
 import { layoutGrid } from "@src/features/nodes/lib/layout/grid";
 
@@ -57,8 +59,29 @@ describe("grid operations", () => {
 
 	it("lays out with the given column count", () => {
 		const nodes = ["a", "b", "c"].map((id) => ({ id, width: 100, height: 50 }));
-		const positions = layoutGrid(nodes, { columns: 1 });
+		const { positions } = layoutGrid(nodes, { columns: 1 });
 		expect(positions.a.x).toBe(positions.c.x);
 		expect(positions.c.y).toBeGreaterThan(positions.b.y);
+	});
+});
+
+describe("grid names", () => {
+	it("sets a name by index, padding gaps with blanks", () => {
+		expect(setLabel([], 2, "Fri")).toEqual(["", "", "Fri"]);
+		expect(setLabel(["Mon"], 0, "  Monday  ")).toEqual(["Monday"]);
+	});
+
+	it("drops trailing blanks, so no names is an empty list", () => {
+		expect(setLabel(["Mon"], 0, "")).toEqual([]);
+		expect(setLabel(["", "Tue"], 1, "")).toEqual([]);
+	});
+
+	it("clamps a very long name", () => {
+		expect(setLabel([], 0, "x".repeat(500))[0]).toHaveLength(80);
+	});
+
+	it("moves later names up when one is removed", () => {
+		expect(removeLabel(["a", "b", "c"], 1)).toEqual(["a", "c"]);
+		expect(removeLabel(["a"], 3)).toEqual(["a"]);
 	});
 });

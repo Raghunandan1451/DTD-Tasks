@@ -7,6 +7,10 @@ export interface Snapshot {
 	edges: BoardEdge[];
 	/** Grid boards only: columns change together with the nodes, so undo restores both. */
 	gridColumns?: number;
+	/** Grid boards only, and only when some are set. Names change with their rows and columns, so undo restores them too. */
+	gridRowLabels?: string[];
+	gridColumnLabels?: string[];
+	gridCornerLabel?: string;
 }
 
 export interface History {

@@ -6,6 +6,7 @@ import reducer, {
 	selectFile,
 	deleteFile,
 	renameFile,
+	moveItem,
 	setFileState,
 } from "@src/lib/store/slices/markdownSlice";
 import { getFromIndexedDB } from "@src/lib/utils/persistMiddleware";
@@ -68,6 +69,107 @@ describe("markdownSlice", () => {
 			renameFile({ oldPath: "a.md", newName: "b.md" })
 		);
 		expect(renamed.files[0]).toMatchObject({ id: "file-1", path: "b.md" });
+	});
+
+	describe("moveItem and selection tracking", () => {
+		const tree: FileState = {
+			files: [
+				{ id: "a", path: "a.md", type: "file", content: "A" },
+				{
+					id: "docs",
+					path: "docs",
+					type: "folder",
+					children: [
+						{ id: "n", path: "note.md", type: "file", content: "N" },
+						{ id: "sub", path: "sub", type: "folder", children: [] },
+					],
+				},
+				{ id: "arch", path: "archive", type: "folder", children: [] },
+			],
+			selectedFile: null,
+			content: "",
+			loaded: true,
+		};
+
+		it("moves a root file into a folder, keeping its id", () => {
+			const state = reducer(
+				tree,
+				moveItem({ sourcePath: "a.md", destFolderPath: "archive" })
+			);
+			expect(state.files.find((f) => f.path === "a.md")).toBeUndefined();
+			const archive = state.files.find((f) => f.path === "archive");
+			expect(archive).toMatchObject({
+				children: [{ id: "a", path: "a.md", content: "A" }],
+			});
+		});
+
+		it("moves a nested file back to the root", () => {
+			const state = reducer(
+				tree,
+				moveItem({ sourcePath: "docs/note.md", destFolderPath: "" })
+			);
+			expect(state.files.some((f) => f.id === "n")).toBe(true);
+		});
+
+		it("moves a whole folder with its children", () => {
+			const state = reducer(
+				tree,
+				moveItem({ sourcePath: "docs", destFolderPath: "archive" })
+			);
+			const archive = state.files.find((f) => f.path === "archive") as {
+				children: { path: string; children?: { path: string }[] }[];
+			};
+			expect(archive.children[0].path).toBe("docs");
+			expect(archive.children[0].children?.map((c) => c.path)).toContain(
+				"note.md"
+			);
+		});
+
+		it("refuses to move a folder into itself or a descendant", () => {
+			expect(
+				reducer(tree, moveItem({ sourcePath: "docs", destFolderPath: "docs" }))
+					.files
+			).toEqual(tree.files);
+			expect(
+				reducer(
+					tree,
+					moveItem({ sourcePath: "docs", destFolderPath: "docs/sub" })
+				).files
+			).toEqual(tree.files);
+		});
+
+		it("does nothing on a name clash or missing destination", () => {
+			const clash = reducer(
+				tree,
+				addFile({ id: "x", path: "a.md", content: "", parentPath: "archive" })
+			);
+			expect(
+				reducer(clash, moveItem({ sourcePath: "a.md", destFolderPath: "archive" }))
+					.files
+			).toEqual(clash.files);
+			expect(
+				reducer(tree, moveItem({ sourcePath: "a.md", destFolderPath: "nope" }))
+					.files
+			).toEqual(tree.files);
+		});
+
+		it("keeps selectedFile pointing at a moved file", () => {
+			const selected = reducer(tree, selectFile("docs/note.md"));
+			const moved = reducer(
+				selected,
+				moveItem({ sourcePath: "docs", destFolderPath: "archive" })
+			);
+			expect(moved.selectedFile).toBe("archive/docs/note.md");
+		});
+
+		it("keeps selectedFile valid when its folder is renamed", () => {
+			const selected = reducer(tree, selectFile("docs/note.md"));
+			const renamed = reducer(
+				selected,
+				renameFile({ oldPath: "docs", newName: "papers" })
+			);
+			expect(renamed.selectedFile).toBe("papers/note.md");
+		});
 	});
 
 	it("should assign ids to items loaded without one", () => {

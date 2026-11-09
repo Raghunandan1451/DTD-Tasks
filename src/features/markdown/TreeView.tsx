@@ -126,16 +126,26 @@ const TreeView: React.FC<TreeViewProps> = ({
 					setShowInput={setShowInput}
 					newFilePath={newFilePath}
 					setNewFilePath={setNewFilePath}
-					onCreate={() => (
+					onCreate={() => {
+						// A selected folder is the parent for the new file.
+						const parent =
+							selectedItem?.type === "folder"
+								? selectedItem.fullPath
+								: "";
+						const typed = newFilePath.trim();
 						handleCreateFile(
 							dispatch,
 							files,
 							showNotification,
-							newFilePath,
-						),
-						setShowInput(false),
-						setNewFilePath("")
-					)}
+							parent && typed ? `${parent}/${typed}` : newFilePath,
+						);
+						if (parent && typed) {
+							// Open the folder so the new file is visible.
+							setExpandedFolders((prev) => new Set(prev).add(parent));
+						}
+						setShowInput(false);
+						setNewFilePath("");
+					}}
 				/>
 			)}
 

@@ -64,6 +64,24 @@ function example() {
 **Tip:** Combine these elements to create rich, formatted documents!
 `;
 
+/**
+ * If `current` is `oldPath` or lives under it, returns it re-rooted at
+ * `newPath`; otherwise returns it unchanged. Keeps selectedFile valid after a
+ * rename or move of the file or one of its ancestor folders.
+ */
+const remapPath = (
+	current: string | null,
+	oldPath: string,
+	newPath: string
+): string | null => {
+	if (!current) return current;
+	if (current === oldPath) return newPath;
+	if (current.startsWith(`${oldPath}/`)) {
+		return `${newPath}${current.slice(oldPath.length)}`;
+	}
+	return current;
+};
+
 const initialState: FileState = {
 	files: [
 		{
@@ -183,7 +201,57 @@ const markdownSlice = createSlice({
 			);
 			if (item) {
 				item.path = newName;
+				const newPath = [...parts, newName].join("/");
+				state.selectedFile = remapPath(state.selectedFile, oldPath, newPath);
 			}
+		},
+		/**
+		 * Moves a file or folder into another folder ("" = the root).
+		 * No-ops on anything invalid: missing source/destination, moving a
+		 * folder into itself or its own descendant, or a name clash at the
+		 * destination. Callers validate first to show a message.
+		 */
+		moveItem: (
+			state,
+			action: PayloadAction<{ sourcePath: string; destFolderPath: string }>
+		) => {
+			const { sourcePath, destFolderPath } = action.payload;
+			const srcParts = sourcePath.split("/").filter(Boolean);
+			const name = srcParts.pop();
+			if (!name) return;
+			const destParts = destFolderPath.split("/").filter(Boolean);
+
+			const srcPrefix = [...srcParts, name].join("/");
+			const destPath = destParts.join("/");
+			if (destPath === srcParts.join("/")) return; // already there
+			if (destPath === srcPrefix || destPath.startsWith(`${srcPrefix}/`)) {
+				return; // into itself / own descendant
+			}
+
+			const descend = (parts: string[]): (File | Folder)[] | null => {
+				let level: (File | Folder)[] = state.files;
+				for (const part of parts) {
+					const folder = level.find(
+						(i) => i.type === "folder" && i.path === part
+					) as Folder | undefined;
+					if (!folder) return null;
+					level = folder.children;
+				}
+				return level;
+			};
+
+			const srcLevel = descend(srcParts);
+			const destLevel = descend(destParts);
+			if (!srcLevel || !destLevel) return;
+			if (destLevel.some((i) => i.path === name)) return; // name clash
+
+			const index = srcLevel.findIndex((i) => i.path === name);
+			if (index === -1) return;
+			const [item] = srcLevel.splice(index, 1);
+			destLevel.push(item);
+
+			const newPath = [...destParts, name].join("/");
+			state.selectedFile = remapPath(state.selectedFile, srcPrefix, newPath);
 		},
 		deleteFile: (state, action: PayloadAction<{ path: string }>) => {
 			const { path } = action.payload;
@@ -316,5 +384,6 @@ export const {
 	deselectFile,
 	deleteFile,
 	renameFile,
+	moveItem,
 } = markdownSlice.actions;
 export default markdownSlice.reducer;

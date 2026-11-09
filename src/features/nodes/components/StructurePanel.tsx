@@ -64,6 +64,9 @@ interface StructurePanelProps {
 	treeRootId: string | null;
 	/** Grid boards: how many columns the nodes are cut into. */
 	gridColumns: number;
+	/** Names of grid rows and columns, by index; blank or missing means unnamed. */
+	gridRowLabels: readonly string[];
+	gridColumnLabels: readonly string[];
 	onTreeRoot: (id: string | null) => void;
 	outline: string;
 	onOutlineChange: (text: string) => void;
@@ -318,6 +321,8 @@ const StructurePanel: React.FC<StructurePanelProps> = ({
 	edges,
 	treeRootId,
 	gridColumns,
+	gridRowLabels,
+	gridColumnLabels,
 	onTreeRoot,
 	outline,
 	onOutlineChange,
@@ -505,7 +510,7 @@ const StructurePanel: React.FC<StructurePanelProps> = ({
 									aria-label={`Remove column ${column + 1}`}
 									title={`Remove column ${column + 1}`}
 								>
-									C{column + 1}
+									{gridColumnLabels[column] || `C${column + 1}`}
 									<X className="h-3 w-3" />
 								</Button>
 							))}
@@ -567,7 +572,7 @@ const StructurePanel: React.FC<StructurePanelProps> = ({
 						<Fragment key={node.id}>
 							{isGrid && gridColumn === 0 && (
 								<li className="flex items-center justify-between px-1 pt-1 text-xs font-semibold text-gray-700 dark:text-gray-200">
-									Row {gridRow + 1}
+									{gridRowLabels[gridRow] || `Row ${gridRow + 1}`}
 									<Button
 										className={`${BTN} hover:!text-red-600`}
 										disabled={gridRows <= 1}
@@ -588,7 +593,7 @@ const StructurePanel: React.FC<StructurePanelProps> = ({
 								isLast={index === rows.length - 1}
 								selected={Boolean(node.selected)}
 								hasChildren={isTree && descendantsOf(edges, node.id).length > 0}
-								caption={isGrid ? `Row ${gridRow + 1} · Column ${gridColumn + 1}` : undefined}
+								caption={isGrid ? `${gridRowLabels[gridRow] || `Row ${gridRow + 1}`} · ${gridColumnLabels[gridColumn] || `Column ${gridColumn + 1}`}` : undefined}
 								linkedTo={linkedIds
 									.map((id) => byId.get(id))
 									.filter((n): n is FlowNode => Boolean(n))}

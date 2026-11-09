@@ -47,6 +47,8 @@ const renderPanel = (mode: "tree" | "graph" | "grid", actions = makeActions(), l
 			edges={edges}
 			treeRootId={null}
 			gridColumns={1}
+			gridRowLabels={[]}
+			gridColumnLabels={[]}
 			onTreeRoot={vi.fn()}
 			outline=""
 			onOutlineChange={vi.fn()}
