@@ -6,6 +6,7 @@ import {
 	selectFile,
 	deleteFile,
 	renameFile,
+	moveItem,
 } from "@src/lib/store/slices/markdownSlice";
 
 import { File, Folder } from "@src/features/markdown/type";
@@ -136,8 +137,9 @@ export const handleRenameFile = (
 	path: string,
 	newName: string,
 	showNotification: ShowNotificationFunc,
+	type: "file" | "folder" = "file",
 ): void => {
-	if (!newName) {
+	if (!newName.trim()) {
 		showNotification("Please enter a valid name", "error");
 		return;
 	}
@@ -147,12 +149,76 @@ export const handleRenameFile = (
 		return;
 	}
 
-	const renamedFile = newName.trim().endsWith(".md")
-		? newName.trim()
-		: `${newName.trim()}.md`;
+	// Only files carry the .md extension; folders keep the name as typed.
+	const trimmed = newName.trim();
+	const renamed =
+		type === "folder" || trimmed.endsWith(".md") ? trimmed : `${trimmed}.md`;
 
-	dispatch(renameFile({ oldPath: path, newName: renamedFile }));
-	showNotification("File renamed successfully", "success");
+	dispatch(renameFile({ oldPath: path, newName: renamed }));
+	showNotification(
+		type === "folder" ? "Folder renamed successfully" : "File renamed successfully",
+		"success",
+	);
+};
+
+/** Full paths of every folder in the tree, depth-first and sorted by name. */
+export const listFolderPaths = (
+	items: (File | Folder)[],
+	parent = "",
+): string[] =>
+	sortFilesAlphabetically(items).flatMap((item) => {
+		if (item.type !== "folder") return [];
+		const fullPath = parent ? `${parent}/${item.path}` : item.path;
+		return [fullPath, ...listFolderPaths(item.children, fullPath)];
+	});
+
+/**
+ * Validates and dispatches a move of `sourcePath` into `destFolderPath`
+ * ("" = root), showing a message instead of silently doing nothing.
+ */
+export const handleMoveItem = (
+	dispatch: Dispatch<Action>,
+	files: (File | Folder)[],
+	sourcePath: string,
+	destFolderPath: string,
+	showNotification: ShowNotificationFunc,
+): boolean => {
+	const srcParts = sourcePath.split("/").filter(Boolean);
+	const name = srcParts.pop();
+	if (!name) return false;
+
+	const parentPath = srcParts.join("/");
+	if (destFolderPath === parentPath) {
+		showNotification("Item is already in that folder", "info");
+		return false;
+	}
+	if (
+		destFolderPath === sourcePath ||
+		destFolderPath.startsWith(`${sourcePath}/`)
+	) {
+		showNotification("Cannot move a folder into itself", "error");
+		return false;
+	}
+
+	let level = files;
+	for (const part of destFolderPath.split("/").filter(Boolean)) {
+		const folder = level.find(
+			(i): i is Folder => i.type === "folder" && i.path === part,
+		);
+		if (!folder) {
+			showNotification("Destination folder not found", "error");
+			return false;
+		}
+		level = folder.children;
+	}
+	if (level.some((i) => i.path === name)) {
+		showNotification(`"${name}" already exists in that folder`, "error");
+		return false;
+	}
+
+	dispatch(moveItem({ sourcePath, destFolderPath }));
+	showNotification("Moved successfully", "success");
+	return true;
 };
 
 export const findFileByPath = (

@@ -15,6 +15,7 @@ import {
 import { SCHEMA_VERSION } from "@src/lib/utils/schemaVersion";
 import { UploadError } from "@src/lib/utils/uploadError";
 import { isBoardColor } from "@src/features/nodes/lib/palette";
+import { GRID_LABEL_MAX } from "@src/features/nodes/lib/gridOps";
 
 export const BOARDS_BACKUP_FILE = "boards-backup.json";
 
@@ -36,6 +37,18 @@ const isFiniteNumber = (value: unknown): value is number =>
 
 const isNodeType = (value: unknown): value is BoardNodeType =>
 	typeof value === "string" && (BOARD_NODE_TYPES as readonly string[]).includes(value);
+
+/** Row/column names: a list of strings. */
+const isLabelList = (value: unknown): value is string[] =>
+	Array.isArray(value) && value.every((item) => typeof item === "string");
+
+/** Names kept from a backup: strings only, clamped, with trailing blanks dropped. */
+const toLabels = (value: unknown): string[] => {
+	if (!isLabelList(value)) return [];
+	const labels = value.map((label) => label.trim().slice(0, GRID_LABEL_MAX));
+	while (labels.length > 0 && labels[labels.length - 1] === "") labels.pop();
+	return labels;
+};
 
 const isLayoutMode = (value: unknown): value is BoardLayoutMode =>
 	typeof value === "string" && (BOARD_LAYOUT_MODES as readonly string[]).includes(value);
@@ -185,6 +198,13 @@ const normalizeBoard = (raw: JsonRecord): Board => {
 	if (Number.isInteger(raw.gridColumns) && (raw.gridColumns as number) > 0) {
 		board.gridColumns = raw.gridColumns as number;
 	}
+	const rowLabels = toLabels(raw.gridRowLabels);
+	if (rowLabels.length > 0) board.gridRowLabels = rowLabels;
+	const columnLabels = toLabels(raw.gridColumnLabels);
+	if (columnLabels.length > 0) board.gridColumnLabels = columnLabels;
+	if (typeof raw.gridCornerLabel === "string" && raw.gridCornerLabel.trim()) {
+		board.gridCornerLabel = raw.gridCornerLabel.trim().slice(0, GRID_LABEL_MAX);
+	}
 	return board;
 };
 
@@ -246,6 +266,14 @@ export const parseBoardsBackup = (raw: unknown): Board[] => {
 			!(Number.isInteger(board.gridColumns) && (board.gridColumns as number) > 0)
 		) {
 			problems.push(`${where} has an invalid "gridColumns"`);
+		}
+		for (const key of ["gridRowLabels", "gridColumnLabels"] as const) {
+			if (board[key] !== undefined && !isLabelList(board[key])) {
+				problems.push(`${where} has an invalid "${key}"`);
+			}
+		}
+		if (board.gridCornerLabel !== undefined && typeof board.gridCornerLabel !== "string") {
+			problems.push(`${where} has an invalid "gridCornerLabel"`);
 		}
 		const viewportProblem = checkViewport(board.viewport);
 		if (viewportProblem) problems.push(`${where} ${viewportProblem}`);

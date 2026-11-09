@@ -147,7 +147,18 @@ export const setLastBoardId = (id: string): Promise<void> => setValue(LAST_BOARD
 
 /** The part of a board the canvas edits. Name and dates belong to the board list. */
 export type BoardContent = Pick<Board, "nodes" | "edges" | "viewport"> &
-	Partial<Pick<Board, "layoutMode" | "outline" | "treeRootId" | "gridColumns">>;
+	Partial<
+		Pick<
+			Board,
+			| "layoutMode"
+			| "outline"
+			| "treeRootId"
+			| "gridColumns"
+			| "gridRowLabels"
+			| "gridColumnLabels"
+			| "gridCornerLabel"
+		>
+	>;
 
 /**
  * Saves canvas content onto the stored board, keeping its current name and
@@ -180,10 +191,16 @@ export const saveBoardContent = (
 		delete next.outline;
 		delete next.treeRootId;
 		delete next.gridColumns;
+		delete next.gridRowLabels;
+		delete next.gridColumnLabels;
+		delete next.gridCornerLabel;
 		if (content.layoutMode) next.layoutMode = content.layoutMode;
 		if (content.outline) next.outline = content.outline;
 		if (content.treeRootId) next.treeRootId = content.treeRootId;
 		if (content.gridColumns) next.gridColumns = content.gridColumns;
+		if (content.gridRowLabels?.length) next.gridRowLabels = content.gridRowLabels;
+		if (content.gridColumnLabels?.length) next.gridColumnLabels = content.gridColumnLabels;
+		if (content.gridCornerLabel) next.gridCornerLabel = content.gridCornerLabel;
 		await tx.store.put(next);
 		await tx.done;
 		return next;

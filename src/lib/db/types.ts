@@ -110,6 +110,14 @@ export interface Board {
 	treeRootId?: string;
 	/** Columns of a "grid" board; rows are the node count divided by this. Missing means a square-ish grid. */
 	gridColumns?: number;
+	/**
+	 * Names of a "grid" board's rows and columns, by index. May be shorter than
+	 * the real count (a missing name is blank); absent means no names.
+	 */
+	gridRowLabels?: string[];
+	gridColumnLabels?: string[];
+	/** Title of a "grid" board's top-left corner cell, e.g. "Days x Exercise". */
+	gridCornerLabel?: string;
 	/** Epoch ms. */
 	createdAt: number;
 	updatedAt: number;

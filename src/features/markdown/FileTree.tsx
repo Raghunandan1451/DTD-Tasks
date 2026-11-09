@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import TreeView, { SelectedItem } from "@src/features/markdown/TreeView";
 import TreeToolbar from "@src/features/markdown/TreeToolbar";
 import EditFileFolder from "@src/features/markdown/EditFileFolder";
+import MoveFileFolder from "@src/features/markdown/MoveFileFolder";
 import NotificationCenter from "@src/components/ui/toast/NotificationCenter";
 import { useResizablePanel } from "@src/lib/hooks/useResizablePanel";
 import { useTreeActions } from "@src/lib/hooks/useTreeActions";
@@ -27,6 +28,13 @@ const FileTree: React.FC<FileTreeProps> = ({ className = "" }) => {
 		onDelete,
 		onConfirmRename,
 		onCancelRename,
+		showMove,
+		moveTargets,
+		moveDestination,
+		setMoveDestination,
+		onMove,
+		onConfirmMove,
+		onCancelMove,
 	} = useTreeActions(selectedItem, setSelectedItem);
 
 	return (
@@ -40,6 +48,7 @@ const FileTree: React.FC<FileTreeProps> = ({ className = "" }) => {
 					selectedItem={selectedItem}
 					onAdd={onAdd}
 					onEdit={onEdit}
+					onMove={onMove}
 					onDelete={onDelete}
 				/>
 
@@ -53,12 +62,27 @@ const FileTree: React.FC<FileTreeProps> = ({ className = "" }) => {
 
 			{showRenameInput && selectedItem && (
 				<EditFileFolder
-					renameValue={renameValue.replace(/\.md$/, "")}
+					renameValue={
+						selectedItem.type === "file"
+							? renameValue.replace(/\.md$/, "")
+							: renameValue
+					}
 					setRenameValue={setRenameValue}
 					setShowRenameInput={(show) => {
 						if (!show) onCancelRename();
 					}}
 					onEdit={onConfirmRename}
+				/>
+			)}
+
+			{showMove && selectedItem && (
+				<MoveFileFolder
+					itemName={selectedItem.name}
+					folderPaths={moveTargets}
+					destination={moveDestination}
+					setDestination={setMoveDestination}
+					onMove={onConfirmMove}
+					onCancel={onCancelMove}
 				/>
 			)}
 

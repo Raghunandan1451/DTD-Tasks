@@ -52,7 +52,10 @@ import {
 	addRow as gridAddRow,
 	defaultColumns,
 	removeColumn as gridRemoveColumn,
+	GRID_LABEL_MAX,
+	removeLabel,
 	removeRow as gridRemoveRow,
+	setLabel,
 	type GridResult,
 } from "@src/features/nodes/lib/gridOps";
 import {
@@ -105,6 +108,11 @@ export interface LayoutMeta {
 	treeRootId: string | null;
 	/** Grid boards: how many columns the node list is cut into. */
 	gridColumns: number;
+	/** Grid boards: names by row / column index. Empty means no names. */
+	gridRowLabels: string[];
+	gridColumnLabels: string[];
+	/** Grid boards: title of the corner cell. */
+	gridCornerLabel: string;
 }
 
 /** Shared across boards, so a selection can be copied from one and pasted into another. */
@@ -141,6 +149,9 @@ export const useBoardEditor = ({ board, onDirty, onNotice }: UseBoardEditorOptio
 		outline: board.outline ?? "",
 		treeRootId: board.treeRootId ?? null,
 		gridColumns: board.gridColumns ?? defaultColumns(board.nodes.length),
+		gridRowLabels: board.gridRowLabels ?? [],
+		gridColumnLabels: board.gridColumnLabels ?? [],
+		gridCornerLabel: board.gridCornerLabel ?? "",
 	}));
 	const metaRef = useRef(meta);
 	const [availability, setAvailability] = useState({
@@ -178,7 +189,18 @@ export const useBoardEditor = ({ board, onDirty, onNotice }: UseBoardEditorOptio
 			nodes: toBoardNodes(nodesRef.current),
 			edges: toBoardEdges(edgesRef.current),
 			...(metaRef.current.layoutMode === "grid"
-				? { gridColumns: metaRef.current.gridColumns }
+				? {
+						gridColumns: metaRef.current.gridColumns,
+						...(metaRef.current.gridRowLabels.length > 0
+							? { gridRowLabels: metaRef.current.gridRowLabels }
+							: {}),
+						...(metaRef.current.gridColumnLabels.length > 0
+							? { gridColumnLabels: metaRef.current.gridColumnLabels }
+							: {}),
+						...(metaRef.current.gridCornerLabel
+							? { gridCornerLabel: metaRef.current.gridCornerLabel }
+							: {}),
+					}
 				: {}),
 		}),
 		[],
@@ -189,15 +211,46 @@ export const useBoardEditor = ({ board, onDirty, onNotice }: UseBoardEditorOptio
 		setAvailability({ canUndo: canUndo(next), canRedo: canRedo(next) });
 	}, []);
 
+	/**
+	 * Grid boards only: forgets columns (and their names) that have no cell left,
+	 * and row names past the last row. Runs before every history step, so deleting
+	 * cells never leaves empty columns behind, and undo brings them back.
+	 */
+	const trimGridMeta = useCallback(() => {
+		const current = metaRef.current;
+		if (current.layoutMode !== "grid") return;
+		const count = nodesRef.current.length;
+		const columns = Math.max(1, Math.min(current.gridColumns, count));
+		const rows = Math.max(1, Math.ceil(count / columns));
+		const rowLabels = current.gridRowLabels.slice(0, rows);
+		const columnLabels = current.gridColumnLabels.slice(0, columns);
+		if (
+			columns === current.gridColumns &&
+			rowLabels.length === current.gridRowLabels.length &&
+			columnLabels.length === current.gridColumnLabels.length
+		) {
+			return;
+		}
+		const next = {
+			...current,
+			gridColumns: columns,
+			gridRowLabels: rowLabels,
+			gridColumnLabels: columnLabels,
+		};
+		metaRef.current = next;
+		setMetaState(next);
+	}, []);
+
 	/** Records `before` as one undo step if the board really changed, and marks it for saving. */
 	const commit = useCallback(
 		(before: Snapshot) => {
+			trimGridMeta();
 			const after = snapshot();
 			if (snapshotsEqual(before, after)) return;
 			setHistory(commitChange(historyRef.current, before, after));
 			onDirtyRef.current("content");
 		},
-		[setHistory, snapshot],
+		[setHistory, snapshot, trimGridMeta],
 	);
 
 	/** Applies a discrete change (add, delete, edit) as a single undo step. */
@@ -622,14 +675,29 @@ export const useBoardEditor = ({ board, onDirty, onNotice }: UseBoardEditorOptio
 		[removeNodes],
 	);
 
-	/** Applies a grid add/remove as one undo step; the column count is part of the step. */
+	/**
+	 * Applies a grid add/remove as one undo step; the column count and the names
+	 * are part of the step. `relabel` moves the names along with the rows/columns.
+	 */
 	const changeGrid = useCallback(
-		(operate: (items: BoardNode[], columns: number) => GridResult<BoardNode>) => {
+		(
+			operate: (items: BoardNode[], columns: number) => GridResult<BoardNode>,
+			relabel: (rows: string[], columns: string[]) => { rows: string[]; columns: string[] } = (
+				rows,
+				columns,
+			) => ({ rows, columns }),
+		) => {
 			mutate((currentNodes, currentEdges) => {
 				const result = operate(toBoardNodes(currentNodes), metaRef.current.gridColumns);
 				const existing = new Map(currentNodes.map((node) => [node.id, node]));
 				const gone = new Set(result.removed.map((node) => node.id));
-				const next = { ...metaRef.current, gridColumns: result.columns };
+				const labels = relabel(metaRef.current.gridRowLabels, metaRef.current.gridColumnLabels);
+				const next = {
+					...metaRef.current,
+					gridColumns: result.columns,
+					gridRowLabels: labels.rows,
+					gridColumnLabels: labels.columns,
+				};
 				metaRef.current = next;
 				setMetaState(next);
 				return {
@@ -651,13 +719,38 @@ export const useBoardEditor = ({ board, onDirty, onNotice }: UseBoardEditorOptio
 	);
 	const removeGridRow = useCallback(
 		(row: number) =>
-			changeGrid((items, columns) => gridRemoveRow(items, columns, row, makeShapeNode)),
+			changeGrid(
+				(items, columns) => gridRemoveRow(items, columns, row, makeShapeNode),
+				(rows, columns) => ({ rows: removeLabel(rows, row), columns }),
+			),
 		[changeGrid],
 	);
 	const removeGridColumn = useCallback(
 		(column: number) =>
-			changeGrid((items, columns) => gridRemoveColumn(items, columns, column, makeShapeNode)),
+			changeGrid(
+				(items, columns) => gridRemoveColumn(items, columns, column, makeShapeNode),
+				(rows, columns) => ({ rows, columns: removeLabel(columns, column) }),
+			),
 		[changeGrid],
+	);
+
+	/** Names a row, column or the corner cell (blank clears it) as one undo step. */
+	const setGridLabel = useCallback(
+		(axis: "row" | "column" | "corner", index: number, value: string) => {
+			mutate(() => {
+				const meta = metaRef.current;
+				const next =
+					axis === "row"
+						? { ...meta, gridRowLabels: setLabel(meta.gridRowLabels, index, value) }
+						: axis === "column"
+							? { ...meta, gridColumnLabels: setLabel(meta.gridColumnLabels, index, value) }
+							: { ...meta, gridCornerLabel: value.trim().slice(0, GRID_LABEL_MAX) };
+				metaRef.current = next;
+				setMetaState(next);
+				return {};
+			});
+		},
+		[mutate],
 	);
 
 	/** What dropping a dragged node on another one does, for each board type. */
@@ -738,8 +831,23 @@ export const useBoardEditor = ({ board, onDirty, onNotice }: UseBoardEditorOptio
 				}),
 			);
 			setEdges(fromBoardEdges(target.edges));
-			if (target.gridColumns !== undefined && target.gridColumns !== metaRef.current.gridColumns) {
-				const next = { ...metaRef.current, gridColumns: target.gridColumns };
+			const gridColumns = target.gridColumns ?? metaRef.current.gridColumns;
+			const gridRowLabels = target.gridRowLabels ?? [];
+			const gridColumnLabels = target.gridColumnLabels ?? [];
+			const gridCornerLabel = target.gridCornerLabel ?? "";
+			if (
+				gridCornerLabel !== metaRef.current.gridCornerLabel ||
+				gridColumns !== metaRef.current.gridColumns ||
+				JSON.stringify(gridRowLabels) !== JSON.stringify(metaRef.current.gridRowLabels) ||
+				JSON.stringify(gridColumnLabels) !== JSON.stringify(metaRef.current.gridColumnLabels)
+			) {
+				const next = {
+					...metaRef.current,
+					gridColumns,
+					gridRowLabels,
+					gridColumnLabels,
+					gridCornerLabel,
+				};
 				metaRef.current = next;
 				setMetaState(next);
 			}
@@ -863,7 +971,11 @@ export const useBoardEditor = ({ board, onDirty, onNotice }: UseBoardEditorOptio
 		addGridColumn,
 		removeGridRow,
 		removeGridColumn,
+		setGridLabel,
 		gridColumns: meta.gridColumns,
+		gridRowLabels: meta.gridRowLabels,
+		gridColumnLabels: meta.gridColumnLabels,
+		gridCornerLabel: meta.gridCornerLabel,
 		/** Current graph in storable form, for the outline editor. */
 		getGraph: snapshot,
 	};

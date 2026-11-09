@@ -2,6 +2,7 @@ import { newId as defaultNewId } from "@src/lib/db/newId";
 import { BOARD_TEXT_MAX, type BoardEdge, type BoardNode } from "@src/lib/db/types";
 import { DEFAULT_NODE_SIZE } from "@src/features/nodes/lib/constants";
 import { layoutGrid } from "@src/features/nodes/lib/layout/grid";
+import { DEFAULT_GAP_X, DEFAULT_GAP_Y } from "@src/features/nodes/lib/layout/types";
 import { DEFAULT_BOARD_COLOR } from "@src/features/nodes/lib/palette";
 
 /*
@@ -220,13 +221,15 @@ export const parseOutline = (
 	// New nodes go in a grid below everything already on the board.
 	const fresh = order.filter((label) => !matched.has(label));
 	const size = DEFAULT_NODE_SIZE.shape;
+	// Loose spacing: these are free-board nodes, not table cells.
 	const gridPositions = layoutGrid(
 		fresh.map((label) => ({
 			id: label,
 			width: size.width,
 			height: size.height,
 		})),
-	);
+		{ gapX: DEFAULT_GAP_X, gapY: DEFAULT_GAP_Y },
+	).positions;
 	const left = existing.nodes.reduce((m, n) => Math.min(m, n.position.x), Infinity);
 	const bottom = existing.nodes.reduce(
 		(m, n) => Math.max(m, n.position.y + (n.height ?? size.height)),

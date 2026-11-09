@@ -67,3 +67,21 @@ export const removeColumn = <T>(
 	const removed = rows.map((row) => row.splice(column, 1)[0]);
 	return { items: rows.flat(), columns: columns - 1, removed };
 };
+
+/** Longest row or column name kept. */
+export const GRID_LABEL_MAX = 80;
+
+/** Sets the name at `index`, trimming and clamping it; blanks at the end are dropped so "no names" is an empty list. */
+export const setLabel = (labels: readonly string[], index: number, value: string): string[] => {
+	if (index < 0) return [...labels];
+	const next = Array.from({ length: Math.max(labels.length, index + 1) }, (_, i) => labels[i] ?? "");
+	next[index] = value.trim().slice(0, GRID_LABEL_MAX);
+	while (next.length > 0 && next[next.length - 1] === "") next.pop();
+	return next;
+};
+
+/** Drops the name at `index`, so the names after it move up with their rows or columns. */
+export const removeLabel = (labels: readonly string[], index: number): string[] => {
+	if (index < 0 || index >= labels.length) return [...labels];
+	return labels.filter((_, i) => i !== index);
+};

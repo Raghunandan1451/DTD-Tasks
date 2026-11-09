@@ -35,9 +35,19 @@ export interface SceneEdge {
 	dashed: boolean;
 }
 
+/** A grid board's row or column name cell. */
+export interface SceneHeader {
+	x: number;
+	y: number;
+	width: number;
+	height: number;
+	label: string;
+}
+
 export interface Scene {
 	name: string;
 	nodes: SceneNode[];
+	headers: SceneHeader[];
 	edges: SceneEdge[];
 	/** Area to draw, in board units, with the margin included. */
 	bounds: { x: number; y: number; width: number; height: number };
@@ -108,6 +118,8 @@ export const buildScene = (
 	// Tree, graph and grid boards show computed positions, not the saved ones.
 	let positions: Record<string, { x: number; y: number }> = {};
 	let crossLinks: ReadonlySet<string> = new Set();
+	let sizes: Record<string, { width: number; height: number }> = {};
+	let gridHeaders: SceneHeader[] = [];
 	if (mode !== "free") {
 		const layoutNodes: LayoutNode[] = board.nodes.map((node) => ({ id: node.id, ...sizeOf(node) }));
 		const layoutEdges: LayoutEdge[] = board.edges.map((edge) => ({
@@ -121,10 +133,17 @@ export const buildScene = (
 			layoutEdges,
 			board.treeRootId,
 			board.gridColumns,
+			{
+				rows: board.gridRowLabels,
+				columns: board.gridColumnLabels,
+				corner: board.gridCornerLabel,
+			},
 		);
 		if (layout) {
 			positions = layout.positions;
 			crossLinks = layout.crossLinks;
+			sizes = layout.sizes ?? {};
+			gridHeaders = layout.headers ?? [];
 		}
 	}
 
@@ -140,7 +159,7 @@ export const buildScene = (
 				color: toBoardColor(node.data.color),
 				x: at.x,
 				y: at.y,
-				...sizeOf(node),
+				...(sizes[node.id] ?? sizeOf(node)),
 				title: node.data.title ?? "",
 				text: node.data.text ?? "",
 			};
@@ -165,13 +184,17 @@ export const buildScene = (
 		});
 	}
 
-	const left = Math.min(...nodes.map((node) => node.x));
-	const top = Math.min(...nodes.map((node) => node.y));
-	const right = Math.max(...nodes.map((node) => node.x + node.width));
-	const bottom = Math.max(...nodes.map((node) => node.y + node.height));
+	// Names are drawn with the whole table, not with a picked selection.
+	const headers = onlySelected ? [] : gridHeaders;
+	const boxes = [...nodes, ...headers];
+	const left = Math.min(...boxes.map((box) => box.x));
+	const top = Math.min(...boxes.map((box) => box.y));
+	const right = Math.max(...boxes.map((box) => box.x + box.width));
+	const bottom = Math.max(...boxes.map((box) => box.y + box.height));
 	return {
 		name: board.name,
 		nodes,
+		headers,
 		edges,
 		bounds: {
 			x: left - MARGIN,
@@ -307,6 +330,22 @@ const drawNodeText = (
 	});
 };
 
+const drawHeader = (ctx: CanvasRenderingContext2D, header: SceneHeader): void => {
+	ctx.beginPath();
+	ctx.roundRect(header.x, header.y, header.width, header.height, 6);
+	ctx.fillStyle = "#e2e8f0";
+	ctx.fill();
+	ctx.lineWidth = 1;
+	ctx.strokeStyle = "#94a3b8";
+	ctx.stroke();
+	if (!header.label) return;
+	ctx.font = `600 13px ${FONT}`;
+	ctx.fillStyle = "#0f172a";
+	ctx.textAlign = "center";
+	ctx.textBaseline = "middle";
+	ctx.fillText(header.label, header.x + header.width / 2, header.y + header.height / 2, header.width - 12);
+};
+
 const drawEdge = (ctx: CanvasRenderingContext2D, edge: SceneEdge): void => {
 	ctx.strokeStyle = EDGE_COLOR;
 	ctx.fillStyle = EDGE_COLOR;
@@ -378,6 +417,7 @@ const renderScene = (scene: Scene): HTMLCanvasElement | null => {
 	ctx.fillRect(0, 0, canvas.width, canvas.height);
 	ctx.scale(scale, scale);
 	ctx.translate(-scene.bounds.x, -scene.bounds.y);
+	scene.headers.forEach((header) => drawHeader(ctx, header));
 	scene.edges.forEach((edge) => drawEdge(ctx, edge));
 	scene.nodes.forEach((node) => drawNode(ctx, node));
 	return canvas;

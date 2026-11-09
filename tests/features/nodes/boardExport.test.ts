@@ -85,6 +85,49 @@ describe("buildScene", () => {
 		expect(spots.size).toBe(4);
 	});
 
+	it("draws a grid board as a table with name cells", () => {
+		const table = board({
+			layoutMode: "grid",
+			gridColumns: 2,
+			gridRowLabels: ["Mon"],
+			gridColumnLabels: ["Task", "Owner"],
+			gridCornerLabel: "Days x Exercise",
+			nodes: [
+				node("a", 0, 0, { width: 100, height: 50 }),
+				node("b", 0, 0, { width: 200, height: 40 }),
+				node("c", 0, 0, { width: 80, height: 90 }),
+				node("d", 0, 0, { width: 60, height: 30 }),
+			],
+			edges: [],
+		});
+		const scene = buildScene(table);
+		expect(scene?.headers.map((h) => h.label)).toEqual([
+			"Days x Exercise",
+			"Task",
+			"Owner",
+			"Mon",
+			"",
+		]);
+		// d is stretched to its column (200) and row (90).
+		const d = scene?.nodes.find((n) => n.id === "d");
+		expect([d?.width, d?.height]).toEqual([200, 90]);
+		// The picture covers the names too.
+		const names = scene?.headers ?? [];
+		expect(scene!.bounds.x).toBeLessThan(Math.min(...names.map((h) => h.x)));
+		expect(scene!.bounds.y).toBeLessThan(Math.min(...names.map((h) => h.y)));
+	});
+
+	it("leaves the names out when only some nodes are exported", () => {
+		const table = board({
+			layoutMode: "grid",
+			gridColumns: 2,
+			gridColumnLabels: ["Task"],
+			nodes: [node("a", 0, 0), node("b", 0, 0)],
+			edges: [],
+		});
+		expect(buildScene(table, new Set(["a"]))?.headers).toEqual([]);
+	});
+
 	it("falls back to a safe colour for an unknown one", () => {
 		const odd = board({
 			nodes: [node("a", 0, 0, { data: { color: "pink" as never } })],

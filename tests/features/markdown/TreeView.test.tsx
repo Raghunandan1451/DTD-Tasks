@@ -1,4 +1,5 @@
-import { render, screen } from "@testing-library/react";
+import { render, screen, fireEvent } from "@testing-library/react";
+import { handleCreateFile } from "@src/lib/utils/treeUtils";
 import { Provider } from "react-redux";
 import { configureStore } from "@reduxjs/toolkit";
 import TreeView from "@src/features/markdown/TreeView";
@@ -79,5 +80,44 @@ describe("TreeView Component", () => {
 		expect(
 			screen.getByPlaceholderText("folder/file.md")
 		).toBeInTheDocument();
+	});
+
+	const createWith = (
+		selectedItem: { fullPath: string; name: string; type: "file" | "folder" } | null
+	) => {
+		vi.mocked(handleCreateFile).mockClear();
+		render(
+			<Provider store={store}>
+				<TreeView
+					showInput={true}
+					setShowInput={() => {}}
+					selectedItem={selectedItem}
+					setSelectedItem={() => {}}
+				/>
+			</Provider>
+		);
+		const input = screen.getByPlaceholderText("folder/file.md");
+		fireEvent.change(input, { target: { value: "idea" } });
+		fireEvent.keyDown(input, { key: "Enter" });
+	};
+
+	it("creates the new file inside the selected folder", () => {
+		createWith({ fullPath: "Folder1", name: "Folder1", type: "folder" });
+		expect(handleCreateFile).toHaveBeenCalledWith(
+			expect.anything(),
+			expect.anything(),
+			expect.anything(),
+			"Folder1/idea"
+		);
+	});
+
+	it("creates at the root when nothing or a file is selected", () => {
+		createWith({ fullPath: "File2.md", name: "File2.md", type: "file" });
+		expect(handleCreateFile).toHaveBeenCalledWith(
+			expect.anything(),
+			expect.anything(),
+			expect.anything(),
+			"idea"
+		);
 	});
 });
