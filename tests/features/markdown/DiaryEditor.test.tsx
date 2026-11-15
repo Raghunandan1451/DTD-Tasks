@@ -43,6 +43,17 @@ describe("DiaryEditor", () => {
 		expect(screen.getByTestId("page-counter")).toHaveTextContent("Page 1 of 2");
 	});
 
+	it("opens an empty note in edit mode, ready to type", () => {
+		setup("a.md", "");
+		expect(screen.getByLabelText("Page text")).toBeInTheDocument();
+		expect(screen.getByLabelText("Page text")).toHaveFocus();
+	});
+
+	it("opens a note with text in preview, not edit", () => {
+		setup("a.md", "some text");
+		expect(screen.queryByLabelText("Page text")).toBeNull();
+	});
+
 	it("turns pages with the side buttons", () => {
 		setup();
 		expect(screen.getByLabelText("Previous page")).toBeDisabled();

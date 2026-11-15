@@ -114,6 +114,10 @@ export const handleCreateFile = (
 			}),
 		);
 
+		// Open the new note straight away (the editor starts in edit mode for
+		// an empty note) instead of leaving the user to click it.
+		dispatch(selectFile(fullPath));
+
 		showNotification("File created successfully!", "success");
 	} catch (error) {
 		showNotification("Error creating file structure", "error");

@@ -79,7 +79,11 @@ const DiaryEditor: FC<DiaryEditorProps> = ({ className = "", onBack }) => {
 	const dispatch = useDispatch();
 	const confirmation = useConfirmationModal();
 
-	const [mode, setMode] = useState<EditorMode>("preview");
+	// An empty note (for example one just created) opens ready to type in;
+	// the parent remounts this editor per file, so this runs once per open.
+	const [mode, setMode] = useState<EditorMode>(() =>
+		content.trim() === "" ? "edit" : "preview",
+	);
 	const [index, setIndex] = useState(0);
 	const [preferredView, setPreferredView] = useState<1 | 2>(readView);
 	const wide = useIsWide();

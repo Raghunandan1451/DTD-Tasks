@@ -76,6 +76,19 @@ describe("Markdown Handlers", () => {
 		);
 	});
 
+	it("handleCreateFile opens the new file after creating it", () => {
+		handleCreateFile(dispatch, [], showNotification, "docs/readme");
+		expect(dispatch).toHaveBeenLastCalledWith(selectFile("docs/readme.md"));
+	});
+
+	it("handleCreateFile does not select anything when the file already exists", () => {
+		const files: File[] = [
+			{ id: "file.md", path: "file.md", type: "file", content: "x" },
+		];
+		handleCreateFile(dispatch, files, showNotification, "file.md");
+		expect(dispatch).not.toHaveBeenCalledWith(selectFile("file.md"));
+	});
+
 	it("handleCreateFile shows error for existing file", () => {
 		const files: File[] = [
 			{
