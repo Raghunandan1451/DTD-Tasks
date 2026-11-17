@@ -1,5 +1,5 @@
 # Use lightweight Node.js image
-FROM node:20-alpine
+FROM node:22-alpine
 
 # Set working directory
 WORKDIR /app
@@ -9,6 +9,9 @@ RUN corepack enable
 
 # Copy only package files first (for caching)
 COPY package.json yarn.lock ./
+
+# The Electron binary is only needed for the desktop build, never in this container
+ENV ELECTRON_SKIP_BINARY_DOWNLOAD=1
 
 # Install all dependencies (including dev)
 RUN yarn install

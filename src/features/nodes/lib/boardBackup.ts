@@ -15,6 +15,7 @@ import {
 import { SCHEMA_VERSION } from "@src/lib/utils/schemaVersion";
 import { UploadError } from "@src/lib/utils/uploadError";
 import { isBoardColor } from "@src/features/nodes/lib/palette";
+import { toBoardPins } from "@src/features/nodes/lib/serialize";
 import { GRID_LABEL_MAX } from "@src/features/nodes/lib/gridOps";
 
 export const BOARDS_BACKUP_FILE = "boards-backup.json";
@@ -87,7 +88,7 @@ const checkNode = (value: unknown): string | null => {
 		}
 	}
 	if (!isRecord(value.data)) return 'is missing its "data"';
-	const { title, text, color, shape } = value.data;
+	const { title, text, color, shape, pins } = value.data;
 	if (!isBoardColor(color)) return 'has an unknown "color"';
 	if (title !== undefined && typeof title !== "string") return 'has an invalid "title"';
 	if (typeof title === "string" && title.length > BOARD_TEXT_MAX) {
@@ -98,6 +99,15 @@ const checkNode = (value: unknown): string | null => {
 		return `has more than ${BOARD_TEXT_MAX} characters of text`;
 	}
 	if (shape !== undefined && !isShape(shape)) return 'has an unknown "shape"';
+	if (pins !== undefined) {
+		if (!isRecord(pins)) return 'has invalid "pins"';
+		for (const mode of ["graph", "tree"] as const) {
+			const point = pins[mode];
+			if (point !== undefined && !(isRecord(point) && isFiniteNumber(point.x) && isFiniteNumber(point.y))) {
+				return 'has invalid "pins"';
+			}
+		}
+	}
 	return null;
 };
 
@@ -169,6 +179,8 @@ const normalizeBoard = (raw: JsonRecord): Board => {
 		if (node.data.title !== undefined) out.data.title = node.data.title;
 		if (node.data.text !== undefined) out.data.text = node.data.text;
 		if (node.data.shape !== undefined) out.data.shape = node.data.shape;
+		const pins = toBoardPins(node.data.pins);
+		if (pins) out.data.pins = pins;
 		return out;
 	});
 	const edges = (raw.edges as BoardEdge[]).map((edge): BoardEdge => {

@@ -37,3 +37,18 @@ cd AIOLists
 yarn install
 yarn dev
 ```
+
+## 🖥️ Desktop app (Windows)
+
+The same app can run as an Electron desktop app that keeps your data in a folder you choose. The web version is unchanged.
+
+```bash
+yarn desktop:dev        # Vite dev server + Electron window
+yarn desktop:start      # build, then run the built app
+yarn desktop:dist       # build the installer into release/
+yarn desktop:typecheck  # type-check the Electron code
+```
+
+- Needs Node 22.12 or newer (Electron 45). Docker and the web build do not download the Electron binary (`ELECTRON_SKIP_BINARY_DOWNLOAD=1`); set the same variable on Vercel.
+- On first start the app asks for a data folder and will not run without one. If the folder later goes missing or can't be written, you get a recovery screen; it never silently creates a new one.
+- The installer is **unsigned** for now, so Windows SmartScreen shows a warning ("More info" → "Run anyway"). Updates are manual: download the new installer from the GitHub Releases page and run it over the old one.

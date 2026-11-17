@@ -1,86 +1,23 @@
-import { useCallback, useRef, useState } from "react";
-import type React from "react";
-import {
-	MarkerType,
-	applyEdgeChanges,
-	applyNodeChanges,
-	useReactFlow,
-	useStoreApi,
-	type Connection,
-	type EdgeChange,
-	type NodeChange,
-	type Viewport,
-	type XYPosition,
-} from "@xyflow/react";
+import React, { useCallback, useRef, useState } from "react";
+import { MarkerType, useReactFlow, useStoreApi, type Viewport, type XYPosition } from "@xyflow/react";
 import { newId } from "@src/lib/db/newId";
-import type { BoardContent } from "@src/lib/storage";
-import type {
-	Board,
-	BoardColor,
-	BoardLayoutMode,
-	BoardNode,
-	BoardNodeType,
-	BoardShape,
-} from "@src/lib/db/types";
-import type { OutlineGraph } from "@src/features/nodes/lib/outline";
-import {
-	DEFAULT_NODE_SIZE,
-	EDGE_TYPE_LABELED,
-	GRID_SIZE,
-	PASTE_OFFSET,
-} from "@src/features/nodes/lib/constants";
-import {
-	copySelection,
-	pasteClipboard,
-	type ClipboardData,
-} from "@src/features/nodes/lib/clipboard";
-import {
-	canRedo,
-	canUndo,
-	commitChange,
-	createHistory,
-	redo as redoHistory,
-	snapshotsEqual,
-	undo as undoHistory,
-	type History,
-	type Snapshot,
-} from "@src/features/nodes/lib/history";
+import { type BoardContent } from "@src/lib/storage";
+import { type Board, type BoardColor, type BoardNodeType, type BoardShape } from "@src/lib/db/types";
+import { type OutlineGraph } from "@src/features/nodes/lib/outline";
+import { DEFAULT_NODE_SIZE } from "@src/features/nodes/lib/constants";
+import { canRedo, canUndo, commitChange, createHistory, redo as redoHistory, snapshotsEqual, undo as undoHistory, type History, type Snapshot } from "@src/features/nodes/lib/history";
 import { DEFAULT_BOARD_COLOR } from "@src/features/nodes/lib/palette";
-import { makeShapeNode } from "@src/features/nodes/lib/newBoard";
-import {
-	addColumn as gridAddColumn,
-	addRow as gridAddRow,
-	defaultColumns,
-	removeColumn as gridRemoveColumn,
-	GRID_LABEL_MAX,
-	removeLabel,
-	removeRow as gridRemoveRow,
-	setLabel,
-	type GridResult,
-} from "@src/features/nodes/lib/gridOps";
-import {
-	childrenOf,
-	descendantsOf,
-	indent,
-	moveInList,
-	moveSibling,
-	moveToTarget,
-	outdent,
-	parentMap,
-	reparent,
-	treeRows,
-} from "@src/features/nodes/lib/structure";
-import {
-	fromBoardEdges,
-	fromBoardNode,
-	fromBoardNodes,
-	toBoardEdges,
-	toBoardNodes,
-	type FlowEdge,
-	type FlowNode,
-	type FlowNodeData,
-} from "@src/features/nodes/lib/serialize";
-import type { DirtyKind } from "@src/features/nodes/lib/useAutosave";
+import { defaultColumns } from "@src/features/nodes/lib/gridOps";
+import { moveToTarget } from "@src/features/nodes/lib/structure";
+import { fromBoardEdges, fromBoardNode, fromBoardNodes, toBoardEdges, toBoardNodes, type FlowEdge, type FlowNode, type FlowNodeData } from "@src/features/nodes/lib/serialize";
+import { type DirtyKind } from "@src/features/nodes/lib/useAutosave";
+import { useGridActions } from "@src/features/nodes/lib/useGridActions";
+import { useStructureActions } from "@src/features/nodes/lib/useStructureActions";
+import { snap, type EdgePatch, type LayoutMeta } from "@src/features/nodes/lib/boardEditorShared";
+import { useFlowHandlers } from "@src/features/nodes/lib/useFlowHandlers";
+import { useClipboardActions } from "@src/features/nodes/lib/useClipboardActions";
+
+export type { EdgePatch, LayoutMeta };
 
 interface UseBoardEditorOptions {
 	/** The board as loaded. Only read once; the editor owns the content after that. */
@@ -96,40 +33,6 @@ interface AddNodeOptions {
 	shape?: BoardShape;
 }
 
-export interface EdgePatch {
-	label?: string;
-	arrow?: boolean;
-}
-
-export interface LayoutMeta {
-	layoutMode: BoardLayoutMode;
-	/** Outline editor text, kept even while it has errors. */
-	outline: string;
-	treeRootId: string | null;
-	/** Grid boards: how many columns the node list is cut into. */
-	gridColumns: number;
-	/** Grid boards: names by row / column index. Empty means no names. */
-	gridRowLabels: string[];
-	gridColumnLabels: string[];
-	/** Grid boards: title of the corner cell. */
-	gridCornerLabel: string;
-}
-
-/** Shared across boards, so a selection can be copied from one and pasted into another. */
-let clipboard: ClipboardData | null = null;
-
-const makeEdge = (source: string, target: string): FlowEdge => ({
-	id: newId(),
-	source,
-	target,
-	type: EDGE_TYPE_LABELED,
-	markerEnd: { type: MarkerType.ArrowClosed },
-});
-
-const snap = (value: number): number => Math.round(value / GRID_SIZE) * GRID_SIZE;
-
-const sameViewport = (a: Viewport, b: Viewport): boolean =>
-	a.x === b.x && a.y === b.y && a.zoom === b.zoom;
 
 /**
  * All state and actions for the open board: nodes, edges, undo/redo, clipboard.
@@ -168,7 +71,6 @@ export const useBoardEditor = ({ board, onDirty, onNotice }: UseBoardEditorOptio
 	const gestureRef = useRef<Snapshot | null>(null);
 	/** State from before a delete; committed once the current event finishes. */
 	const batchRef = useRef<Snapshot | null>(null);
-	const pasteCountRef = useRef(0);
 
 	const onDirtyRef = useRef(onDirty);
 	onDirtyRef.current = onDirty;
@@ -284,86 +186,24 @@ export const useBoardEditor = ({ board, onDirty, onNotice }: UseBoardEditorOptio
 		});
 	}, [commit, snapshot]);
 
-	// --- React Flow change handlers ----------------------------------------
+	// --- React Flow change handlers (own hook) ---
+	const { onNodesChange, onEdgesChange, onNodeDragStop, onConnect, onMoveEnd } =
+		useFlowHandlers({
+			mutate,
+			setNodes,
+			setEdges,
+			snapshot,
+			beginBatch,
+			commitGesture,
+			nodesRef,
+			edgesRef,
+			metaRef,
+			gestureRef,
+			viewportRef,
+			onDirtyRef,
+			onNoticeRef,
+		});
 
-	const onNodesChange = useCallback(
-		(allChanges: NodeChange<FlowNode>[]) => {
-			// Outside free boards, positions come from the layout: a drag only picks a drop target.
-			const changes =
-				metaRef.current.layoutMode === "free"
-					? allChanges
-					: allChanges.filter((change) => change.type !== "position");
-			if (changes.length === 0) return;
-			let persisted = false;
-			let structural = false;
-			for (const change of changes) {
-				if (change.type === "position") {
-					persisted = true;
-					if (change.dragging && !gestureRef.current) gestureRef.current = snapshot();
-				} else if (change.type === "dimensions") {
-					// Plain measurements (no `resizing` flag) are not edits.
-					if (change.resizing !== undefined) persisted = true;
-					if (change.resizing === true && !gestureRef.current) {
-						gestureRef.current = snapshot();
-					}
-				} else if (change.type === "remove" || change.type === "add" || change.type === "replace") {
-					persisted = true;
-					structural = true;
-				}
-			}
-
-			if (structural) beginBatch();
-			setNodes(applyNodeChanges(changes, nodesRef.current));
-
-			if (changes.some((c) => c.type === "dimensions" && c.resizing === false)) {
-				commitGesture();
-			}
-			if (persisted && !structural) onDirtyRef.current("content");
-		},
-		[beginBatch, commitGesture, setNodes, snapshot],
-	);
-
-	const onEdgesChange = useCallback(
-		(changes: EdgeChange<FlowEdge>[]) => {
-			const structural = changes.some(
-				(c) => c.type === "remove" || c.type === "add" || c.type === "replace",
-			);
-			if (structural) beginBatch();
-			setEdges(applyEdgeChanges(changes, edgesRef.current));
-		},
-		[beginBatch, setEdges],
-	);
-
-	const onNodeDragStop = useCallback(() => {
-		commitGesture();
-	}, [commitGesture]);
-
-	const onConnect = useCallback(
-		(connection: Connection) => {
-			const { source, target } = connection;
-			if (!source || !target || source === target) return;
-			mutate((_nodes, current) => {
-				const exists = current.some((edge) => edge.source === source && edge.target === target);
-				if (exists) return {};
-				if (metaRef.current.layoutMode === "tree") {
-					const result = reparent(current, target, source, makeEdge);
-					if (!result.ok) {
-						onNoticeRef.current?.(result.reason);
-						return {};
-					}
-					return { edges: result.edges };
-				}
-				return { edges: [...current, makeEdge(source, target)] };
-			});
-		},
-		[mutate],
-	);
-
-	const onMoveEnd = useCallback((_event: unknown, viewport: Viewport) => {
-		if (sameViewport(viewport, viewportRef.current)) return;
-		viewportRef.current = { x: viewport.x, y: viewport.y, zoom: viewport.zoom };
-		onDirtyRef.current("viewport");
-	}, []);
 
 	// --- Actions ------------------------------------------------------------
 
@@ -437,6 +277,29 @@ export const useBoardEditor = ({ board, onDirty, onNotice }: UseBoardEditorOptio
 		[mutate],
 	);
 
+	/** Remembers where a node was dragged on a graph or tree board (one undo step). */
+	const pinNode = useCallback(
+		(id: string, mode: "graph" | "tree", position: { x: number; y: number }) => {
+			mutate((current) => ({
+				nodes: current.map((node) =>
+					node.id === id
+						? {
+								...node,
+								data: {
+									...node.data,
+									pins: {
+										...node.data.pins,
+										[mode]: { x: Math.round(position.x), y: Math.round(position.y) },
+									},
+								},
+							}
+						: node,
+				),
+			}));
+		},
+		[mutate],
+	);
+
 	/** Sets the colour of every selected node. */
 	const setSelectedColor = useCallback(
 		(color: BoardColor) => {
@@ -483,10 +346,21 @@ export const useBoardEditor = ({ board, onDirty, onNotice }: UseBoardEditorOptio
 		});
 	}, [mutate]);
 
-	// --- Structure actions (used by the right-hand panel and drag-and-drop) ---
-
-	const refuse = useCallback((reason: string) => onNoticeRef.current?.(reason), []);
-
+	// --- Structure and grid actions (their own hooks, same shared state) ---
+	const {
+		addChild,
+		addSibling,
+		reparentNode,
+		indentNode,
+		outdentNode,
+		moveNode,
+		link,
+		unlink,
+		removeNodes,
+		removeSubtree,
+	} = useStructureActions({ mutate, nodesRef, edgesRef, metaRef, onNoticeRef, addNode });
+	const { addGridRow, addGridColumn, removeGridRow, removeGridColumn, setGridLabel } =
+		useGridActions({ mutate, metaRef, setMetaState });
 	/** Sets the shape of every selected shape node. */
 	const setSelectedShape = useCallback(
 		(shape: BoardShape) => {
@@ -518,241 +392,6 @@ export const useBoardEditor = ({ board, onDirty, onNotice }: UseBoardEditorOptio
 		[setEdges, setNodes],
 	);
 
-	/** Adds a node linked from `parentId`, as its index-th child (last by default). */
-	const addChild = useCallback(
-		(
-			parentId: string,
-			type: BoardNodeType = "shape",
-			options: { index?: number; shape?: BoardShape } = {},
-		): string => {
-			const parent = nodesRef.current.find((node) => node.id === parentId);
-			const size = DEFAULT_NODE_SIZE[type];
-			const id = newId();
-			const node: FlowNode = {
-				...fromBoardNode({
-					id,
-					type,
-					position: {
-						x: snap(parent?.position.x ?? 0),
-						y: snap(
-							(parent?.position.y ?? 0) + (parent?.height ?? DEFAULT_NODE_SIZE.shape.height) + 48,
-						),
-					},
-					width: size.width,
-					height: size.height,
-					data: {
-						color: DEFAULT_BOARD_COLOR,
-						...(type === "shape" ? { shape: options.shape ?? "rounded" } : {}),
-					},
-				}),
-				selected: true,
-			};
-			mutate((currentNodes, currentEdges) => {
-				const linked = reparent(currentEdges, id, parentId, makeEdge, options.index);
-				return {
-					nodes: [...currentNodes.map((n) => (n.selected ? { ...n, selected: false } : n)), node],
-					edges: linked.ok ? linked.edges : currentEdges,
-				};
-			});
-			return id;
-		},
-		[mutate],
-	);
-
-	/** Adds a node right after `id` under the same parent (or as a new top-level node). */
-	const addSibling = useCallback(
-		(id: string, type: BoardNodeType = "shape"): string => {
-			const parent = parentMap(edgesRef.current).get(id);
-			if (!parent) return addNode(type);
-			const index = childrenOf(edgesRef.current, parent).indexOf(id) + 1;
-			return addChild(parent, type, { index });
-		},
-		[addChild, addNode],
-	);
-
-	/** Makes `id` a child of `parentId` (or top level when null). Refuses loops. */
-	const reparentNode = useCallback(
-		(id: string, parentId: string | null, index?: number) => {
-			mutate((_nodes, current) => {
-				const result = reparent(current, id, parentId, makeEdge, index);
-				if (!result.ok) {
-					refuse(result.reason);
-					return {};
-				}
-				return { edges: result.edges };
-			});
-		},
-		[mutate, refuse],
-	);
-
-	const indentNode = useCallback(
-		(id: string) => {
-			mutate((currentNodes, current) => {
-				const rows = treeRows(currentNodes, current, metaRef.current.treeRootId);
-				const result = indent(current, id, makeEdge, rows);
-				if (!result.ok) {
-					refuse(result.reason);
-					return {};
-				}
-				return { edges: result.edges };
-			});
-		},
-		[mutate, refuse],
-	);
-
-	const outdentNode = useCallback(
-		(id: string) => {
-			mutate((_nodes, current) => {
-				const result = outdent(current, id, makeEdge);
-				if (!result.ok) {
-					refuse(result.reason);
-					return {};
-				}
-				return { edges: result.edges };
-			});
-		},
-		[mutate, refuse],
-	);
-
-	/** Tree: swap with the previous/next sibling. Other types: move in the node list. */
-	const moveNode = useCallback(
-		(id: string, direction: -1 | 1) => {
-			if (metaRef.current.layoutMode === "tree") {
-				mutate((_nodes, current) => ({
-					edges: moveSibling(current, id, direction),
-				}));
-			} else {
-				mutate((current) => ({ nodes: moveInList(current, id, direction) }));
-			}
-		},
-		[mutate],
-	);
-
-	/** Adds a link source -> target. In a tree this re-parents the target instead. */
-	const link = useCallback(
-		(source: string, target: string) => {
-			if (source === target) return;
-			mutate((_nodes, current) => {
-				if (current.some((edge) => edge.source === source && edge.target === target)) return {};
-				if (metaRef.current.layoutMode === "tree") {
-					const result = reparent(current, target, source, makeEdge);
-					if (!result.ok) {
-						refuse(result.reason);
-						return {};
-					}
-					return { edges: result.edges };
-				}
-				return { edges: [...current, makeEdge(source, target)] };
-			});
-		},
-		[mutate, refuse],
-	);
-
-	const unlink = useCallback(
-		(source: string, target: string) => {
-			mutate((_nodes, current) => ({
-				edges: current.filter((edge) => !(edge.source === source && edge.target === target)),
-			}));
-		},
-		[mutate],
-	);
-
-	/** Removes nodes and every link to or from them in one step. */
-	const removeNodes = useCallback(
-		(ids: readonly string[]) => {
-			const gone = new Set(ids);
-			mutate((currentNodes, currentEdges) => ({
-				nodes: currentNodes.filter((node) => !gone.has(node.id)),
-				edges: currentEdges.filter((edge) => !gone.has(edge.source) && !gone.has(edge.target)),
-			}));
-		},
-		[mutate],
-	);
-
-	/** Removes a node together with everything below it. */
-	const removeSubtree = useCallback(
-		(id: string) => removeNodes([id, ...descendantsOf(edgesRef.current, id)]),
-		[removeNodes],
-	);
-
-	/**
-	 * Applies a grid add/remove as one undo step; the column count and the names
-	 * are part of the step. `relabel` moves the names along with the rows/columns.
-	 */
-	const changeGrid = useCallback(
-		(
-			operate: (items: BoardNode[], columns: number) => GridResult<BoardNode>,
-			relabel: (rows: string[], columns: string[]) => { rows: string[]; columns: string[] } = (
-				rows,
-				columns,
-			) => ({ rows, columns }),
-		) => {
-			mutate((currentNodes, currentEdges) => {
-				const result = operate(toBoardNodes(currentNodes), metaRef.current.gridColumns);
-				const existing = new Map(currentNodes.map((node) => [node.id, node]));
-				const gone = new Set(result.removed.map((node) => node.id));
-				const labels = relabel(metaRef.current.gridRowLabels, metaRef.current.gridColumnLabels);
-				const next = {
-					...metaRef.current,
-					gridColumns: result.columns,
-					gridRowLabels: labels.rows,
-					gridColumnLabels: labels.columns,
-				};
-				metaRef.current = next;
-				setMetaState(next);
-				return {
-					nodes: result.items.map((item) => existing.get(item.id) ?? fromBoardNode(item)),
-					edges: currentEdges.filter((edge) => !gone.has(edge.source) && !gone.has(edge.target)),
-				};
-			});
-		},
-		[mutate],
-	);
-
-	const addGridRow = useCallback(
-		() => changeGrid((items, columns) => gridAddRow(items, columns, makeShapeNode)),
-		[changeGrid],
-	);
-	const addGridColumn = useCallback(
-		() => changeGrid((items, columns) => gridAddColumn(items, columns, makeShapeNode)),
-		[changeGrid],
-	);
-	const removeGridRow = useCallback(
-		(row: number) =>
-			changeGrid(
-				(items, columns) => gridRemoveRow(items, columns, row, makeShapeNode),
-				(rows, columns) => ({ rows: removeLabel(rows, row), columns }),
-			),
-		[changeGrid],
-	);
-	const removeGridColumn = useCallback(
-		(column: number) =>
-			changeGrid(
-				(items, columns) => gridRemoveColumn(items, columns, column, makeShapeNode),
-				(rows, columns) => ({ rows, columns: removeLabel(columns, column) }),
-			),
-		[changeGrid],
-	);
-
-	/** Names a row, column or the corner cell (blank clears it) as one undo step. */
-	const setGridLabel = useCallback(
-		(axis: "row" | "column" | "corner", index: number, value: string) => {
-			mutate(() => {
-				const meta = metaRef.current;
-				const next =
-					axis === "row"
-						? { ...meta, gridRowLabels: setLabel(meta.gridRowLabels, index, value) }
-						: axis === "column"
-							? { ...meta, gridColumnLabels: setLabel(meta.gridColumnLabels, index, value) }
-							: { ...meta, gridCornerLabel: value.trim().slice(0, GRID_LABEL_MAX) };
-				metaRef.current = next;
-				setMetaState(next);
-				return {};
-			});
-		},
-		[mutate],
-	);
-
 	/** What dropping a dragged node on another one does, for each board type. */
 	const applyDrop = useCallback(
 		(dragId: string, targetId: string) => {
@@ -776,49 +415,14 @@ export const useBoardEditor = ({ board, onDirty, onNotice }: UseBoardEditorOptio
 		[link, mutate, reparentNode],
 	);
 
-	/** Adds copies, selects them, and deselects everything else. */
-	const insertCopies = useCallback(
-		(data: ClipboardData, offset: number) => {
-			const copies = pasteClipboard(data, offset);
-			mutate((currentNodes, currentEdges) => ({
-				nodes: [
-					...currentNodes.map((n) => (n.selected ? { ...n, selected: false } : n)),
-					...fromBoardNodes(copies.nodes).map((n) => ({
-						...n,
-						selected: true,
-					})),
-				],
-				edges: [...currentEdges, ...fromBoardEdges(copies.edges)],
-			}));
-		},
-		[mutate],
-	);
+	// --- Copy, paste, duplicate (own hook) ---
+	const { copy, paste, duplicate } = useClipboardActions({
+		mutate,
+		nodesRef,
+		edgesRef,
+		selectedNodeIds,
+	});
 
-	const copy = useCallback(() => {
-		const data = copySelection(
-			toBoardNodes(nodesRef.current),
-			toBoardEdges(edgesRef.current),
-			selectedNodeIds(),
-		);
-		if (!data) return;
-		clipboard = data;
-		pasteCountRef.current = 0;
-	}, [selectedNodeIds]);
-
-	const paste = useCallback(() => {
-		if (!clipboard) return;
-		pasteCountRef.current += 1;
-		insertCopies(clipboard, PASTE_OFFSET * pasteCountRef.current);
-	}, [insertCopies]);
-
-	const duplicate = useCallback(() => {
-		const data = copySelection(
-			toBoardNodes(nodesRef.current),
-			toBoardEdges(edgesRef.current),
-			selectedNodeIds(),
-		);
-		if (data) insertCopies(data, PASTE_OFFSET);
-	}, [insertCopies, selectedNodeIds]);
 
 	/** Shows a stored snapshot, keeping selection and measurements of nodes that remain. */
 	const applySnapshot = useCallback(
@@ -967,6 +571,7 @@ export const useBoardEditor = ({ board, onDirty, onNotice }: UseBoardEditorOptio
 		removeNodes,
 		removeSubtree,
 		applyDrop,
+		pinNode,
 		addGridRow,
 		addGridColumn,
 		removeGridRow,

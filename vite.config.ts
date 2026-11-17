@@ -4,10 +4,10 @@ import tailwindcss from "@tailwindcss/vite";
 import tsconfigPaths from "vite-tsconfig-paths";
 
 // https://vitejs.dev/config/
-export default defineConfig({
+export default defineConfig(({ mode }) => ({
 	plugins: [react(), tailwindcss(), tsconfigPaths()],
 	build: {
-		outDir: "dist",
+		outDir: mode === "desktop" ? "dist-desktop" : "dist",
 		emptyOutDir: true,
 		target: "esnext",
 	},
@@ -30,4 +30,4 @@ export default defineConfig({
 		environment: "jsdom",
 		include: ["tests/**/*.{test,spec}.{ts,tsx}"],
 	},
-});
+}));

@@ -219,7 +219,8 @@ const BoardCanvas: React.FC<BoardCanvasProps> = ({
 	const shownNodes = useMemo((): (FlowNode | GridHeaderNode)[] => {
 		if (!layout) return editor.nodes;
 		const cells = editor.nodes.map((node) => {
-			const at = dragging?.id === node.id ? dragging.position : layout.positions[node.id];
+			const pin = layoutMode === "graph" || layoutMode === "tree" ? node.data.pins?.[layoutMode] : undefined;
+			const at = dragging?.id === node.id ? dragging.position : (pin ?? layout.positions[node.id]);
 			const size = layout.sizes?.[node.id];
 			const base = {
 				...node,
@@ -231,7 +232,7 @@ const BoardCanvas: React.FC<BoardCanvasProps> = ({
 		// Grid boards also show the row and column names; they exist only on screen.
 		const headers = (layout.headers ?? []).map(toGridHeaderNode);
 		return [...headers, ...cells];
-	}, [editor.nodes, layout, dragging, dropTargetId]);
+	}, [editor.nodes, layout, layoutMode, dragging, dropTargetId]);
 	const shownEdges = useMemo(() => {
 		if (!layout || layout.crossLinks.size === 0) return editor.edges;
 		return editor.edges.map((edge) =>
@@ -251,16 +252,20 @@ const BoardCanvas: React.FC<BoardCanvasProps> = ({
 		[getIntersectingNodes, layoutMode],
 	);
 
-	const { onNodeDragStop: finishDrag, applyDrop } = editor;
+	const { onNodeDragStop: finishDrag, applyDrop, pinNode } = editor;
 	const onNodeDragStop = useCallback(
 		(_event: unknown, node: FlowNode) => {
 			finishDrag();
 			if (layoutMode === "free") return;
 			if (dropTargetId) applyDrop(node.id, dropTargetId);
+			// Dropped on empty space: on graph and tree boards the node stays where it was put.
+			else if (dragging?.id === node.id && (layoutMode === "graph" || layoutMode === "tree")) {
+				pinNode(node.id, layoutMode, node.position);
+			}
 			setDragging(null);
 			setDropTargetId(null);
 		},
-		[applyDrop, dropTargetId, finishDrag, layoutMode],
+		[applyDrop, dragging, dropTargetId, finishDrag, layoutMode, pinNode],
 	);
 
 	// Re-centre when the arrangement changes, not on every edit.
