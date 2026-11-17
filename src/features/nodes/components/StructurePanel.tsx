@@ -129,8 +129,16 @@ const Row: React.FC<RowProps> = ({
 		if (clean === value) return;
 		actions.updateNodeData(node.id, node.type === "note" ? { title: clean } : { text: clean });
 	};
+	// Notes keep their description in `text` (the title is `title`).
+	const description = node.data.text ?? "";
+	const commitDescription = (next: string) => {
+		const clean = next.slice(0, BOARD_TEXT_MAX);
+		if (clean === description) return;
+		actions.updateNodeData(node.id, { text: clean });
+	};
 	const isTree = mode === "tree";
 	const showLinks = mode === "graph" || mode === "free";
+	const canPickLink = showLinks && linkable.length > 0;
 
 	const remove = () => {
 		if (isTree && hasChildren) {
@@ -192,7 +200,7 @@ const Row: React.FC<RowProps> = ({
 							}
 						}
 					}}
-					className="min-h-9 min-w-0 flex-1 rounded-md bg-black/5 px-2 text-sm text-gray-900 outline-none focus:ring-2 focus:ring-cyan-400 dark:bg-white/10 dark:text-gray-100 md:min-h-8"
+					className="min-h-9 min-w-28 flex-[1_1_7rem] rounded-md bg-black/5 px-2 text-sm text-gray-900 outline-none focus:ring-2 focus:ring-cyan-400 dark:bg-white/10 dark:text-gray-100 md:min-h-8"
 				/>
 				{node.type === "shape" && (
 					<select
@@ -213,6 +221,27 @@ const Row: React.FC<RowProps> = ({
 					</select>
 				)}
 			</div>
+			{node.type === "note" && (
+				<textarea
+					// Remount when the text changes elsewhere (undo/redo, canvas edit).
+					key={`${node.id}:description:${description}`}
+					aria-label="Node description"
+					placeholder="Description"
+					defaultValue={description}
+					maxLength={BOARD_TEXT_MAX}
+					rows={selected ? 3 : 1}
+					onFocus={() => actions.selectOnly([node.id])}
+					onBlur={(event) => commitDescription(event.target.value)}
+					onKeyDown={(event) => {
+						// Enter is a new line here. Escape puts back the saved text.
+						if (event.key === "Escape") {
+							event.currentTarget.value = description;
+							event.currentTarget.blur();
+						}
+					}}
+					className="mt-1 block w-full resize-none rounded-md bg-black/5 px-2 py-1.5 text-xs text-gray-900 outline-none focus:ring-2 focus:ring-cyan-400 dark:bg-white/10 dark:text-gray-100"
+				/>
+			)}
 			<div className="mt-1 flex flex-wrap items-center gap-1">
 				{isTree && (
 					<>
@@ -270,47 +299,48 @@ const Row: React.FC<RowProps> = ({
 				>
 					<Trash2 className="h-4 w-4" />
 				</Button>
-			</div>
-			{showLinks && (
-				<div className="mt-1 flex flex-wrap items-center gap-1">
-					{linkedTo.map((target) => (
-						<span
-							key={target.id}
-							className="inline-flex items-center gap-0.5 rounded-full bg-black/10 py-0.5 pl-2 pr-0.5 text-xs text-gray-800 dark:bg-white/15 dark:text-gray-100"
-						>
-							<ChevronRight className="h-3 w-3" />
-							{textOf(target) || "Untitled"}
-							<button
-								type="button"
-								aria-label={`Remove link to ${textOf(target) || "Untitled"}`}
-								className="rounded-full p-1 hover:bg-black/10 dark:hover:bg-white/20"
-								onClick={() => actions.unlink(node.id, target.id)}
+				{(canPickLink || (showLinks && linkedTo.length > 0)) && (
+					<div className="ml-auto flex flex-wrap items-center justify-end gap-1">
+						{canPickLink && (
+							<select
+								aria-label="Link to"
+								value=""
+								onChange={(event) => {
+									if (event.target.value) actions.link(node.id, event.target.value);
+								}}
+								className={`${SELECT} max-w-40`}
 							>
-								<X className="h-3 w-3" />
-							</button>
-						</span>
-					))}
-					{linkable.length > 0 && (
-						<select
-							aria-label="Link to"
-							value=""
-							onChange={(event) => {
-								if (event.target.value) actions.link(node.id, event.target.value);
-							}}
-							className={`${SELECT} max-w-40`}
-						>
-							<option value="" className="text-black">
-								Link to…
-							</option>
-							{linkable.map((target) => (
-								<option key={target.id} value={target.id} className="text-black">
-									{textOf(target) || "Untitled"}
+								<option value="" className="text-black">
+									Link to…
 								</option>
+								{linkable.map((target) => (
+									<option key={target.id} value={target.id} className="text-black">
+										{textOf(target) || "Untitled"}
+									</option>
+								))}
+							</select>
+						)}
+						{showLinks &&
+							linkedTo.map((target) => (
+								<span
+									key={target.id}
+									className="inline-flex items-center gap-0.5 rounded-full bg-black/10 py-0.5 pl-2 pr-0.5 text-xs text-gray-800 dark:bg-white/15 dark:text-gray-100"
+								>
+									<ChevronRight className="h-3 w-3" />
+									{textOf(target) || "Untitled"}
+									<button
+										type="button"
+										aria-label={`Remove link to ${textOf(target) || "Untitled"}`}
+										className="rounded-full p-1 hover:bg-black/10 dark:hover:bg-white/20"
+										onClick={() => actions.unlink(node.id, target.id)}
+									>
+										<X className="h-3 w-3" />
+									</button>
+								</span>
 							))}
-						</select>
-					)}
-				</div>
-			)}
+					</div>
+				)}
+			</div>
 		</li>
 	);
 };
@@ -428,29 +458,29 @@ const StructurePanel: React.FC<StructurePanelProps> = ({
 						<Type className="h-4 w-4" />
 						Text
 					</Button>
-				</div>
-				<div className="flex flex-wrap items-center gap-1">
-					<label className="text-xs text-gray-700 dark:text-gray-200" htmlFor="panel-shape">
-						Shape
-					</label>
-					<select
-						id="panel-shape"
-						value={shape}
-						onChange={(event) => {
-							const next = event.target.value as BoardShape;
-							setShape(next);
-							// Also reshape any selected shape nodes.
-							if (canShape) actions.setSelectedShape(next);
-						}}
-						className={SELECT}
-						title={canShape ? "Applies to selected shapes and new shapes" : "Used for new shapes"}
-					>
-						{BOARD_SHAPES.map((value) => (
-							<option key={value} value={value} className="text-black">
-								{SHAPE_LABEL[value]}
-							</option>
-						))}
-					</select>
+					<div className="ml-auto flex items-center gap-1">
+						<label className="text-xs text-gray-700 dark:text-gray-200" htmlFor="panel-shape">
+							Shape
+						</label>
+						<select
+							id="panel-shape"
+							value={shape}
+							onChange={(event) => {
+								const next = event.target.value as BoardShape;
+								setShape(next);
+								// Also reshape any selected shape nodes.
+								if (canShape) actions.setSelectedShape(next);
+							}}
+							className={SELECT}
+							title={canShape ? "Applies to selected shapes and new shapes" : "Used for new shapes"}
+						>
+							{BOARD_SHAPES.map((value) => (
+								<option key={value} value={value} className="text-black">
+									{SHAPE_LABEL[value]}
+								</option>
+							))}
+						</select>
+					</div>
 				</div>
 				<div className="flex flex-wrap items-center gap-1" role="group" aria-label="Colour">
 					{BOARD_COLORS.map((color) => (
