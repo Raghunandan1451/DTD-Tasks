@@ -1,5 +1,5 @@
 import JSZip from "jszip";
-import { listBoards, mergeBoards, type BoardMergeResult } from "@src/lib/db/boardsRepo";
+import { listBoards, mergeBoards, type BoardMergeResult } from "@src/lib/storage";
 import {
 	BOARD_LAYOUT_MODES,
 	BOARD_NODE_TYPES,

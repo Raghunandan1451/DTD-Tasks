@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { saveBoardContent, type BoardContent } from "@src/lib/db/boardsRepo";
+import { saveBoardContent, type BoardContent } from "@src/lib/storage";
 import type { Board } from "@src/lib/db/types";
 import { AUTOSAVE_MS } from "@src/features/nodes/lib/constants";
 

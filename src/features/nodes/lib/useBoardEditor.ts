@@ -13,7 +13,7 @@ import {
 	type XYPosition,
 } from "@xyflow/react";
 import { newId } from "@src/lib/db/newId";
-import type { BoardContent } from "@src/lib/db/boardsRepo";
+import type { BoardContent } from "@src/lib/storage";
 import type {
 	Board,
 	BoardColor,

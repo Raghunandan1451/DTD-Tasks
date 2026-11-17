@@ -1,19 +1,22 @@
-import { getDB, getValue, setValue, withErrorStatus } from "@src/lib/db/database";
+import {
+	getDB,
+	getValue,
+	setValue,
+	withErrorStatus,
+} from "@src/lib/db/database";
 import { newId } from "@src/lib/db/newId";
-import type { Board, BoardLayoutMode, BoardViewport } from "@src/lib/db/types";
+import type { Board, BoardLayoutMode } from "@src/lib/db/types";
+import {
+	NOT_FOUND_MESSAGE,
+	buildBoard,
+	copyOfBoard,
+	defaultBoardName,
+	renamedBoard,
+	withBoardContent,
+} from "@src/lib/storage/boardLogic";
+import type { BoardContent, BoardMergeResult } from "@src/lib/storage/types";
 
 const LAST_BOARD_KEY = "nodes_last_board_id";
-const DEFAULT_BOARD_NAME = "Untitled board";
-const DEFAULT_VIEWPORT: BoardViewport = { x: 0, y: 0, zoom: 1 };
-
-const NOT_FOUND_MESSAGE = "That board no longer exists.";
-
-export interface BoardMergeResult {
-	added: number;
-	skipped: number;
-}
-
-const cleanName = (name: string): string => name.trim() || DEFAULT_BOARD_NAME;
 
 /** All boards, most recently updated first. */
 export const listBoards = async (): Promise<Board[]> => {
@@ -34,23 +37,18 @@ export const countBoards = async (): Promise<number> => {
 
 /** Creates a board of the given type. The type is chosen here and never changed afterwards. */
 export const createBoard = (
-	name: string = DEFAULT_BOARD_NAME,
+	name: string = defaultBoardName(),
 	layoutMode: BoardLayoutMode = "free",
 	initial: Partial<Pick<Board, "nodes" | "edges" | "gridColumns">> = {},
 ): Promise<Board> =>
 	withErrorStatus(async () => {
-		const now = Date.now();
-		const board: Board = {
-			id: newId(),
-			name: cleanName(name),
-			nodes: initial.nodes ?? [],
-			edges: initial.edges ?? [],
-			viewport: { ...DEFAULT_VIEWPORT },
+		const board = buildBoard(
+			newId(),
+			Date.now(),
+			name,
 			layoutMode,
-			...(initial.gridColumns ? { gridColumns: initial.gridColumns } : {}),
-			createdAt: now,
-			updatedAt: now,
-		};
+			initial,
+		);
 		const db = await getDB();
 		await db.add("boards", board);
 		return board;
@@ -71,11 +69,7 @@ export const renameBoard = (id: string, name: string): Promise<Board> =>
 		const tx = db.transaction("boards", "readwrite");
 		const existing = await tx.store.get(id);
 		if (!existing) throw new Error(NOT_FOUND_MESSAGE);
-		const next: Board = {
-			...existing,
-			name: cleanName(name),
-			updatedAt: Date.now(),
-		};
+		const next = renamedBoard(existing, name, Date.now());
 		await tx.store.put(next);
 		await tx.done;
 		return next;
@@ -88,14 +82,7 @@ export const duplicateBoard = (id: string): Promise<Board> =>
 		const tx = db.transaction("boards", "readwrite");
 		const existing = await tx.store.get(id);
 		if (!existing) throw new Error(NOT_FOUND_MESSAGE);
-		const now = Date.now();
-		const copy: Board = {
-			...structuredClone(existing),
-			id: newId(),
-			name: `${existing.name} (copy)`,
-			createdAt: now,
-			updatedAt: now,
-		};
+		const copy = copyOfBoard(existing, newId(), Date.now());
 		await tx.store.add(copy);
 		await tx.done;
 		return copy;
@@ -141,24 +128,11 @@ export const mergeBoards = (boards: Board[]): Promise<BoardMergeResult> =>
 		return result;
 	});
 
-export const getLastBoardId = (): Promise<string | null> => getValue<string>(LAST_BOARD_KEY);
+export const getLastBoardId = (): Promise<string | null> =>
+	getValue<string>(LAST_BOARD_KEY);
 
-export const setLastBoardId = (id: string): Promise<void> => setValue(LAST_BOARD_KEY, id);
-
-/** The part of a board the canvas edits. Name and dates belong to the board list. */
-export type BoardContent = Pick<Board, "nodes" | "edges" | "viewport"> &
-	Partial<
-		Pick<
-			Board,
-			| "layoutMode"
-			| "outline"
-			| "treeRootId"
-			| "gridColumns"
-			| "gridRowLabels"
-			| "gridColumnLabels"
-			| "gridCornerLabel"
-		>
-	>;
+export const setLastBoardId = (id: string): Promise<void> =>
+	setValue(LAST_BOARD_KEY, id);
 
 /**
  * Saves canvas content onto the stored board, keeping its current name and
@@ -179,28 +153,12 @@ export const saveBoardContent = (
 			await tx.done;
 			return null;
 		}
-		const next: Board = {
-			...existing,
-			nodes: content.nodes,
-			edges: content.edges,
-			viewport: content.viewport,
-			updatedAt: options.touch === false ? existing.updatedAt : Date.now(),
-		};
-		// An absent key clears the field, so removing the tree root really removes it.
-		delete next.layoutMode;
-		delete next.outline;
-		delete next.treeRootId;
-		delete next.gridColumns;
-		delete next.gridRowLabels;
-		delete next.gridColumnLabels;
-		delete next.gridCornerLabel;
-		if (content.layoutMode) next.layoutMode = content.layoutMode;
-		if (content.outline) next.outline = content.outline;
-		if (content.treeRootId) next.treeRootId = content.treeRootId;
-		if (content.gridColumns) next.gridColumns = content.gridColumns;
-		if (content.gridRowLabels?.length) next.gridRowLabels = content.gridRowLabels;
-		if (content.gridColumnLabels?.length) next.gridColumnLabels = content.gridColumnLabels;
-		if (content.gridCornerLabel) next.gridCornerLabel = content.gridCornerLabel;
+		const next = withBoardContent(
+			existing,
+			content,
+			Date.now(),
+			options.touch !== false,
+		);
 		await tx.store.put(next);
 		await tx.done;
 		return next;

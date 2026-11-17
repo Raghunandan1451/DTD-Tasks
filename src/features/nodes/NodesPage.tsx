@@ -10,7 +10,7 @@ import TitleWithButton from "@src/components/shared/title_with_button/TitleWithB
 import useNotifications from "@src/lib/hooks/useNotifications";
 import { useConfirmationModal } from "@src/lib/hooks/useConfirmDialog";
 import { handleBoardsExport } from "@src/lib/utils/downloadHandler";
-import { getBoard, listBoards } from "@src/lib/db/boardsRepo";
+import { getBoard, listBoards } from "@src/lib/storage";
 import { importBoardsFile, serializeBoards } from "@src/features/nodes/lib/boardBackup";
 import {
 	buildBoardExports,

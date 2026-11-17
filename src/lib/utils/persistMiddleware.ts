@@ -2,6 +2,8 @@ import { Middleware, Action } from "@reduxjs/toolkit";
 import { RootState } from "@src/lib/store/store";
 import { debounce } from "@src/lib/utils/debounce";
 import { getValue, setValue } from "@src/lib/db/database";
+import { getNotesStore } from "@src/lib/storage";
+import type { FileState } from "@src/features/markdown/type";
 import {
 	ensureMarkdownBaseline,
 	logPersistedMarkdown,
@@ -14,7 +16,32 @@ const sliceStorageKeys: Record<string, string> = {
 	finance: "redux_finance_data",
 };
 
-const debouncedSaves: Record<string, (state: unknown) => void> = {};
+/**
+ * How each slice is written. Notes go through the active notes store (IndexedDB
+ * in the browser, a folder on desktop); the rest are still plain IndexedDB values.
+ */
+const saveSlice = (sliceName: string, key: string, state: unknown): Promise<void> =>
+	sliceName === "fileManager"
+		? getNotesStore().saveTree(state as FileState)
+		: saveToIndexedDB(key, state);
+
+const debouncedSaves: Record<
+	string,
+	((state: unknown) => void) & { flush: () => void }
+> = {};
+
+/**
+ * Writes any save still waiting for its debounce timer, then lets the notes
+ * store finish its own queue. Call before the page or window goes away.
+ */
+export const flushPendingSaves = async (): Promise<void> => {
+	for (const save of Object.values(debouncedSaves)) save.flush();
+	// Saves that already started (from the flush above or earlier) must finish too.
+	await Promise.allSettled([...inFlightSaves]);
+	await getNotesStore().flush();
+};
+
+const inFlightSaves = new Set<Promise<void>>();
 
 /** Runs only after a slice was actually written, never for a failed save. */
 const afterSave: Record<string, (savedState: unknown) => void> = {
@@ -53,11 +80,15 @@ export const persistMiddleware: Middleware =
 
 				if (!debouncedSaves[key]) {
 					debouncedSaves[key] = debounce((stateToSave) => {
-						saveToIndexedDB(key, stateToSave)
+						const saving: Promise<void> = saveSlice(sliceName, key, stateToSave)
 							.then(() => afterSave[sliceName]?.(stateToSave))
 							.catch((error) => {
 								console.error(`Failed to persist ${key}`, error);
+							})
+							.finally(() => {
+								inFlightSaves.delete(saving);
 							});
+						inFlightSaves.add(saving);
 					}, 1000);
 				}
 
