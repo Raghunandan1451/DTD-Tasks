@@ -5,6 +5,7 @@ import os from "node:os";
 import path from "node:path";
 import {
 	UnsafePathError,
+	folderToOpen,
 	inspectFolder,
 	listDir,
 	makeDir,
@@ -13,6 +14,7 @@ import {
 	renamePath,
 	resolveInside,
 	trashPath,
+	writeBinary,
 	writeText,
 } from "@shell/folderService";
 import { readConfig, writeConfig } from "@shell/appConfig";
@@ -51,14 +53,14 @@ describe("inspectFolder", () => {
 	});
 
 	it("reports a damaged marker and a marker from a newer version", async () => {
-		await fs.mkdir(path.join(root, ".aiolists"));
-		await fs.writeFile(path.join(root, ".aiolists", "meta.json"), "{nope");
+		await fs.mkdir(path.join(root, ".dtdtasks"));
+		await fs.writeFile(path.join(root, ".dtdtasks", "meta.json"), "{nope");
 		expect(await inspectFolder(root)).toEqual({
 			kind: "problem",
 			problem: "damaged-marker",
 		});
 		await fs.writeFile(
-			path.join(root, ".aiolists", "meta.json"),
+			path.join(root, ".dtdtasks", "meta.json"),
 			JSON.stringify({ app: "AIOLists", formatVersion: 99 }),
 		);
 		expect(await inspectFolder(root)).toEqual({
@@ -125,14 +127,14 @@ describe("file operations", () => {
 	});
 
 	it("hides the marker folder from listings and refuses to touch it", async () => {
-		expect((await listDir(root, "")).map((e) => e.name)).not.toContain(".aiolists");
-		await expect(writeText(root, ".aiolists/meta.json", "x")).rejects.toBeInstanceOf(
+		expect((await listDir(root, "")).map((e) => e.name)).not.toContain(".dtdtasks");
+		await expect(writeText(root, ".dtdtasks/meta.json", "x")).rejects.toBeInstanceOf(
 			UnsafePathError,
 		);
 		await expect(
-			renamePath(root, ".aiolists/meta.json", "gone.json"),
+			renamePath(root, ".dtdtasks/meta.json", "gone.json"),
 		).rejects.toBeInstanceOf(UnsafePathError);
-		await expect(trashPath(root, ".aiolists", async () => {})).rejects.toBeInstanceOf(
+		await expect(trashPath(root, ".dtdtasks", async () => {})).rejects.toBeInstanceOf(
 			UnsafePathError,
 		);
 		await expect(trashPath(root, ".", async () => {})).rejects.toBeInstanceOf(
@@ -155,5 +157,45 @@ describe("appConfig", () => {
 		expect(await readConfig(root)).toEqual({ dataFolder: "D:\\Notes" });
 		await fs.writeFile(path.join(root, "config.json"), "{broken");
 		expect(await readConfig(root)).toEqual({});
+	});
+});
+
+describe("binary files and the explorer folder", () => {
+	it("writes the exact bytes of a PDF, making missing folders", async () => {
+		const bytes = Buffer.from([0x25, 0x50, 0x44, 0x46, 0x00, 0xff]);
+		await writeBinary(root, "Notes/pdf/a.pdf", bytes.toString("base64"));
+		expect(await fs.readFile(path.join(root, "Notes", "pdf", "a.pdf"))).toEqual(bytes);
+	});
+
+	it("refuses to write binary outside the folder or into the marker", async () => {
+		await expect(writeBinary(root, "../x.pdf", "AA==")).rejects.toBeInstanceOf(UnsafePathError);
+		await expect(writeBinary(root, ".dtdtasks/meta.json", "AA==")).rejects.toBeInstanceOf(UnsafePathError);
+	});
+
+	it("gives the folder to open, creating it, and never one outside", async () => {
+		expect(await folderToOpen(root, "Notes")).toBe(path.join(root, "Notes"));
+		expect((await fs.stat(path.join(root, "Notes"))).isDirectory()).toBe(true);
+		await expect(folderToOpen(root, "../..")).rejects.toBeInstanceOf(UnsafePathError);
+	});
+});
+
+describe("folders made before the marker rename", () => {
+	it("moves .aiolists to .dtdtasks once and opens the folder", async () => {
+		await fs.mkdir(path.join(root, ".aiolists"));
+		await fs.writeFile(
+			path.join(root, ".aiolists", "meta.json"),
+			JSON.stringify({ app: "AIOLists", formatVersion: 1 }),
+		);
+		await fs.writeFile(path.join(root, ".aiolists", "notes-index.json"), "{}");
+		expect(await inspectFolder(root)).toEqual({ kind: "ok" });
+		expect(await fs.readdir(root)).toEqual([".dtdtasks"]);
+		expect(await fs.readFile(path.join(root, ".dtdtasks", "notes-index.json"), "utf8")).toBe("{}");
+	});
+
+	it("leaves a .aiolists folder that is not ours alone", async () => {
+		await fs.mkdir(path.join(root, ".aiolists"));
+		await fs.writeFile(path.join(root, ".aiolists", "meta.json"), "{nope");
+		expect(await inspectFolder(root)).toEqual({ kind: "not-empty" });
+		expect(await fs.readdir(root)).toEqual([".aiolists"]);
 	});
 });

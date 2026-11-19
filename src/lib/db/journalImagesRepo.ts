@@ -1,22 +1,11 @@
-import { getDB, withErrorStatus } from "@src/lib/db/database";
-import { newId } from "@src/lib/db/newId";
+import { getStorage } from "@src/lib/storage";
 
 /** Stores an already-resized image and returns its id. */
 export const putJournalImage = (blob: Blob): Promise<string> =>
-	withErrorStatus(async () => {
-		const db = await getDB();
-		const id = newId();
-		await db.put("journalImages", { id, blob });
-		return id;
-	});
+	getStorage().journal.putImage(blob);
 
-export const getJournalImage = async (id: string): Promise<Blob | null> => {
-	const db = await getDB();
-	return (await db.get("journalImages", id))?.blob ?? null;
-};
+export const getJournalImage = (id: string): Promise<Blob | null> =>
+	getStorage().journal.getImage(id);
 
 export const deleteJournalImage = (id: string): Promise<void> =>
-	withErrorStatus(async () => {
-		const db = await getDB();
-		await db.delete("journalImages", id);
-	});
+	getStorage().journal.deleteImage(id);

@@ -1,6 +1,6 @@
 import jsPDF from "jspdf";
 import JSZip from "jszip";
-import { saveAs } from "file-saver";
+import { saveFile, savedTo } from "@src/lib/utils/saveFile";
 import { ExpensesData, ShowNotificationFn } from "@src/lib/types/downloadHandlerTypes";
 
 import { ExpenseEntry, FinanceState, SimulatedExpense } from "@src/features/finance/type";
@@ -248,8 +248,9 @@ export const handleFinanceExport = async (
 
 		// Save ZIP
 		const blob = await zip.generateAsync({ type: "blob" });
-		saveAs(blob, `expense-export_${formatTimestamp()}.zip`);
-		showNotification?.("Expense data exported successfully", "success");
+		const saved = await saveFile(blob, `expense-export_${formatTimestamp()}.zip`);
+		if (saved.cancelled) return;
+		showNotification?.(`Expense data exported successfully${savedTo(saved.path)}`, "success");
 	} catch (error) {
 		console.error("Finance export error:", error);
 		showNotification?.("Failed to export finance data", "error");

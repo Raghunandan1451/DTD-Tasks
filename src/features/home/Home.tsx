@@ -37,6 +37,7 @@ const Home: React.FC = () => {
 					</p>
 				</div>
 				<div className="flex items-center gap-2">
+				{!window.desktop && (
 				<TimelineImportButton
 					showNotification={showNotification}
 					onImported={() => {
@@ -44,6 +45,8 @@ const Home: React.FC = () => {
 						setFeedVersion((value) => value + 1);
 					}}
 				/>
+				)}
+				{!window.desktop && (
 				<DownloadMenu
 					selected={selected}
 					isDataLoaded={isDataLoaded}
@@ -55,6 +58,7 @@ const Home: React.FC = () => {
 					onDeselectAll={() => setSelected(new Set())}
 					onDownload={handleDownloadSelected}
 				/>
+				)}
 				</div>
 			</div>
 

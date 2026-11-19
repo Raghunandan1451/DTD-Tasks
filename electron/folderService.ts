@@ -14,10 +14,12 @@ export type Inspection =
 	| { kind: "not-empty" }
 	| { kind: "problem"; problem: FolderProblem };
 
+const OLD_MARKER_DIR = ".aiolists";
+
 const markerPath = (root: string) => path.join(root, MARKER_FILE);
 
 async function canWrite(root: string): Promise<boolean> {
-	const probe = path.join(root, `.aiolists-write-test-${process.pid}`);
+	const probe = path.join(root, `.dtdtasks-write-test-${process.pid}`);
 	try {
 		await fs.writeFile(probe, "");
 		await fs.rm(probe, { force: true });
@@ -44,6 +46,21 @@ export async function inspectFolder(root: string): Promise<Inspection> {
 		return { kind: "problem", problem: "not-readable" };
 	}
 
+	// Folders made before the rename used ".aiolists": move our own folder over once.
+	if (!names.includes(MARKER_DIR) && names.includes(OLD_MARKER_DIR)) {
+		try {
+			const old = JSON.parse(
+				await fs.readFile(path.join(root, OLD_MARKER_DIR, "meta.json"), "utf8"),
+			);
+			if (old?.app === "AIOLists") {
+				await fs.rename(path.join(root, OLD_MARKER_DIR), path.join(root, MARKER_DIR));
+				names = await fs.readdir(root);
+			}
+		} catch {
+			/* not ours or not movable: treated as an ordinary folder below */
+		}
+	}
+
 	if (names.includes(MARKER_DIR)) {
 		try {
 			const meta = JSON.parse(await fs.readFile(markerPath(root), "utf8"));
@@ -65,10 +82,10 @@ export async function inspectFolder(root: string): Promise<Inspection> {
 	return names.length === 0 ? { kind: "empty" } : { kind: "not-empty" };
 }
 
-export async function atomicWrite(target: string, content: string): Promise<void> {
+export async function atomicWrite(target: string, content: string | Buffer): Promise<void> {
 	await fs.mkdir(path.dirname(target), { recursive: true });
 	const tmp = `${target}.${process.pid}.tmp`;
-	await fs.writeFile(tmp, content, "utf8");
+	await fs.writeFile(tmp, content, typeof content === "string" ? "utf8" : undefined);
 	await fs.rename(tmp, target);
 }
 
@@ -166,6 +183,37 @@ export async function writeText(
 		throw new UnsafePathError("That file is managed by the app");
 	}
 	await atomicWrite(target, content);
+}
+
+/** Writes a binary file (a PDF); `base64` is what the page sends over IPC. */
+export async function writeBinary(
+	root: string,
+	rel: string,
+	base64: string,
+): Promise<void> {
+	const target = await resolveInside(root, rel);
+	if (isProtected(root, target)) {
+		throw new UnsafePathError("That file is managed by the app");
+	}
+	await atomicWrite(target, Buffer.from(base64, "base64"));
+}
+
+/** Reads a binary file as base64, or null when it does not exist. */
+export async function readBinary(root: string, rel: string): Promise<string | null> {
+	const target = await resolveInside(root, rel);
+	try {
+		return (await fs.readFile(target)).toString("base64");
+	} catch (error) {
+		if ((error as NodeJS.ErrnoException).code === "ENOENT") return null;
+		throw error;
+	}
+}
+
+/** The absolute path of a folder inside the data folder, created if missing, for the file explorer. */
+export async function folderToOpen(root: string, rel: string): Promise<string> {
+	const target = await resolveInside(root, rel || ".");
+	await fs.mkdir(target, { recursive: true });
+	return target;
 }
 
 export async function listDir(root: string, rel: string): Promise<DirEntry[]> {

@@ -84,7 +84,7 @@ const ExpenseTracker = () => {
 				buttonText="Download"
 				onDownload={() => setShowDownloadOptions(true)}
 				onUploadFiles={handleUpload}
-				showUpload={true}
+				showUpload={!window.desktop}
 				showNotification={showNotification}
 			/>
 			<ExpenseSummary

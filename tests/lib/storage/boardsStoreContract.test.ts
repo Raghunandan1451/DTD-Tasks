@@ -3,7 +3,9 @@ import { IDBFactory } from "fake-indexeddb";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { resetDBForTests } from "@src/lib/db/database";
 import { indexedDbBoardsStore } from "@src/lib/storage/indexedDbStorage";
+import { createFolderBoardsStore } from "@src/lib/storage/folder/folderBoardsStore";
 import { createMemoryBoardsStore } from "@src/lib/storage/memoryStorage";
+import { fakeFs } from "./fakeFolderFs";
 import type { BoardsStore } from "@src/lib/storage";
 import type { Board } from "@src/lib/db/types";
 
@@ -31,6 +33,7 @@ const implementations: [string, () => Promise<BoardsStore>][] = [
 		},
 	],
 	["memory", async () => createMemoryBoardsStore()],
+	["folder", async () => createFolderBoardsStore(fakeFs().fs)],
 ];
 
 describe.each(implementations)("BoardsStore contract: %s", (_name, make) => {

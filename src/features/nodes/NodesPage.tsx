@@ -110,6 +110,7 @@ const NodesPage: React.FC = () => {
 					onDownload={openDownload}
 					onUpload={handleUpload}
 					showUpload
+					hideTransfer={Boolean(window.desktop)}
 					uploadAccept=".json,.zip"
 					uploadText="Upload backup"
 					showNotification={showNotification}

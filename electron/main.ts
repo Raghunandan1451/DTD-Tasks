@@ -15,13 +15,17 @@ import { promises as fs } from "node:fs";
 import type { FolderState } from "@src/lib/desktop/types";
 import { readConfig, writeConfig } from "@shell/appConfig";
 import {
+	folderToOpen,
 	inspectFolder,
 	listDir,
 	makeDir,
 	prepareFolder,
+	atomicWrite,
+	readBinary,
 	readText,
 	renamePath,
 	trashPath,
+	writeBinary,
 	writeText,
 } from "@shell/folderService";
 
@@ -37,6 +41,7 @@ const FLUSH_TIMEOUT_MS = 4000;
 if (!app.isPackaged && process.env.AIOLISTS_USER_DATA) {
 	app.setPath("userData", process.env.AIOLISTS_USER_DATA);
 }
+const testSaveDir = app.isPackaged ? undefined : process.env.AIOLISTS_TEST_SAVE_DIR;
 const testPick = app.isPackaged ? undefined : process.env.AIOLISTS_TEST_PICK_FOLDER;
 
 protocol.registerSchemesAsPrivileged([
@@ -166,6 +171,31 @@ function registerIpc() {
 	handle("fs:writeText", (rel: string, content: string) =>
 		writeText(needRoot(), rel, String(content)),
 	);
+	handle("fs:readBinary", (rel: string) => readBinary(needRoot(), rel));
+	handle("fs:writeBinary", (rel: string, base64: string) =>
+		writeBinary(needRoot(), rel, String(base64)),
+	);
+	// Exports are written straight into the data folder (no Save dialog): Exports/ or QR/.
+	handle("shell:saveFile", async (name: string, base64: string, folder?: string) => {
+		const dataRoot = needRoot();
+		const fileName = [...path.basename(String(name))].map((c) => (c.charCodeAt(0) < 32 || '<>:"/|?*\\'.includes(c) ? "_" : c)).join("") || "export";
+		const sub = folder === "QR" ? "QR" : "Exports";
+		const dir = testSaveDir ?? (await folderToOpen(dataRoot, sub));
+		if (testSaveDir) await fs.mkdir(dir, { recursive: true });
+		const ext = path.extname(fileName);
+		const stem = fileName.slice(0, fileName.length - ext.length);
+		let target = path.join(dir, fileName);
+		for (let n = 2; await fs.stat(target).then(() => true, () => false); n++) {
+			target = path.join(dir, `${stem} (${n})${ext}`);
+		}
+		await atomicWrite(target, Buffer.from(String(base64), "base64"));
+		return target;
+	});
+	handle("shell:openFolder", async (rel: string) => {
+		const target = await folderToOpen(needRoot(), String(rel ?? ""));
+		const error = await shell.openPath(target);
+		if (error) throw new Error(error);
+	});
 	handle("fs:list", (rel: string) => listDir(needRoot(), rel));
 	handle("fs:mkdir", (rel: string) => makeDir(needRoot(), rel));
 	handle("fs:rename", (from: string, to: string) => renamePath(needRoot(), from, to));

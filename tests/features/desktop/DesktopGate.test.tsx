@@ -22,6 +22,7 @@ const fakeDesktop = (initial: FolderState, next: Partial<Record<"choose" | "conf
 				beforeClose = null;
 			};
 		}),
+		shell: { openFolder: vi.fn(async () => {}), saveFile: vi.fn(async () => "") },
 	} satisfies DesktopApi;
 	window.desktop = api;
 	return { api, runBeforeClose: () => beforeClose?.() };

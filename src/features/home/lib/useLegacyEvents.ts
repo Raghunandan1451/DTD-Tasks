@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import { saveAs } from "file-saver";
+import { saveFile, savedTo } from "@src/lib/utils/saveFile";
 import {
 	LEGACY_EVENTS_PENDING_KEY,
 	deleteValue,
@@ -51,8 +51,9 @@ export const useLegacyEvents = (showNotification?: ShowNotificationFn) => {
 			const blob = new Blob([JSON.stringify(pending, null, 2)], {
 				type: "application/json",
 			});
-			saveAs(blob, `events-backup_${timestamp()}.json`);
-			showNotification?.("Events backup downloaded", "success");
+			const saved = await saveFile(blob, `events-backup_${timestamp()}.json`);
+			if (saved.cancelled) return;
+			showNotification?.(`Events backup downloaded${savedTo(saved.path)}`, "success");
 		} catch (error) {
 			// Keep the data: don't clear when the save itself failed.
 			console.error("Failed to download legacy events", error);

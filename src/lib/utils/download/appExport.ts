@@ -1,6 +1,6 @@
 
 import JSZip from "jszip";
-import { saveAs } from "file-saver";
+import { saveFile, savedTo } from "@src/lib/utils/saveFile";
 import { AppState, FileTree, ShowNotificationFn } from "@src/lib/types/downloadHandlerTypes";
 
 
@@ -25,8 +25,9 @@ export const handleTimelineExport = async (
 		const blob = new Blob([JSON.stringify(backup, null, 2)], {
 			type: "application/json",
 		});
-		saveAs(blob, `timeline-backup_${formatTimestamp()}.json`);
-		showNotification?.("Timeline exported successfully", "success");
+		const saved = await saveFile(blob, `timeline-backup_${formatTimestamp()}.json`);
+		if (saved.cancelled) return;
+		showNotification?.(`Timeline exported successfully${savedTo(saved.path)}`, "success");
 	} catch (error) {
 		console.error("Timeline export error:", error);
 		showNotification?.("Failed to export timeline", "error");
@@ -47,8 +48,9 @@ export const handleBoardsExport = async (
 		zip.file(BOARDS_BACKUP_FILE, JSON.stringify(backup, null, 2));
 		const imagesFolder = zip.folder("Images");
 		pictures?.images.forEach((file) => imagesFolder?.file(file.fileName, file.blob));
-		saveAs(await zip.generateAsync({ type: "blob" }), `boards-export_${formatTimestamp()}.zip`);
-		showNotification?.("Boards exported successfully", "success");
+		const saved = await saveFile(await zip.generateAsync({ type: "blob" }), `boards-export_${formatTimestamp()}.zip`);
+		if (saved.cancelled) return;
+		showNotification?.(`Boards exported successfully${savedTo(saved.path)}`, "success");
 	} catch (error) {
 		console.error("Boards export error:", error);
 		showNotification?.("Failed to export boards", "error");
@@ -199,8 +201,9 @@ To restore data:
 		);
 
 		const blob = await zip.generateAsync({ type: "blob" });
-		saveAs(blob, `list-manager-full-export_${formatTimestamp()}.zip`);
-		showNotification?.("All data exported successfully", "success");
+		const saved = await saveFile(blob, `list-manager-full-export_${formatTimestamp()}.zip`);
+		if (saved.cancelled) return;
+		showNotification?.(`All data exported successfully${savedTo(saved.path)}`, "success");
 	} catch (error) {
 		console.error("Full app export error:", error);
 		showNotification?.("Failed to export all data", "error");

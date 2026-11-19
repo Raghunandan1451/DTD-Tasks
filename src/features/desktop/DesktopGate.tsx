@@ -1,8 +1,17 @@
-import { FC, ReactNode, useCallback, useEffect, useState } from "react";
+import { FC, ReactNode, useCallback, useEffect, useMemo, useState } from "react";
 import { FolderOpen } from "lucide-react";
 import type { FolderProblem, FolderState } from "@src/lib/desktop/types";
 import { flushPendingSaves } from "@src/lib/utils/persistMiddleware";
 import { flushRegistered } from "@src/lib/utils/flushRegistry";
+import { setStorage } from "@src/lib/storage";
+import { createFolderTimelineStore } from "@src/lib/storage/folder/folderTimelineStore";
+import { createFolderActivityStore } from "@src/lib/storage/folder/folderActivityStore";
+import { createFolderFinanceStore } from "@src/lib/storage/folder/folderFinanceStore";
+import { createFolderJournalStore } from "@src/lib/storage/folder/folderJournalStore";
+import { createFolderBoardsStore } from "@src/lib/storage/folder/folderBoardsStore";
+import { createFolderNotesStore } from "@src/lib/storage/folder/folderNotesStore";
+import ImportBackup from "@src/features/desktop/ImportBackup";
+import { useNotesRefreshOnFocus } from "@src/features/desktop/useNotesRefreshOnFocus";
 import Button from "@src/components/ui/button/Button";
 
 const PROBLEM_TEXT: Record<FolderProblem, string> = {
@@ -51,6 +60,25 @@ const DesktopGate: FC<{ children: ReactNode }> = ({ children }) => {
 	}, [desktop, run]);
 
 	const ready = state?.status === "ready";
+	const [conflicts, setConflicts] = useState<string[]>([]);
+	useNotesRefreshOnFocus(ready, setConflicts);
+
+	// Notes live in the folder. Set during render, once, so it is in place before
+	// any child asks the store for the notes. Boards, journal, finance and activity are files too.
+	useMemo(() => {
+		if (desktop && ready) {
+			const journal = createFolderJournalStore(desktop.fs);
+			const activity = createFolderActivityStore(desktop.fs);
+			setStorage({
+				notes: createFolderNotesStore(desktop.fs),
+				boards: createFolderBoardsStore(desktop.fs),
+				journal,
+				activity,
+				finance: createFolderFinanceStore(desktop.fs),
+				timeline: createFolderTimelineStore(journal, activity),
+			});
+		}
+	}, [desktop, ready]);
 
 	// Save everything before the window closes.
 	useEffect(() => {
@@ -85,6 +113,23 @@ const DesktopGate: FC<{ children: ReactNode }> = ({ children }) => {
 		return (
 			<>
 				{children}
+				<ImportBackup />
+				{conflicts.length > 0 && (
+					<div role="status" className="fixed bottom-12 left-2 z-50 max-w-sm space-y-1 rounded-lg bg-amber-900/90 p-3 text-xs text-amber-50 shadow-lg">
+						<p>
+							{conflicts.length === 1 ? "A note was" : `${conflicts.length} notes were`} changed here and on disk.
+							Your text was kept in {conflicts.length === 1 ? "a copy" : "copies"} next to the note:
+						</p>
+						<ul className="list-disc pl-4">
+							{conflicts.map((name) => (
+								<li key={name}>{name}</li>
+							))}
+						</ul>
+						<button type="button" className="underline" onClick={() => setConflicts([])}>
+							Dismiss
+						</button>
+					</div>
+				)}
 				<Button
 					type="button"
 					onClick={changeFolder}
@@ -118,7 +163,7 @@ const DesktopGate: FC<{ children: ReactNode }> = ({ children }) => {
 			<Screen title="This folder isn't empty">
 				<p className="break-all text-sm text-gray-400">{state.path}</p>
 				<p className="text-gray-300">
-					It already has other files. AIOLists will only add its own files and a hidden <code>.aiolists</code>{" "}
+					It already has other files. AIOLists will only add its own files and a hidden <code>.dtdtasks</code>{" "}
 					folder, and will not change or show anything else. Use it anyway?
 				</p>
 				<div className="flex flex-wrap gap-2">

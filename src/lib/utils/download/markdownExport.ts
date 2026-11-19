@@ -1,6 +1,6 @@
 
 import JSZip from "jszip";
-import { saveAs } from "file-saver";
+import { saveFile, savedTo } from "@src/lib/utils/saveFile";
 import { ShowNotificationFn } from "@src/lib/types/downloadHandlerTypes";
 import { File, Folder } from "@src/features/markdown/type";
 
@@ -131,8 +131,9 @@ export const handleMarkdownExport = async (
 
 		const blob = await zip.generateAsync({ type: "blob" });
 
-		saveAs(blob, `markdown-export_${formatTimestamp()}.zip`);
-		showNotification?.("Files exported successfully", "success");
+		const saved = await saveFile(blob, `markdown-export_${formatTimestamp()}.zip`);
+		if (saved.cancelled) return;
+		showNotification?.(`Files exported successfully${savedTo(saved.path)}`, "success");
 	} catch (error) {
 		console.error("Markdown export error:", error);
 		showNotification?.("Failed to export files", "error");

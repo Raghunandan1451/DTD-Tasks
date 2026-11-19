@@ -2,7 +2,9 @@ import { Middleware, Action } from "@reduxjs/toolkit";
 import { RootState } from "@src/lib/store/store";
 import { debounce } from "@src/lib/utils/debounce";
 import { getValue, setValue } from "@src/lib/db/database";
-import { getNotesStore } from "@src/lib/storage";
+import { getFinanceStore, getNotesStore } from "@src/lib/storage";
+import type { ExpensesState } from "@src/lib/store/slices/expensesSlice";
+import type { FinanceState } from "@src/features/finance/type";
 import type { FileState } from "@src/features/markdown/type";
 import {
 	ensureMarkdownBaseline,
@@ -17,13 +19,15 @@ const sliceStorageKeys: Record<string, string> = {
 };
 
 /**
- * How each slice is written. Notes go through the active notes store (IndexedDB
- * in the browser, a folder on desktop); the rest are still plain IndexedDB values.
+ * How each slice is written. Notes and finance go through the active store
+ * (IndexedDB in the browser, files in the data folder on desktop).
  */
-const saveSlice = (sliceName: string, key: string, state: unknown): Promise<void> =>
-	sliceName === "fileManager"
-		? getNotesStore().saveTree(state as FileState)
-		: saveToIndexedDB(key, state);
+const saveSlice = (sliceName: string, key: string, state: unknown): Promise<void> => {
+	if (sliceName === "fileManager") return getNotesStore().saveTree(state as FileState);
+	if (sliceName === "expenses") return getFinanceStore().saveExpenses(state as ExpensesState);
+	if (sliceName === "finance") return getFinanceStore().saveFinance(state as FinanceState);
+	return saveToIndexedDB(key, state);
+};
 
 const debouncedSaves: Record<
 	string,

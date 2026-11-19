@@ -28,10 +28,16 @@ const api: DesktopApi = {
 	fs: {
 		readText: (rel) => invoke("fs:readText", rel),
 		writeText: (rel, content) => invoke("fs:writeText", rel, content),
+		readBinary: (rel) => invoke("fs:readBinary", rel),
+		writeBinary: (rel, base64) => invoke("fs:writeBinary", rel, base64),
 		list: (rel) => invoke("fs:list", rel),
 		mkdir: (rel) => invoke("fs:mkdir", rel),
 		rename: (from, to) => invoke("fs:rename", from, to),
 		trash: (rel) => invoke("fs:trash", rel),
+	},
+	shell: {
+		openFolder: (rel) => invoke("shell:openFolder", rel),
+		saveFile: (name, base64, folder) => invoke("shell:saveFile", name, base64, folder),
 	},
 	onBeforeClose(handler) {
 		beforeCloseHandlers.add(handler);

@@ -1,6 +1,6 @@
 
 
-import { saveAs } from "file-saver";
+import { saveFile, savedTo } from "@src/lib/utils/saveFile";
 import { ShowNotificationFn } from "@src/lib/types/downloadHandlerTypes";
 import { formatTimestamp } from "@src/lib/utils/download/shared";
 
@@ -42,13 +42,17 @@ export const handleQRExport = async (
 	try {
 		const source = format === "jpg" ? flattenOnWhite(canvas) : canvas;
 		const done = (blob: Blob | null) => {
-			if (blob) {
-				saveAs(blob, `qr-code_${formatTimestamp()}.${format}`);
-				showNotification?.(
-					"QR Code downloaded successfully",
-					"success",
-				);
-			}
+			if (!blob) return;
+			saveFile(blob, `qr-code_${formatTimestamp()}.${format}`, "QR").then(
+				(saved) => {
+					if (saved.cancelled) return;
+					showNotification?.(
+						`QR Code downloaded successfully${savedTo(saved.path)}`,
+						"success",
+					);
+				},
+				() => showNotification?.("Failed to export QR code", "error"),
+			);
 		};
 		if (format === "jpg") source.toBlob(done, "image/jpeg", 0.92);
 		else source.toBlob(done);

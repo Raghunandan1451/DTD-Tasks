@@ -1,12 +1,17 @@
 import { indexedDbStorage } from "@src/lib/storage/indexedDbStorage";
 import type {
 	BoardsStore,
+	FinanceStore,
 	NotesStore,
 	StorageProvider,
 } from "@src/lib/storage/types";
 
 export type {
+	ActivityStore,
 	BoardContent,
+	FinanceStore,
+	JournalStore,
+	TimelineStore,
 	BoardMergeResult,
 	BoardsStore,
 	NotesStore,
@@ -23,8 +28,9 @@ let provider: StorageProvider = indexedDbStorage;
 
 export const getStorage = (): StorageProvider => provider;
 
-export const setStorage = (next: StorageProvider): void => {
-	provider = next;
+/** Replaces the parts given; anything left out keeps its current store. */
+export const setStorage = (next: Partial<StorageProvider>): void => {
+	provider = { ...provider, ...next };
 };
 
 /** Back to the default IndexedDB storage (tests). */
@@ -33,6 +39,7 @@ export const resetStorage = (): void => {
 };
 
 export const getNotesStore = (): NotesStore => provider.notes;
+export const getFinanceStore = (): FinanceStore => provider.finance;
 
 // Board functions under their original names, always using the active store.
 const boards = (): BoardsStore => provider.boards;
