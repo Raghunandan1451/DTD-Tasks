@@ -10,7 +10,6 @@ import { createFolderFinanceStore } from "@src/lib/storage/folder/folderFinanceS
 import { createFolderJournalStore } from "@src/lib/storage/folder/folderJournalStore";
 import { createFolderBoardsStore } from "@src/lib/storage/folder/folderBoardsStore";
 import { createFolderNotesStore } from "@src/lib/storage/folder/folderNotesStore";
-import ImportBackup from "@src/features/desktop/ImportBackup";
 import { useNotesRefreshOnFocus } from "@src/features/desktop/useNotesRefreshOnFocus";
 import Button from "@src/components/ui/button/Button";
 
@@ -104,16 +103,9 @@ const DesktopGate: FC<{ children: ReactNode }> = ({ children }) => {
 	}
 
 	if (state.status === "ready") {
-		const changeFolder = async () => {
-			if (!window.confirm("Switch to a different data folder? Your current folder is left untouched.")) return;
-			await Promise.all([flushPendingSaves(), flushRegistered()]);
-			await desktop.folder.forget();
-			window.location.reload();
-		};
 		return (
 			<>
 				{children}
-				<ImportBackup />
 				{conflicts.length > 0 && (
 					<div role="status" className="fixed bottom-12 left-2 z-50 max-w-sm space-y-1 rounded-lg bg-amber-900/90 p-3 text-xs text-amber-50 shadow-lg">
 						<p>
@@ -130,16 +122,6 @@ const DesktopGate: FC<{ children: ReactNode }> = ({ children }) => {
 						</button>
 					</div>
 				)}
-				<Button
-					type="button"
-					onClick={changeFolder}
-					title={`Data folder: ${state.path}`}
-					aria-label="Change data folder"
-					className="fixed bottom-2 left-2 z-50 flex items-center gap-1.5 rounded-lg bg-gray-800/80 px-2 py-1 text-xs text-gray-300 hover:bg-gray-700"
-				>
-					<FolderOpen className="h-4 w-4" />
-					<span className="hidden sm:inline">Change folder</span>
-				</Button>
 			</>
 		);
 	}

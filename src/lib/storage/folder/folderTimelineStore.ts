@@ -8,13 +8,11 @@ export const createFolderTimelineStore = (
 	activity: FolderActivityStore,
 ): TimelineStore => ({
 	restore: async (data) => {
-		const notes = await journal.restore(data.journal, data.journalImages);
+		const notes = await journal.restore(data.journal);
 		const rows = await activity.restore(data.markdownLog);
 		return {
 			journalAdded: notes.entriesAdded,
 			journalSkipped: notes.entriesSkipped,
-			imagesAdded: notes.imagesAdded,
-			imagesSkipped: notes.imagesSkipped,
 			logAdded: rows.added,
 			logSkipped: rows.skipped,
 		};

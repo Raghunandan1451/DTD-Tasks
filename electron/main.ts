@@ -175,17 +175,18 @@ function registerIpc() {
 	handle("fs:writeBinary", (rel: string, base64: string) =>
 		writeBinary(needRoot(), rel, String(base64)),
 	);
-	// Exports are written straight into the data folder (no Save dialog): Exports/ or QR/.
-	handle("shell:saveFile", async (name: string, base64: string, folder?: string) => {
+	// Exports are written straight into the data folder (no Save dialog): Exports/, QR/, Finance/ or Boards/.
+	// `replace` overwrites a same-named file (regenerated PDFs); otherwise a taken name becomes "name (2).ext".
+	handle("shell:saveFile", async (name: string, base64: string, folder?: string, replace?: boolean) => {
 		const dataRoot = needRoot();
 		const fileName = [...path.basename(String(name))].map((c) => (c.charCodeAt(0) < 32 || '<>:"/|?*\\'.includes(c) ? "_" : c)).join("") || "export";
-		const sub = folder === "QR" ? "QR" : "Exports";
+		const sub = folder === "QR" || folder === "Finance" || folder === "Boards" ? folder : "Exports";
 		const dir = testSaveDir ?? (await folderToOpen(dataRoot, sub));
 		if (testSaveDir) await fs.mkdir(dir, { recursive: true });
 		const ext = path.extname(fileName);
 		const stem = fileName.slice(0, fileName.length - ext.length);
 		let target = path.join(dir, fileName);
-		for (let n = 2; await fs.stat(target).then(() => true, () => false); n++) {
+		for (let n = 2; !replace && (await fs.stat(target).then(() => true, () => false)); n++) {
 			target = path.join(dir, `${stem} (${n})${ext}`);
 		}
 		await atomicWrite(target, Buffer.from(String(base64), "base64"));

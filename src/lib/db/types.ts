@@ -8,16 +8,9 @@ export interface JournalEntry {
 	text: string;
 	mood?: JournalMood;
 	tags?: string[];
-	/** Key into the `journalImages` store. */
-	imageId?: string;
 	/** Epoch ms. Immutable and always "now" when the note is created. */
 	createdAt: number;
 	updatedAt?: number;
-}
-
-export interface JournalImage {
-	id: string;
-	blob: Blob;
 }
 
 export type MarkdownAction = "created" | "edited" | "renamed" | "deleted";

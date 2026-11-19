@@ -1,5 +1,4 @@
 import { FC, useRef, useState } from "react";
-import { Upload } from "lucide-react";
 import Button from "@src/components/ui/button/Button";
 import { importBrowserBackup, type ImportReport } from "@src/features/desktop/importBrowserBackup";
 
@@ -43,11 +42,9 @@ const ImportBackup: FC = () => {
 				onClick={() => input.current?.click()}
 				title="Import files downloaded from the browser version"
 				aria-label="Import browser backup"
-				className="fixed bottom-2 left-32 z-50 flex items-center gap-1.5 rounded-lg bg-gray-800/80 px-2 py-1 text-xs text-gray-300 hover:bg-gray-700 sm:left-40"
-			>
-				<Upload className="h-4 w-4" />
-				<span className="hidden sm:inline">{busy ? "Importing…" : "Import backup"}</span>
-			</Button>
+				className="btn-secondary text-xs md:text-base py-1.5 md:py-2 px-2.5 md:px-4"
+				text={busy ? "Importing…" : "Import"}
+			/>
 			{report && (
 				<div
 					role="dialog"

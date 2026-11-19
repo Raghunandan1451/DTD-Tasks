@@ -8,35 +8,25 @@ import type { TimelineStore } from "@src/lib/storage/types";
 
 /**
  * Adds backup rows that are not already stored. Existing rows are never
- * touched: journal and images match by id, markdown log by id or by
+ * touched: journal matches by id, markdown log by id or by
  * [fileId, day, action]. One transaction, so a failure adds nothing.
  */
 const mergeTimelineData = (data: TimelineData): Promise<MergeResult> =>
 	withErrorStatus(async () => {
 		const db = await getDB();
 		const tx = db.transaction(
-			["journal", "journalImages", "markdownLog"],
+			["journal", "markdownLog"],
 			"readwrite",
 		);
 		const journal = tx.objectStore("journal");
-		const images = tx.objectStore("journalImages");
 		const log = tx.objectStore("markdownLog");
 		const result: MergeResult = {
 			journalAdded: 0,
 			journalSkipped: 0,
-			imagesAdded: 0,
-			imagesSkipped: 0,
 			logAdded: 0,
 			logSkipped: 0,
 		};
 
-		for (const image of data.journalImages) {
-			if (await images.get(image.id)) result.imagesSkipped++;
-			else {
-				await images.add(image);
-				result.imagesAdded++;
-			}
-		}
 		for (const entry of data.journal) {
 			if (await journal.get(entry.id)) result.journalSkipped++;
 			else {

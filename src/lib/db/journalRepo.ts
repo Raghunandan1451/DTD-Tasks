@@ -15,11 +15,11 @@ const store = () => getStorage().journal;
 export const addJournalEntry = (input: JournalInput): Promise<JournalEntry> =>
 	store().add(input);
 
-/** Edits text, mood and tags only; createdAt and the image never change. */
+/** Edits text, mood and tags only; createdAt never changes. */
 export const updateJournalEntry = (id: string, patch: JournalPatch): Promise<JournalEntry> =>
 	store().update(id, patch);
 
-/** Deletes the note and its image together. */
+/** Deletes the note. */
 export const deleteJournalEntry = (id: string): Promise<void> => store().remove(id);
 
 /** Notes with fromMs <= createdAt < toMs, newest first. */

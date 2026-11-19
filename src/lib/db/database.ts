@@ -8,7 +8,6 @@ import {
 import type {
 	Board,
 	JournalEntry,
-	JournalImage,
 	MarkdownAction,
 	MarkdownLogEntry,
 } from "@src/lib/db/types";
@@ -39,7 +38,8 @@ interface AppDB extends DBSchema {
 	};
 	journalImages: {
 		key: string;
-		value: JournalImage;
+		/** Left over from the removed image feature; never written any more. */
+		value: { id: string; blob: Blob };
 	};
 	markdownLog: {
 		key: string;

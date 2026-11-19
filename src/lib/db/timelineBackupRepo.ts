@@ -2,21 +2,17 @@ import { getDB } from "@src/lib/db/database";
 import { getStorage } from "@src/lib/storage";
 import type {
 	JournalEntry,
-	JournalImage,
 	MarkdownLogEntry,
 } from "@src/lib/db/types";
 
 export interface TimelineData {
 	journal: JournalEntry[];
-	journalImages: JournalImage[];
 	markdownLog: MarkdownLogEntry[];
 }
 
 export interface MergeResult {
 	journalAdded: number;
 	journalSkipped: number;
-	imagesAdded: number;
-	imagesSkipped: number;
 	logAdded: number;
 	logSkipped: number;
 }
@@ -24,14 +20,13 @@ export interface MergeResult {
 /** Everything the Timeline backup exports (expenses live in their own section). */
 export const getAllTimelineData = async (): Promise<TimelineData> => {
 	const db = await getDB();
-	const tx = db.transaction(["journal", "journalImages", "markdownLog"]);
-	const [journal, journalImages, markdownLog] = await Promise.all([
+	const tx = db.transaction(["journal", "markdownLog"]);
+	const [journal, markdownLog] = await Promise.all([
 		tx.objectStore("journal").getAll(),
-		tx.objectStore("journalImages").getAll(),
 		tx.objectStore("markdownLog").getAll(),
 	]);
 	await tx.done;
-	return { journal, journalImages, markdownLog };
+	return { journal, markdownLog };
 };
 
 /** Rows exported by Timeline: notes plus markdown activity. */

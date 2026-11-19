@@ -1,5 +1,5 @@
 import { newId } from "@src/lib/db/newId";
-import type { JournalEntry, JournalImage } from "@src/lib/db/types";
+import type { JournalEntry } from "@src/lib/db/types";
 import {
 	JOURNAL_NOT_FOUND_MESSAGE,
 	buildJournalEntry,
@@ -15,38 +15,21 @@ import {
 import type { NotesFs } from "@src/lib/storage/folder/notesIndex";
 import { scopedFs } from "@src/lib/storage/folder/scopedFs";
 import type { JournalStore } from "@src/lib/storage/types";
-import { blobToBase64 } from "@src/lib/utils/blobBase64";
 import { toLocalDay } from "@src/lib/utils/isoDate";
 
 const DAY_FILE = /^(\d{4}-\d{2}-\d{2})\.json$/;
 const YEAR_DIR = /^\d{4}$/;
-const IMAGES_DIR = "images";
-
-const MIME_BY_EXT: Record<string, string> = {
-	jpg: "image/jpeg",
-	png: "image/png",
-	webp: "image/webp",
-	gif: "image/gif",
-};
-const EXT_BY_MIME: Record<string, string> = {
-	"image/jpeg": "jpg",
-	"image/png": "png",
-	"image/webp": "webp",
-	"image/gif": "gif",
-};
 
 export interface FolderJournalStore extends JournalStore {
 	/** Files that could not be read (copied aside, never lost). */
 	problems(): Promise<FileProblem[]>;
-	/** Adds backup notes and images that are not stored yet (matched by id); never changes existing ones. */
-	restore(entries: JournalEntry[], images: JournalImage[]): Promise<JournalRestoreResult>;
+	/** Adds backup notes that are not stored yet (matched by id); never changes existing ones. */
+	restore(entries: JournalEntry[]): Promise<JournalRestoreResult>;
 }
 
 export interface JournalRestoreResult {
 	entriesAdded: number;
 	entriesSkipped: number;
-	imagesAdded: number;
-	imagesSkipped: number;
 }
 
 const dayPath = (day: string) => `${day.slice(0, 4)}/${day}.json`;
@@ -68,17 +51,9 @@ const parseDay = (raw: unknown): JournalEntry[] => {
 	return entries;
 };
 
-const base64ToBlob = (base64: string, type: string): Blob => {
-	const binary = atob(base64);
-	const bytes = new Uint8Array(binary.length);
-	for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
-	return new Blob([bytes], { type });
-};
-
 /**
  * The journal kept as `<data folder>/Journal/<year>/<YYYY-MM-DD>.json`, every
- * note written that local day in one file, and the pictures as real files in
- * `Journal/images/`. A note never changes day (createdAt is fixed), so editing
+ * note written that local day in one file,. A note never changes day (createdAt is fixed), so editing
  * one only rewrites its own day file. Day files are read when a screen needs
  * them, not all at start.
  */
@@ -94,7 +69,6 @@ export const createFolderJournalStore = (
 	let dayList: string[] | null = null;
 	const days = new Map<string, JournalEntry[]>();
 	const dayOfEntry = new Map<string, string>();
-	const imageFiles = new Map<string, string>();
 
 	const listDays = async (): Promise<string[]> => {
 		if (dayList) return dayList;
@@ -149,17 +123,6 @@ export const createFolderJournalStore = (
 		return null;
 	};
 
-	const imageFileFor = async (id: string): Promise<string | null> => {
-		const known = imageFiles.get(id);
-		if (known) return known;
-		const match = (await dir.list(IMAGES_DIR)).find(
-			(entry) => entry.kind === "file" && entry.name.startsWith(`${id}.`),
-		);
-		if (!match) return null;
-		imageFiles.set(id, match.name);
-		return match.name;
-	};
-
 	const entriesBetween = async (fromDay: string, toDay: string): Promise<JournalEntry[]> => {
 		const out: JournalEntry[] = [];
 		for (const day of await listDays()) {
@@ -201,16 +164,9 @@ export const createFolderJournalStore = (
 				const entries = await loadDay(day);
 				const index = entries.findIndex((entry) => entry.id === id);
 				if (index === -1) return;
-				const [removed] = entries.splice(index, 1);
+				entries.splice(index, 1);
 				dayOfEntry.delete(id);
 				await writeDay(day);
-				if (removed.imageId) {
-					const file = await imageFileFor(removed.imageId);
-					if (file) {
-						await dir.trash(`${IMAGES_DIR}/${file}`);
-						imageFiles.delete(removed.imageId);
-					}
-				}
 			}),
 
 		inRange: (fromMs, toMs) =>
@@ -258,24 +214,12 @@ export const createFolderJournalStore = (
 				return null;
 			}),
 
-		restore: (entries, images) =>
+		restore: (entries) =>
 			enqueue(async () => {
 				const result: JournalRestoreResult = {
 					entriesAdded: 0,
 					entriesSkipped: 0,
-					imagesAdded: 0,
-					imagesSkipped: 0,
 				};
-				for (const image of images) {
-					if (await imageFileFor(image.id)) {
-						result.imagesSkipped++;
-						continue;
-					}
-					const file = `${image.id}.${EXT_BY_MIME[image.blob.type] ?? "bin"}`;
-					await dir.writeBinary(`${IMAGES_DIR}/${file}`, await blobToBase64(image.blob));
-					imageFiles.set(image.id, file);
-					result.imagesAdded++;
-				}
 				// Every day file is read once so a note that is already here is never added twice.
 				for (const day of await listDays()) await loadDay(day);
 				const touched = new Set<string>();
@@ -295,33 +239,6 @@ export const createFolderJournalStore = (
 					await writeDay(day);
 				}
 				return result;
-			}),
-
-		putImage: (blob) =>
-			enqueue(async () => {
-				const id = newId();
-				const file = `${id}.${EXT_BY_MIME[blob.type] ?? "bin"}`;
-				await dir.writeBinary(`${IMAGES_DIR}/${file}`, await blobToBase64(blob));
-				imageFiles.set(id, file);
-				return id;
-			}),
-
-		getImage: (id) =>
-			enqueue(async () => {
-				const file = await imageFileFor(id);
-				if (!file) return null;
-				const base64 = await dir.readBinary(`${IMAGES_DIR}/${file}`);
-				if (base64 === null) return null;
-				const ext = file.slice(file.lastIndexOf(".") + 1);
-				return base64ToBlob(base64, MIME_BY_EXT[ext] ?? "application/octet-stream");
-			}),
-
-		deleteImage: (id) =>
-			enqueue(async () => {
-				const file = await imageFileFor(id);
-				if (!file) return;
-				await dir.trash(`${IMAGES_DIR}/${file}`);
-				imageFiles.delete(id);
 			}),
 	};
 };

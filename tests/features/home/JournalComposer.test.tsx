@@ -9,11 +9,7 @@ import { getDB, resetDBForTests } from "@src/lib/db/database";
 import * as journalRepo from "@src/lib/db/journalRepo";
 import { toLocalDay } from "@src/lib/utils/isoDate";
 
-const resize = vi.hoisted(() => vi.fn());
-vi.mock("@src/lib/utils/imageResize", () => ({ resizeImageToJpeg: resize }));
-
 const storedNotes = async () => (await getDB()).getAll("journal");
-const png = () => new File(["x"], "a.png", { type: "image/png" });
 
 const setup = () => {
 	const onPosted = vi.fn();
@@ -27,8 +23,6 @@ const setup = () => {
 beforeEach(async () => {
 	await resetDBForTests();
 	globalThis.indexedDB = new IDBFactory();
-	resize.mockReset();
-	resize.mockResolvedValue(new Blob(["jpeg"], { type: "image/jpeg" }));
 	URL.createObjectURL = vi.fn(() => "blob:preview");
 	URL.revokeObjectURL = vi.fn();
 	vi.restoreAllMocks();
@@ -134,52 +128,17 @@ describe("JournalComposer", () => {
 		expect(screen.queryByText("#drop")).toBeNull();
 	});
 
-	it("attaches a resized image, shows a preview and stores it with the note", async () => {
-		const { user, onPosted } = setup();
-		const file = png();
-		await user.upload(screen.getByLabelText("Attach an image"), file);
-
-		expect(resize).toHaveBeenCalledWith(file);
-		expect(await screen.findByAltText("Selected attachment")).toBeInTheDocument();
-
-		await user.click(screen.getByRole("button", { name: "Post" }));
-		await waitFor(() => expect(onPosted).toHaveBeenCalled());
-
-		const [note] = await storedNotes();
-		expect(note.imageId).toBeTruthy();
-		expect(
-			await (await getDB()).get("journalImages", note.imageId as string),
-		).toBeTruthy();
-		expect(screen.queryByAltText("Selected attachment")).toBeNull();
+	it("has no image controls", () => {
+		setup();
+		expect(screen.queryByLabelText("Attach an image")).toBeNull();
 	});
 
-	it("lets an image be posted without text and can discard it", async () => {
-		const { user } = setup();
-		await user.upload(screen.getByLabelText("Attach an image"), png());
-		await screen.findByAltText("Selected attachment");
-		expect(screen.getByRole("button", { name: "Post" })).toBeEnabled();
-		await user.click(screen.getByRole("button", { name: "Remove image" }));
-		expect(screen.queryByAltText("Selected attachment")).toBeNull();
-		expect(screen.getByRole("button", { name: "Post" })).toBeDisabled();
-	});
-
-	it("shows a readable error when the image cannot be processed", async () => {
-		resize.mockRejectedValue(new Error("Could not process this image."));
-		const { user } = setup();
-		await user.upload(screen.getByLabelText("Attach an image"), png());
-		expect(await screen.findByRole("alert")).toHaveTextContent(
-			"Could not process this image.",
-		);
-	});
-
-	it("keeps the draft, shows the error and removes the orphan image when saving fails", async () => {
+	it("keeps the draft, shows the error and when saving fails", async () => {
 		vi.spyOn(journalRepo, "addJournalEntry").mockRejectedValueOnce(
 			new Error("Storage is full."),
 		);
 		const { user, onPosted } = setup();
 		await user.type(screen.getByRole("textbox", { name: "Note" }), "keep me");
-		await user.upload(screen.getByLabelText("Attach an image"), png());
-		await screen.findByAltText("Selected attachment");
 		await user.click(screen.getByRole("button", { name: "Post" }));
 
 		expect(await screen.findByRole("alert")).toHaveTextContent(
@@ -187,9 +146,6 @@ describe("JournalComposer", () => {
 		);
 		expect(onPosted).not.toHaveBeenCalled();
 		expect(screen.getByRole("textbox", { name: "Note" })).toHaveValue("keep me");
-		await waitFor(async () =>
-			expect(await (await getDB()).getAll("journalImages")).toEqual([]),
-		);
 		expect(screen.getByRole("button", { name: "Post" })).toBeEnabled();
 	});
 });

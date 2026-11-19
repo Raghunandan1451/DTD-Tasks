@@ -10,6 +10,8 @@ import TitleWithButton from "@src/components/shared/title_with_button/TitleWithB
 import useNotifications from "@src/lib/hooks/useNotifications";
 import { useConfirmationModal } from "@src/lib/hooks/useConfirmDialog";
 import { handleBoardsExport } from "@src/lib/utils/downloadHandler";
+import { saveFile } from "@src/lib/utils/saveFile";
+import Button from "@src/components/ui/button/Button";
 import { getBoard, listBoards } from "@src/lib/storage";
 import { importBoardsFile, serializeBoards } from "@src/features/nodes/lib/boardBackup";
 import {
@@ -83,6 +85,35 @@ const NodesPage: React.FC = () => {
 		}
 	};
 
+	// Desktop: the open board as a picture in the Boards folder (a selection narrows it, like the download).
+	const [savingImage, setSavingImage] = useState(false);
+	const handleSaveImage = async () => {
+		setSavingImage(true);
+		try {
+			await boards.flushPending();
+			const activeId = boards.activeId;
+			const current = activeId ? await getBoard(activeId) : null;
+			if (!current) {
+				showNotification("Open a board first", "error");
+				return;
+			}
+			const selected = readSelection.current?.() ?? new Set<string>();
+			const scenes = buildScenes([current], { boardId: current.id, nodeIds: selected });
+			const { images } = await buildBoardExports(scenes, "png");
+			if (images.length === 0) {
+				showNotification("This board has no nodes to save", "info");
+				return;
+			}
+			await saveFile(images[0].blob, images[0].fileName, "Boards", true);
+			showNotification(`Saved "${current.name}" as an image in the Boards folder`, "success");
+		} catch (error) {
+			console.error("Board image error:", error);
+			showNotification("Failed to save the board as an image", "error");
+		} finally {
+			setSavingImage(false);
+		}
+	};
+
 	const handleUpload = async (file: File): Promise<string> => {
 		await boards.flushPending();
 		const message = await importBoardsFile(file);
@@ -111,6 +142,17 @@ const NodesPage: React.FC = () => {
 					onUpload={handleUpload}
 					showUpload
 					hideTransfer={Boolean(window.desktop)}
+					actions={
+						window.desktop && (
+							<Button
+								type="button"
+								className="btn-primary text-xs md:text-base py-1.5 md:py-2 px-2.5 md:px-4"
+								onClick={() => void handleSaveImage()}
+								disabled={savingImage || !boards.active}
+								text={savingImage ? "Saving..." : "Save"}
+							/>
+						)
+					}
 					uploadAccept=".json,.zip"
 					uploadText="Upload backup"
 					showNotification={showNotification}

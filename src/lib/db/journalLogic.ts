@@ -17,7 +17,7 @@ export const JOURNAL_NOT_FOUND_MESSAGE = "That note no longer exists.";
 
 /** A new note dated `now`. There is deliberately no way to pass a date. */
 export const buildJournalEntry = (input: JournalInput, id: string, now: number): JournalEntry => {
-	const text = validateText(input.text, Boolean(input.imageId));
+	const text = validateText(input.text);
 	const mood = validateMood(input.mood);
 	const tags = input.tags ? normalizeTags(input.tags) : [];
 	return {
@@ -26,11 +26,10 @@ export const buildJournalEntry = (input: JournalInput, id: string, now: number):
 		createdAt: now,
 		...(mood ? { mood } : {}),
 		...(tags.length ? { tags } : {}),
-		...(input.imageId ? { imageId: input.imageId } : {}),
 	};
 };
 
-/** The note with text, mood and tags edited; createdAt and the image never change. */
+/** The note with text, mood and tags edited; createdAt never changes. */
 export const patchedJournalEntry = (
 	existing: JournalEntry,
 	patch: JournalPatch,
@@ -38,7 +37,7 @@ export const patchedJournalEntry = (
 ): JournalEntry => {
 	const next: JournalEntry = { ...existing };
 	if (patch.text !== undefined) {
-		next.text = validateText(patch.text, Boolean(existing.imageId));
+		next.text = validateText(patch.text);
 	}
 	if (patch.mood !== undefined) {
 		const mood = patch.mood === null ? undefined : validateMood(patch.mood);

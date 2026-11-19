@@ -8,7 +8,7 @@ import { newId } from "@src/lib/db/newId";
 import type { JournalEntry } from "@src/lib/db/types";
 import type { JournalStore } from "@src/lib/storage/types";
 
-/** The journal as it has always been kept: notes and images in IndexedDB. */
+/** The journal as it has always been kept: notes in IndexedDB. */
 export const indexedDbJournalStore: JournalStore = {
 	add: (input) =>
 		withErrorStatus(async () => {
@@ -33,13 +33,7 @@ export const indexedDbJournalStore: JournalStore = {
 	remove: (id) =>
 		withErrorStatus(async () => {
 			const db = await getDB();
-			const tx = db.transaction(["journal", "journalImages"], "readwrite");
-			const existing = await tx.objectStore("journal").get(id);
-			if (existing?.imageId) {
-				await tx.objectStore("journalImages").delete(existing.imageId);
-			}
-			await tx.objectStore("journal").delete(id);
-			await tx.done;
+			await db.delete("journal", id);
 		}),
 
 	inRange: async (fromMs, toMs) => {
@@ -92,23 +86,4 @@ export const indexedDbJournalStore: JournalStore = {
 			.openCursor(IDBKeyRange.upperBound(beforeMs, true), "prev");
 		return cursor ? (cursor.key as number) : null;
 	},
-
-	putImage: (blob) =>
-		withErrorStatus(async () => {
-			const db = await getDB();
-			const id = newId();
-			await db.put("journalImages", { id, blob });
-			return id;
-		}),
-
-	getImage: async (id) => {
-		const db = await getDB();
-		return (await db.get("journalImages", id))?.blob ?? null;
-	},
-
-	deleteImage: (id) =>
-		withErrorStatus(async () => {
-			const db = await getDB();
-			await db.delete("journalImages", id);
-		}),
 };

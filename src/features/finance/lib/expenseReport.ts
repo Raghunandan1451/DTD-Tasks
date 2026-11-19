@@ -82,6 +82,8 @@ interface BuildExpenseReportOptions {
 	title: string;
 	/** "yyyy-MM". Omit to report every month that has entries */
 	monthKey?: string;
+	/** Report only these "yyyy-MM" months (a quarter or a year). Ignored when `monthKey` is set. */
+	periodMonths?: readonly string[];
 	today?: Date;
 }
 
@@ -195,11 +197,15 @@ export const buildExpenseReport = ({
 	allExpenses,
 	title,
 	monthKey,
+	periodMonths,
 	today = new Date(),
 }: BuildExpenseReportOptions): ExpenseReport => {
+	const inPeriod = (e: ExpenseEntry) => Boolean(periodMonths?.includes(e.date.slice(0, 7)));
 	const reportExpenses = monthKey
 		? allExpenses.filter((e) => e.date.startsWith(monthKey))
-		: allExpenses;
+		: periodMonths
+			? allExpenses.filter(inPeriod)
+			: allExpenses;
 
 	const monthKeys = monthKey
 		? [monthKey]

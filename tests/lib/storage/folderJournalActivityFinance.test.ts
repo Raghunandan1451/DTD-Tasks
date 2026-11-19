@@ -58,29 +58,14 @@ describe("folder journal store", () => {
 		expect(onThisDay.map((e) => toLocalDay(e.createdAt))).toEqual(["2025-11-15", "2024-11-15"]);
 	});
 
-	it("deleting the last note of a day trashes the day file and the picture", async () => {
+	it("deleting the last note of a day trashes the day file", async () => {
 		const h = fakeFs();
 		const store = createFolderJournalStore(h.fs);
-		const blob = new Blob([new Uint8Array([1, 2, 3, 255])], { type: "image/png" });
-		const imageId = await store.putImage(blob);
-		const entry = await store.add({ text: "with picture", imageId });
-		expect([...h.files.keys()].some((k) => k === `Journal/images/${imageId}.png`)).toBe(true);
+		const entry = await store.add({ text: "only note" });
 		await store.remove(entry.id);
-		expect(h.trashed.sort()).toEqual([
+		expect(h.trashed).toEqual([
 			`Journal/${toLocalDay(entry.createdAt).slice(0, 4)}/${toLocalDay(entry.createdAt)}.json`,
-			`Journal/images/${imageId}.png`,
-		].sort());
-	});
-
-	it("round-trips a picture as a real image file", async () => {
-		const h = fakeFs();
-		const store = createFolderJournalStore(h.fs);
-		const id = await store.putImage(new Blob([new Uint8Array([9, 8, 7])], { type: "image/jpeg" }));
-		expect(h.files.has(`Journal/images/${id}.jpg`)).toBe(true);
-		const back = await store.getImage(id);
-		expect(back?.type).toBe("image/jpeg");
-		expect(back?.size).toBe(3);
-		expect(await store.getImage("missing")).toBeNull();
+		]);
 	});
 
 	it("keeps a damaged day file aside and reports it", async () => {

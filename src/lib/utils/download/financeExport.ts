@@ -15,9 +15,10 @@ import { formatISODate } from "@src/lib/utils/isoDate";
 
 
 
+import { monthsOfPeriod, periodFileName, periodLabel, type ReportPeriod } from "@src/features/finance/lib/reportPeriods";
 import { formatTimestamp, createMetadata } from "@src/lib/utils/download/shared";
 
-export type FinanceExportReportScope = "allMonths" | "lastTwoMonths";
+export type FinanceExportReportScope = "allMonths" | "lastTwoMonths" | ReportPeriod;
 
 interface EstimatedData {
 	simulatedExpenses: SimulatedExpense[];
@@ -161,6 +162,24 @@ const buildExpenseReportFiles = (
 		),
 	});
 
+	if (typeof reportScope === "object") {
+		return [
+			{
+				fileName: periodFileName(reportScope),
+				pdf: renderExpenseReportPdf(
+					buildExpenseReport({
+						financeData,
+						allExpenses,
+						...(reportScope.kind === "month"
+							? { monthKey: reportScope.month }
+							: { periodMonths: monthsOfPeriod(reportScope) }),
+						title: `Expense Report - ${periodLabel(reportScope, getMonthLabel)}`,
+					}),
+				),
+			},
+		];
+	}
+
 	if (reportScope === "lastTwoMonths") {
 		return getLastTwoMonthKeys().map(monthReport);
 	}
@@ -197,7 +216,47 @@ export const handleFinanceExport = async (
 		return;
 	}
 
+	if (typeof reportScope === "object") {
+		const months = monthsOfPeriod(reportScope);
+		const any = (expensesData?.expenses ?? []).some((e) => months.includes(e.date.slice(0, 7)));
+		if (!any) {
+			showNotification?.(`No expenses in ${periodLabel(reportScope, getMonthLabel)}`, "info");
+			return;
+		}
+	}
+
 	try {
+		// Desktop: the PDFs go straight into the Finance folder (the folder itself is the backup).
+		if (window.desktop) {
+			const files: { name: string; pdf: jsPDF }[] = [];
+			if (expensesData?.expenses) {
+				buildExpenseReportFiles(financeData, expensesData, reportScope).forEach((report) =>
+					files.push({ name: report.fileName, pdf: report.pdf }),
+				);
+			}
+			if (simulatedData?.length) {
+				files.push({
+					name: "estimated-prices.pdf",
+					pdf: generateEstimatedPDF({
+						simulatedExpenses: simulatedData,
+						totalEstimatedPrice: totalSimulatedCost,
+					}),
+				});
+			}
+			if (files.length === 0) {
+				showNotification?.("No finance data to export", "error");
+				return;
+			}
+			for (const file of files) {
+				await saveFile(file.pdf.output("blob"), file.name, "Finance", true);
+			}
+			showNotification?.(
+				`${files.length} PDF${files.length === 1 ? "" : "s"} saved in the Finance folder`,
+				"success",
+			);
+			return;
+		}
+
 		const zip = new JSZip();
 
 		// Finance + expenses in one restorable file

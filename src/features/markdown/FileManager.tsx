@@ -15,7 +15,6 @@ import { setFileState, deselectFile } from "@src/lib/store/slices/markdownSlice"
 import Button from "@src/components/ui/button/Button";
 import { findFileByPath } from "@src/lib/utils/treeUtils";
 import { pdfExists, saveNotePdf } from "@src/features/markdown/lib/saveNotePdf";
-import { NOTES_ROOT } from "@src/lib/storage/folder/fileNames";
 import type { FileManagerData } from "@src/lib/types/downloadHandlerTypes";
 
 const FileManager: React.FC = () => {
@@ -40,14 +39,6 @@ const FileManager: React.FC = () => {
 			showNotification(`${existed ? "Updated" : "Saved"} ${saved}`, "success");
 		} catch {
 			showNotification("Could not save the PDF", "error");
-		}
-	};
-
-	const handleOpenFolder = async () => {
-		try {
-			await desktop?.shell.openFolder(NOTES_ROOT);
-		} catch {
-			showNotification("Could not open the folder", "error");
 		}
 	};
 
@@ -94,13 +85,7 @@ const FileManager: React.FC = () => {
 									className="btn-primary text-xs md:text-base py-1.5 md:py-2 px-2.5 md:px-4"
 									onClick={handleSavePdf}
 									disabled={!selectedFile}
-									text="Save as PDF"
-								/>
-								<Button
-									type="button"
-									className="btn-secondary text-xs md:text-base py-1.5 md:py-2 px-2.5 md:px-4"
-									onClick={handleOpenFolder}
-									text="Open folder"
+									text="Save"
 								/>
 							</>
 						)

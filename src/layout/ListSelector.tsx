@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import {
+	Download,
 	Home as HomeIcon,
 	Network,
 	NotebookPen,
@@ -11,6 +12,8 @@ import {
 	type LucideIcon,
 } from "lucide-react";
 import ThemeToggle from "@src/components/shared/theme_toggler/ThemeToggle";
+import ChangeFolderButton from "@src/features/desktop/ChangeFolderButton";
+import { DESKTOP_APP_DOWNLOAD_URL } from "@src/lib/desktop/links";
 import { useNavCollapsed } from "@src/lib/hooks/useNavCollapsed";
 
 export interface NavItem {
@@ -170,7 +173,13 @@ const ListSelector: React.FC = () => {
 					{/* Navigation Links */}
 					<div className="flex-1 overflow-y-auto py-4 px-2">
 						{navigationData.map(
-							({ id, name, description, mobileReady, icon: Icon }) => (
+							({
+								id,
+								name,
+								description,
+								mobileReady,
+								icon: Icon,
+							}) => (
 								<Link
 									key={id}
 									to={toPath(id)}
@@ -182,7 +191,10 @@ const ListSelector: React.FC = () => {
 									}`}
 								>
 									<span className="flex items-center gap-2 font-semibold">
-										<Icon className="h-4 w-4 shrink-0" aria-hidden />
+										<Icon
+											className="h-4 w-4 shrink-0"
+											aria-hidden
+										/>
 										{name}
 										{mobileReady === false && (
 											<DesktopOnlyBadge />
@@ -195,13 +207,18 @@ const ListSelector: React.FC = () => {
 							),
 						)}
 					</div>
+					{window.desktop && (
+						<div className="border-t border-gray-200 px-2 py-3 dark:border-gray-700">
+							<ChangeFolderButton />
+						</div>
+					)}
 				</div>
 			</nav>
 
 			{/* Desktop Navigation: full list, or an icon rail when collapsed */}
 			<nav
 				aria-label="Main"
-				className={`hidden md:block glass-nav scrollbar-hide ${collapsed ? "collapsed" : ""}`}
+				className={`hidden md:flex glass-nav scrollbar-hide ${collapsed ? "collapsed" : ""}`}
 			>
 				<div
 					className={`flex items-center mb-4 px-2 ${
@@ -209,18 +226,28 @@ const ListSelector: React.FC = () => {
 					}`}
 				>
 					{!collapsed && (
-						<h2 className="text-lg font-semibold text-gray-800 dark:text-gray-200">
+						<h2 className="whitespace-nowrap text-lg font-semibold text-gray-800 dark:text-gray-200">
 							DTD Tasks
 						</h2>
 					)}
-					<div className={`flex items-center gap-1 ${collapsed ? "flex-col" : ""}`}>
+					<div
+						className={`flex items-center gap-1 ${collapsed ? "flex-col" : ""}`}
+					>
 						<ThemeToggle />
 						<button
 							type="button"
 							onClick={toggleCollapsed}
 							aria-expanded={!collapsed}
-							aria-label={collapsed ? "Expand navigation" : "Collapse navigation"}
-							title={collapsed ? "Expand navigation" : "Collapse navigation"}
+							aria-label={
+								collapsed
+									? "Expand navigation"
+									: "Collapse navigation"
+							}
+							title={
+								collapsed
+									? "Expand navigation"
+									: "Collapse navigation"
+							}
 							className="rounded-lg p-1.5 text-gray-700 hover:bg-white/20 dark:text-gray-200 dark:hover:bg-white/10"
 						>
 							{collapsed ? (
@@ -231,33 +258,64 @@ const ListSelector: React.FC = () => {
 						</button>
 					</div>
 				</div>
+				{!window.desktop && (
+					<a
+						href={DESKTOP_APP_DOWNLOAD_URL}
+						target="_blank"
+						rel="noopener noreferrer"
+						title="Download the desktop app for Windows"
+						aria-label="Download the desktop app"
+						className={`mx-1 mb-3 flex items-center gap-2 rounded-lg border border-cyan-500/40 bg-cyan-500/10 px-2 py-1.5 text-sm font-medium text-cyan-700 hover:bg-cyan-500/20 dark:text-cyan-300 ${
+							collapsed ? "justify-center" : ""
+						}`}
+					>
+						<Download className="h-4 w-4 shrink-0" aria-hidden />
+						{!collapsed && <span className="whitespace-nowrap">Get desktop app</span>}
+					</a>
+				)}
 				<div className="flex flex-col gap-1">
-					{navigationData.map(({ id, name, mobileReady, icon: Icon }) => (
-						<Link
-							key={id}
-							to={toPath(id)}
-							title={collapsed ? name : undefined}
-							aria-label={collapsed ? name : undefined}
-							className={`${
-								isActive(location, toPath(id)) ? "active" : ""
-							} glass-link flex items-center gap-2 ${
-								collapsed ? "justify-center" : "justify-between"
-							}`}
-						>
-							{collapsed ? (
-								<Icon className="h-5 w-5" aria-hidden />
-							) : (
-								<>
-									<span className="flex items-center gap-2">
-										<Icon className="h-4 w-4 shrink-0" aria-hidden />
-										{name}
-									</span>
-									{mobileReady === false && <DesktopOnlyBadge />}
-								</>
-							)}
-						</Link>
-					))}
+					{navigationData.map(
+						({ id, name, mobileReady, icon: Icon }) => (
+							<Link
+								key={id}
+								to={toPath(id)}
+								title={collapsed ? name : undefined}
+								aria-label={collapsed ? name : undefined}
+								className={`${
+									isActive(location, toPath(id))
+										? "active"
+										: ""
+								} glass-link flex items-center gap-2 ${
+									collapsed
+										? "justify-center"
+										: "justify-between"
+								}`}
+							>
+								{collapsed ? (
+									<Icon className="h-5 w-5" aria-hidden />
+								) : (
+									<>
+										<span className="flex items-center gap-2">
+											<Icon
+												className="h-4 w-4 shrink-0"
+												aria-hidden
+											/>
+											{name}
+										</span>
+										{mobileReady === false && (
+											<DesktopOnlyBadge />
+										)}
+									</>
+								)}
+							</Link>
+						),
+					)}
 				</div>
+				{window.desktop && (
+					<div className="mt-auto border-t border-white/20 px-1 pt-3 dark:border-white/10">
+						<ChangeFolderButton collapsed={collapsed} />
+					</div>
+				)}
 			</nav>
 		</>
 	);

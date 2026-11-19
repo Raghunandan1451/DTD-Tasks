@@ -7,6 +7,8 @@ import DownloadMenu from "@src/features/home/components/DownloadMenu";
 import ProgressBar from "@src/features/home/components/ProgressBar";
 import TimelineImportButton from "@src/features/home/components/TimelineImportButton";
 import LegacyEventsNotice from "@src/features/home/components/LegacyEventsNotice";
+import OpenFolderButton from "@src/features/desktop/OpenFolderButton";
+import ImportBackup from "@src/features/desktop/ImportBackup";
 import Timeline from "@src/features/home/components/timeline/Timeline";
 
 const Home: React.FC = () => {
@@ -37,6 +39,8 @@ const Home: React.FC = () => {
 					</p>
 				</div>
 				<div className="flex items-center gap-2">
+				{window.desktop && <OpenFolderButton showNotification={showNotification} />}
+				{window.desktop && <ImportBackup />}
 				{!window.desktop && (
 				<TimelineImportButton
 					showNotification={showNotification}

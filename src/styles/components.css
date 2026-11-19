@@ -1,6 +1,6 @@
 @layer components {
 	.glass-nav {
-		@apply flex h-full min-w-48 flex-col gap-2 overflow-y-auto py-2 backdrop-blur-xl 
+		@apply flex h-full min-w-56 flex-col gap-2 overflow-y-auto py-2 backdrop-blur-xl 
 			   bg-white/(--glass-opacity) dark:bg-black/(--glass-opacity) 
 			   border border-white/20 dark:border-white/10 
 			   rounded-r-xl shadow-lg;

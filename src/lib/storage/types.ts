@@ -88,13 +88,13 @@ export interface NotesStore {
 	refresh?(current: FileState): Promise<NotesRefresh | null>;
 }
 
-/** Where journal notes and their images are kept. */
+/** Where journal notes are kept. */
 export interface JournalStore {
 	/** Creates a note dated "now". There is deliberately no way to pass a date. */
 	add(input: JournalInput): Promise<JournalEntry>;
-	/** Edits text, mood and tags only; createdAt and the image never change. */
+	/** Edits text, mood and tags only; createdAt never changes. */
 	update(id: string, patch: JournalPatch): Promise<JournalEntry>;
-	/** Deletes the note and its image together. */
+	/** Deletes the note. */
 	remove(id: string): Promise<void>;
 	/** Notes with fromMs <= createdAt < toMs, newest first. */
 	inRange(fromMs: number, toMs: number): Promise<JournalEntry[]>;
@@ -102,10 +102,6 @@ export interface JournalStore {
 	onThisDay(reference: Date): Promise<JournalEntry[]>;
 	/** createdAt of the newest note strictly before beforeMs, or null. */
 	timeBefore(beforeMs: number): Promise<number | null>;
-	/** Stores an already-resized image and returns its id. */
-	putImage(blob: Blob): Promise<string>;
-	getImage(id: string): Promise<Blob | null>;
-	deleteImage(id: string): Promise<void>;
 }
 
 /** Where the notes activity log (what the Home timeline shows for notes) is kept. */
@@ -124,7 +120,7 @@ export interface ActivityStore {
 	dayBefore(beforeDay: string): Promise<string | null>;
 }
 
-/** Adds the rows of a timeline backup (journal notes, images, activity) that are not stored yet. */
+/** Adds the rows of a timeline backup (journal notes, activity) that are not stored yet. */
 export interface TimelineStore {
 	restore(data: TimelineData): Promise<MergeResult>;
 }

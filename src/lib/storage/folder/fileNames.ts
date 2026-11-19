@@ -13,7 +13,7 @@ export const BOARDS_ROOT = "Boards";
 /** Finance: `settings.json` plus one expenses file per month. */
 export const FINANCE_ROOT = "Finance";
 
-/** Journal: one file per day, plus the images. */
+/** Journal: one file per day. */
 export const JOURNAL_ROOT = "Journal";
 
 /** Exports the user asked for land here by default. */

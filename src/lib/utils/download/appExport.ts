@@ -16,7 +16,7 @@ import type { BoardExports } from "@src/features/nodes/lib/boardExport";
 
 import { formatTimestamp, createMetadata, convertToFileTree } from "@src/lib/utils/download/shared";
 
-/** Timeline (journal notes with images, plus markdown activity) as one JSON file. */
+/** Timeline (journal notes, plus markdown activity) as one JSON file. */
 export const handleTimelineExport = async (
 	backup: TimelineBackup,
 	showNotification?: ShowNotificationFn,
@@ -188,7 +188,7 @@ Total Items: ${totalItems}
 Folders:
 - Finance: Balance, expenses, and PDF report
 - Markdown: Files and folders
-- Timeline: Journal notes (with images) and markdown activity
+- Timeline: Journal notes and markdown activity
 - Boards: Nodes & Notes boards
 
 To restore data:

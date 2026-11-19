@@ -55,10 +55,15 @@ export interface DesktopApi {
 		/** Opens a folder inside the data folder in the file explorer ("" is the data folder itself). */
 		openFolder(rel: string): Promise<void>;
 		/**
-		 * Writes an export straight into the data folder (Exports/ by default, or QR/),
-		 * with no Save dialog. A taken name becomes "name (2).ext". Resolves to the saved path.
+		 * Writes an export straight into the data folder (Exports/ by default, or QR/, Finance/, Boards/),
+		 * with no Save dialog. A taken name becomes "name (2).ext" unless `replace` is set. Resolves to the saved path.
 		 */
-		saveFile(name: string, base64: string, folder?: "Exports" | "QR"): Promise<string>;
+		saveFile(
+			name: string,
+			base64: string,
+			folder?: "Exports" | "QR" | "Finance" | "Boards",
+			replace?: boolean,
+		): Promise<string>;
 	};
 	/** Main asks the page to save everything before the window closes. */
 	onBeforeClose(handler: () => Promise<void> | void): () => void;

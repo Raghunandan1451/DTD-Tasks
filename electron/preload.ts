@@ -37,7 +37,8 @@ const api: DesktopApi = {
 	},
 	shell: {
 		openFolder: (rel) => invoke("shell:openFolder", rel),
-		saveFile: (name, base64, folder) => invoke("shell:saveFile", name, base64, folder),
+		saveFile: (name, base64, folder, replace) =>
+			invoke("shell:saveFile", name, base64, folder, replace),
 	},
 	onBeforeClose(handler) {
 		beforeCloseHandlers.add(handler);

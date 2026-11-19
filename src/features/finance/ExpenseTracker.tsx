@@ -81,7 +81,7 @@ const ExpenseTracker = () => {
 		<>
 			<TitleWithButton
 				heading="Expense Tracker"
-				buttonText="Download"
+				buttonText={window.desktop ? "Save" : "Download"}
 				onDownload={() => setShowDownloadOptions(true)}
 				onUploadFiles={handleUpload}
 				showUpload={!window.desktop}

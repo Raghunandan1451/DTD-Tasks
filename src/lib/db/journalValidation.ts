@@ -7,7 +7,6 @@ export interface JournalInput {
 	text: string;
 	mood?: JournalMood;
 	tags?: string[];
-	imageId?: string;
 }
 
 export const isJournalMood = (value: unknown): value is JournalMood =>
@@ -28,9 +27,9 @@ export const normalizeTags = (tags: readonly string[]): string[] => {
 };
 
 /** Throws a readable Error for a note that must not be stored. */
-export const validateText = (text: string, hasImage: boolean): string => {
+export const validateText = (text: string): string => {
 	const trimmed = text.trim();
-	if (!trimmed && !hasImage) throw new Error("Write something before posting.");
+	if (!trimmed) throw new Error("Write something before posting.");
 	if (trimmed.length > JOURNAL_TEXT_MAX) {
 		throw new Error(`Notes can be at most ${JOURNAL_TEXT_MAX} characters.`);
 	}
