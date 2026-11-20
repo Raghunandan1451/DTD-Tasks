@@ -8,16 +8,9 @@ export interface JournalEntry {
 	text: string;
 	mood?: JournalMood;
 	tags?: string[];
-	/** Key into the `journalImages` store. */
-	imageId?: string;
 	/** Epoch ms. Immutable and always "now" when the note is created. */
 	createdAt: number;
 	updatedAt?: number;
-}
-
-export interface JournalImage {
-	id: string;
-	blob: Blob;
 }
 
 export type MarkdownAction = "created" | "edited" | "renamed" | "deleted";
@@ -63,7 +56,15 @@ export interface BoardNodeData {
 	text?: string;
 	color: BoardColor;
 	shape?: BoardShape;
+	/**
+	 * Where the user dragged this node on a graph or tree board. Each board type
+	 * remembers its own spot, so free-board positions are never touched.
+	 */
+	pins?: BoardPins;
 }
+
+export type BoardPinMode = "graph" | "tree";
+export type BoardPins = Partial<Record<BoardPinMode, { x: number; y: number }>>;
 
 /** Serializable fields only: React Flow runtime state is never stored. */
 export interface BoardNode {

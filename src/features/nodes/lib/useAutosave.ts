@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { saveBoardContent, type BoardContent } from "@src/lib/db/boardsRepo";
+import { saveBoardContent, type BoardContent } from "@src/lib/storage";
 import type { Board } from "@src/lib/db/types";
+import { registerFlush } from "@src/lib/utils/flushRegistry";
 import { AUTOSAVE_MS } from "@src/features/nodes/lib/constants";
 
 export type SaveStatus = "saved" | "saving" | "error";
@@ -93,7 +94,10 @@ export const useAutosave = ({ boardId, getContent, onSaved, onError }: UseAutosa
 		document.addEventListener("visibilitychange", onVisibility);
 		window.addEventListener("pagehide", onLeave);
 		window.addEventListener("beforeunload", onLeave);
+		// So the desktop shell can save every open board before the window closes.
+		const unregister = registerFlush(flush);
 		return () => {
+			unregister();
 			document.removeEventListener("visibilitychange", onVisibility);
 			window.removeEventListener("pagehide", onLeave);
 			window.removeEventListener("beforeunload", onLeave);

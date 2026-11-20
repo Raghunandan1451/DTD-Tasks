@@ -1,16 +1,24 @@
 {
 	"name": "dtd-tasks",
 	"description": "DTD Tasks: Your daily task and time management tool",
+	"author": "Raghunandan Sharma",
+	"homepage": "https://github.com/Raghunandan1451/DTD-Tasks",
 	"private": true,
-	"version": "2.0.0",
+	"version": "2.1.0",
 	"type": "module",
+	"main": "dist-electron/main.cjs",
 	"scripts": {
 		"dev": "vite",
 		"build": "tsc -p tsconfig.build.json && vite build",
 		"lint": "eslint .",
 		"preview": "vite preview",
 		"test": "vitest",
-		"test:ui": "vitest --ui"
+		"test:ui": "vitest --ui",
+		"desktop:dev": "node scripts/desktop-dev.mjs",
+		"desktop:build": "node scripts/build-electron.mjs && vite build --mode desktop",
+		"desktop:start": "yarn desktop:build && electron .",
+		"desktop:dist": "yarn desktop:build && electron-builder",
+		"desktop:typecheck": "tsc -p tsconfig.electron.json"
 	},
 	"dependencies": {
 		"@reduxjs/toolkit": "^2.6.1",
@@ -42,6 +50,8 @@
 		"@types/react-dom": "^19.0.4",
 		"@vitejs/plugin-react": "^4.3.4",
 		"@vitest/ui": "^3.0.9",
+		"electron": "^45.3.3",
+		"electron-builder": "^26.18.0",
 		"eslint": "^9.22.0",
 		"eslint-plugin-react": "^7.37.4",
 		"eslint-plugin-react-hooks": "^5.2.0",

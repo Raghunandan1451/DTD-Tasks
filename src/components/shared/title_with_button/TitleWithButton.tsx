@@ -11,7 +11,8 @@ type ShowNotificationFn = (
 
 interface TitleWithButtonProps {
 	heading: string;
-	onDownload:
+	/** Not needed when `hideTransfer` is set. */
+	onDownload?:
 		| (() => Promise<void> | void)
 		| ((heading: string) => Promise<void> | void);
 	/** Return a string to use it as the success message instead of the default */
@@ -21,7 +22,11 @@ interface TitleWithButtonProps {
 		files: File[],
 		heading: string
 	) => Promise<string | void> | string | void;
-	buttonText: string;
+	buttonText?: string;
+	/** Desktop pages keep their data in the folder: no Download or Upload buttons. */
+	hideTransfer?: boolean;
+	/** Extra buttons after the title. */
+	actions?: React.ReactNode;
 	showUpload?: boolean;
 	/** File types the picker accepts. Defaults to ".json". */
 	uploadAccept?: string;
@@ -36,7 +41,9 @@ const TitleWithButton: React.FC<TitleWithButtonProps> = ({
 	onDownload,
 	onUpload,
 	onUploadFiles,
-	buttonText,
+	buttonText = "Download",
+	hideTransfer = false,
+	actions,
 	showUpload = false,
 	uploadAccept = ".json",
 	uploadText = "Upload JSON",
@@ -49,6 +56,7 @@ const TitleWithButton: React.FC<TitleWithButtonProps> = ({
 	const handleDownloadClick = async () => {
 		setIsDownloading(true);
 		try {
+			if (!onDownload) return;
 			if (onDownload.length === 0) {
 				await (onDownload as () => Promise<void> | void)();
 			} else {
@@ -103,14 +111,17 @@ const TitleWithButton: React.FC<TitleWithButtonProps> = ({
 				{heading.toUpperCase()}
 			</h1>
 			<div className="flex gap-1.5 md:gap-3 items-center">
-				<Button
-					type="button"
-					className="btn-primary text-xs md:text-base py-1.5 md:py-2 px-2.5 md:px-4"
-					onClick={handleDownloadClick}
-					text={isDownloading ? "Downloading..." : buttonText}
-					disabled={isDownloading || isUploading}
-				/>
-				{showUpload && (
+				{actions}
+				{!hideTransfer && (
+					<Button
+						type="button"
+						className="btn-primary text-xs md:text-base py-1.5 md:py-2 px-2.5 md:px-4"
+						onClick={handleDownloadClick}
+						text={isDownloading ? "Downloading..." : buttonText}
+						disabled={isDownloading || isUploading}
+					/>
+				)}
+				{showUpload && !hideTransfer && (
 					<>
 						<Button
 							type="button"

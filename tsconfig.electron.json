@@ -1,0 +1,11 @@
+{
+	"extends": "./tsconfig.json",
+	"compilerOptions": {
+		"lib": ["ES2022"],
+		"types": ["node"],
+		"module": "ESNext",
+		"moduleResolution": "bundler"
+	},
+	"include": ["electron", "src/lib/desktop/types.ts"],
+	"exclude": ["dist", "node_modules", "tests"]
+}

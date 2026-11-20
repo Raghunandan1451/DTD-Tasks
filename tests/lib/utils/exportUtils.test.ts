@@ -60,7 +60,6 @@ const readBlob = (blob: Blob): Promise<string> =>
 const timeline = (overrides: Partial<TimelineBackup> = {}): TimelineBackup => ({
 	schemaVersion: 2,
 	journal: [{ id: "j1", text: "hello", createdAt: 1 }],
-	journalImages: [],
 	markdownLog: [],
 	...overrides,
 });

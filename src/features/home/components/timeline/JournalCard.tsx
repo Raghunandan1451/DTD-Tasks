@@ -2,7 +2,6 @@ import React, { useState } from "react";
 import { Pencil, Trash2 } from "lucide-react";
 import Button from "@src/components/ui/button/Button";
 import Textarea from "@src/components/ui/textbox/Textarea";
-import JournalImage from "@src/features/home/components/timeline/JournalImage";
 import MoodPicker from "@src/features/home/components/timeline/MoodPicker";
 import TagField, {
 	mergeTags,
@@ -76,7 +75,7 @@ const JournalCard: React.FC<JournalCardProps> = ({ item }) => {
 		setBusy(true);
 		setError(null);
 		try {
-			// Only text, mood and tags can change; the date and image never do.
+			// Only text, mood and tags can change; the date never does.
 			const nextTags = mergeTags(tags, tagDraft);
 			await actions.saveNote(entry.id, {
 				text,
@@ -212,7 +211,7 @@ const JournalCard: React.FC<JournalCardProps> = ({ item }) => {
 						<Button
 							type="submit"
 							text={busy ? "Saving..." : "Save"}
-							disabled={busy || (!text.trim() && !entry.imageId)}
+							disabled={busy || !text.trim()}
 							className="btn-primary px-3 py-1 text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400 disabled:opacity-50"
 						/>
 					</div>
@@ -224,8 +223,6 @@ const JournalCard: React.FC<JournalCardProps> = ({ item }) => {
 					</p>
 				)
 			)}
-
-			{entry.imageId && <JournalImage imageId={entry.imageId} />}
 
 			{!editing && shown.tags.length > 0 && (
 				<ul className="mt-2 flex flex-wrap gap-1.5" aria-label="Tags">

@@ -8,7 +8,7 @@ import {
 	listBoards,
 	renameBoard,
 	setLastBoardId,
-} from "@src/lib/db/boardsRepo";
+} from "@src/lib/storage";
 import type { Board, BoardLayoutMode } from "@src/lib/db/types";
 import { initialContent } from "@src/features/nodes/lib/newBoard";
 

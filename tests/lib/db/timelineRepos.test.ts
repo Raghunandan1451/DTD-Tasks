@@ -4,18 +4,11 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { getDB, resetDBForTests } from "@src/lib/db/database";
 import {
 	addJournalEntry,
-	deleteJournalEntry,
 	getJournalInRange,
 	getJournalOnThisDay,
 	updateJournalEntry,
 } from "@src/lib/db/journalRepo";
-import {
-	deleteJournalImage,
-	getJournalImage,
-	putJournalImage,
-} from "@src/lib/db/journalImagesRepo";
 import { getMarkdownLogInRange, logMarkdown } from "@src/lib/db/markdownLogRepo";
-import { fitWithin } from "@src/lib/utils/imageResize";
 
 const at = (y: number, m: number, d: number, h = 12) =>
 	new Date(y, m - 1, d, h).getTime();
@@ -79,14 +72,6 @@ describe("journal", () => {
 		expect(updated.updatedAt).toBeDefined();
 	});
 
-	it("deletes the attached image with the note", async () => {
-		const imageId = await putJournalImage(new Blob(["img"]));
-		const entry = await addJournalEntry({ text: "pic", imageId });
-		await deleteJournalEntry(entry.id);
-		expect(await getJournalImage(imageId)).toBeNull();
-		expect(await getJournalInRange(0, Date.now() + 1000)).toEqual([]);
-	});
-
 	it("queries a half-open range, newest first", async () => {
 		const db = await getDB();
 		for (const [id, createdAt] of [["a", 100], ["b", 200], ["c", 300]] as const) {
@@ -113,23 +98,6 @@ describe("journal", () => {
 
 	it("returns nothing on this day for an empty journal", async () => {
 		expect(await getJournalOnThisDay(new Date(2026, 9, 27))).toEqual([]);
-	});
-});
-
-describe("journal images", () => {
-	it("stores, reads and deletes a blob", async () => {
-		const id = await putJournalImage(new Blob(["abc"], { type: "image/jpeg" }));
-		// fake-indexeddb clones jsdom Blobs into plain objects, so only presence
-		// is asserted here; real browsers store the Blob itself.
-		expect(await getJournalImage(id)).not.toBeNull();
-		await deleteJournalImage(id);
-		expect(await getJournalImage(id)).toBeNull();
-	});
-
-	it("scales the longest side down and never upscales", () => {
-		expect(fitWithin(4000, 2000)).toEqual({ width: 1280, height: 640 });
-		expect(fitWithin(1000, 3000)).toEqual({ width: 427, height: 1280 });
-		expect(fitWithin(800, 600)).toEqual({ width: 800, height: 600 });
 	});
 });
 

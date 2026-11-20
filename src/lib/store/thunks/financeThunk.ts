@@ -1,6 +1,5 @@
 import { createAsyncThunk } from "@reduxjs/toolkit";
-import { getFromIndexedDB } from "@src/lib/utils/persistMiddleware";
-import { FinanceState } from "@src/features/finance/type";
+import { getFinanceStore } from "@src/lib/storage";
 import { setFinanceState } from "@src/lib/store/slices/financeSlice";
 import { addRecurringForMissedMonths, addSalaryForMissedMonths } from "@src/lib/utils/finance";
 import { todayISO } from "@src/lib/utils/isoDate";
@@ -9,7 +8,7 @@ import type { AppDispatch, RootState } from "@src/lib/store/store";
 export const hydrateFinance = createAsyncThunk(
 	"finance/hydrate",
 	async (_, { dispatch }) => {
-		const data = await getFromIndexedDB<FinanceState>("redux_finance_data");
+		const data = await getFinanceStore().loadFinance();
 		if (data) dispatch(setFinanceState(data));
 	}
 );

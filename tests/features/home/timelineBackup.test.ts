@@ -2,13 +2,10 @@ import "fake-indexeddb/auto";
 import { IDBFactory } from "fake-indexeddb";
 import { beforeEach, describe, expect, it } from "vitest";
 import {
-	base64ToBlob,
-	blobToBase64,
 	buildTimelineBackup,
 	describeTimelineImport,
 	importTimelineFile,
 	parseTimelineBackup,
-	serializeTimeline,
 } from "@src/features/home/lib/timelineBackup";
 import { getDB, resetDBForTests } from "@src/lib/db/database";
 import { logMarkdown } from "@src/lib/db/markdownLogRepo";
@@ -21,7 +18,7 @@ import type { JournalEntry, MarkdownLogEntry } from "@src/lib/db/types";
 import { SCHEMA_VERSION } from "@src/lib/utils/schemaVersion";
 import { UploadError } from "@src/lib/utils/uploadError";
 
-// "AQID" is the base64 of the bytes 1, 2, 3.
+// "AQID" is the base64 of the bytes 1, 2, 3 (what older backups carry for a picture).
 const IMAGE = { id: "img1", mimeType: "image/png", data: "AQID" };
 
 const note = (overrides: Partial<JournalEntry> = {}): JournalEntry => ({
@@ -44,7 +41,7 @@ const logRow = (overrides: Partial<MarkdownLogEntry> = {}): MarkdownLogEntry => 
 
 const backup = (extra: Record<string, unknown> = {}) => ({
 	schemaVersion: SCHEMA_VERSION,
-	journal: [note({ imageId: "img1" })],
+	journal: [{ ...note(), imageId: "img1" }],
 	journalImages: [IMAGE],
 	markdownLog: [logRow()],
 	...extra,
@@ -74,18 +71,6 @@ const freshDb = async () => {
 
 beforeEach(freshDb);
 
-describe("base64 images", () => {
-	it("round-trips bytes and type", async () => {
-		const blob = base64ToBlob("AQID", "image/png");
-		expect(blob.type).toBe("image/png");
-		expect(blob.size).toBe(3);
-		expect(await blobToBase64(blob)).toBe("AQID");
-	});
-});
-
-// fake-indexeddb clones a stored Blob into a plain {} (real browsers keep it),
-// so image bytes are checked on serializeTimeline with real Blobs, and stored
-// images are checked by id.
 describe("export", () => {
 	it("includes notes and markdown activity from the database", async () => {
 		const db = await getDB();
@@ -97,37 +82,27 @@ describe("export", () => {
 		expect(out.schemaVersion).toBe(SCHEMA_VERSION);
 		expect(out.journal).toEqual([note()]);
 		expect(out.markdownLog).toHaveLength(1);
-		expect(out.journalImages).toEqual([]);
+		expect(out).not.toHaveProperty("journalImages");
 		await expect(countTimelineData()).resolves.toBe(2);
-	});
-
-	it("writes images as base64 with their type", async () => {
-		const out = await serializeTimeline({
-			journal: [note({ imageId: "img1" })],
-			journalImages: [{ id: "img1", blob: base64ToBlob("AQID", "image/png") }],
-			markdownLog: [],
-		});
-		expect(out.journalImages).toEqual([IMAGE]);
 	});
 });
 
 describe("import", () => {
-	it("reproduces notes with images and the markdown log in a fresh profile", async () => {
+	it("reproduces notes and the markdown log, and drops pictures from older backups in a fresh profile", async () => {
 		const exported = backup();
 		const message = await importTimelineFile(fileOf(exported));
 
-		expect(message).toBe("Imported 1 notes, 1 images, 1 activity rows");
+		expect(message).toBe("Imported 1 notes, 1 activity rows");
 		const stored = await getAllTimelineData();
-		expect(stored.journal).toEqual(exported.journal);
+		expect(stored.journal).toEqual([note()]);
 		expect(stored.markdownLog).toEqual(exported.markdownLog);
-		expect(stored.journalImages.map((image) => image.id)).toEqual(["img1"]);
 	});
 
 	it("skips duplicates when the same file is imported twice", async () => {
 		await importTimelineFile(fileOf(backup()));
 		const again = await importTimelineFile(fileOf(backup()));
 
-		expect(again).toBe("Nothing new to import (3 already existed)");
+		expect(again).toBe("Nothing new to import (2 already existed)");
 		await expect(countTimelineData()).resolves.toBe(2);
 	});
 
@@ -178,11 +153,6 @@ describe("import", () => {
 		expect(message).toBe("Imported 1 notes");
 	});
 
-	it("allows an image-only note", () => {
-		expect(() =>
-			parseTimelineBackup(backup({ journal: [note({ text: "", imageId: "img1" })] })),
-		).not.toThrow();
-	});
 });
 
 describe("malformed backups", () => {
@@ -223,13 +193,11 @@ describe("malformed backups", () => {
 		expect(message).toContain("(and 2 more)");
 	});
 
-	it("checks moods, tags, actions and image data", async () => {
+	it("checks moods, tags and actions", async () => {
 		const problems = [
 			{ journal: [note({ mood: 9 as never })] },
 			{ journal: [note({ tags: [1] as never })] },
 			{ markdownLog: [logRow({ action: "moved" as never })] },
-			{ journalImages: [{ ...IMAGE, data: "not base64!" }] },
-			{ journalImages: [{ ...IMAGE, mimeType: "text/html" }] },
 			{ journal: "nope" },
 		];
 		for (const problem of problems) {
@@ -255,8 +223,6 @@ describe("describeTimelineImport", () => {
 			describeTimelineImport({
 				journalAdded: 0,
 				journalSkipped: 0,
-				imagesAdded: 0,
-				imagesSkipped: 0,
 				logAdded: 0,
 				logSkipped: 0,
 			}),

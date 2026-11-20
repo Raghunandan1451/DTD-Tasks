@@ -8,7 +8,6 @@ import { isJournalMood } from "@src/lib/db/journalValidation";
 import {
 	JOURNAL_TEXT_MAX,
 	type JournalEntry,
-	type JournalImage,
 	type MarkdownAction,
 	type MarkdownLogEntry,
 } from "@src/lib/db/types";
@@ -17,17 +16,9 @@ import { UploadError } from "@src/lib/utils/uploadError";
 
 export const TIMELINE_BACKUP_FILE = "timeline-backup.json";
 
-/** An image inside the JSON: the blob as base64 text. */
-export interface BackupImage {
-	id: string;
-	mimeType: string;
-	data: string;
-}
-
 export interface TimelineBackup {
 	schemaVersion: number;
 	journal: JournalEntry[];
-	journalImages: BackupImage[];
 	markdownLog: MarkdownLogEntry[];
 }
 
@@ -43,47 +34,12 @@ const isFiniteNumber = (value: unknown): value is number =>
 	typeof value === "number" && Number.isFinite(value);
 
 const DAY_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
-const BASE64_PATTERN = /^[A-Za-z0-9+/]*={0,2}$/;
 const ACTIONS: readonly MarkdownAction[] = [
 	"created",
 	"edited",
 	"renamed",
 	"deleted",
 ];
-
-// --- Blob <-> base64 ------------------------------------------------------
-
-const bytesToBase64 = (bytes: Uint8Array): string => {
-	// Chunked so large images do not overflow the call stack.
-	let binary = "";
-	for (let i = 0; i < bytes.length; i += 0x8000) {
-		binary += String.fromCharCode(...bytes.subarray(i, i + 0x8000));
-	}
-	return btoa(binary);
-};
-
-export const blobToBase64 = async (blob: Blob): Promise<string> => {
-	if (typeof blob.arrayBuffer === "function") {
-		return bytesToBase64(new Uint8Array(await blob.arrayBuffer()));
-	}
-	// Older engines without Blob.arrayBuffer.
-	return new Promise((resolve, reject) => {
-		const reader = new FileReader();
-		reader.onerror = () => reject(new Error("Could not read an image"));
-		reader.onload = () => {
-			const url = String(reader.result);
-			resolve(url.slice(url.indexOf(",") + 1));
-		};
-		reader.readAsDataURL(blob);
-	});
-};
-
-export const base64ToBlob = (data: string, mimeType: string): Blob => {
-	const binary = atob(data);
-	const bytes = new Uint8Array(binary.length);
-	for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
-	return new Blob([bytes], { type: mimeType });
-};
 
 // --- Export ---------------------------------------------------------------
 
@@ -92,13 +48,6 @@ export const serializeTimeline = async (
 ): Promise<TimelineBackup> => ({
 	schemaVersion: SCHEMA_VERSION,
 	journal: data.journal,
-	journalImages: await Promise.all(
-		data.journalImages.map(async (image) => ({
-			id: image.id,
-			mimeType: image.blob.type || "application/octet-stream",
-			data: await blobToBase64(image.blob),
-		})),
-	),
 	markdownLog: data.markdownLog,
 });
 
@@ -129,28 +78,6 @@ const checkJournal = (value: unknown): string | null => {
 		)
 	) {
 		return 'has invalid "tags"';
-	}
-	if (value.imageId !== undefined && !isNonEmptyString(value.imageId)) {
-		return 'has an invalid "imageId"';
-	}
-	return null;
-};
-
-const checkImage = (value: unknown): string | null => {
-	if (!isRecord(value)) return "is not an object";
-	if (!isNonEmptyString(value.id)) return 'is missing an "id"';
-	if (
-		typeof value.mimeType !== "string" ||
-		!value.mimeType.startsWith("image/")
-	) {
-		return 'has an invalid "mimeType"';
-	}
-	if (
-		!isNonEmptyString(value.data) ||
-		value.data.length % 4 !== 0 ||
-		!BASE64_PATTERN.test(value.data)
-	) {
-		return "has image data that is not valid base64";
 	}
 	return null;
 };
@@ -233,7 +160,7 @@ export const parseTimelineBackup = (raw: unknown): TimelineData => {
 
 	const problems: string[] = [];
 	const journal = readList(raw, "journal", "Journal entry", checkJournal, problems);
-	const images = readList(raw, "journalImages", "Image", checkImage, problems);
+	// Older backups carry journal pictures; the app no longer keeps them, so they are skipped.
 	const log = readList(raw, "markdownLog", "Activity row", checkLog, problems);
 
 	if (problems.length > 0) {
@@ -243,13 +170,12 @@ export const parseTimelineBackup = (raw: unknown): TimelineData => {
 	}
 
 	return {
-		journal: journal as JournalEntry[],
-		journalImages: (images as BackupImage[]).map(
-			(image): JournalImage => ({
-				id: image.id,
-				blob: base64ToBlob(image.data, image.mimeType),
-			}),
-		),
+		journal: (journal as JournalEntry[]).map((entry) => {
+			// Older backups name a picture the app no longer keeps.
+			const copy: JournalEntry & { imageId?: unknown } = { ...entry };
+			delete copy.imageId;
+			return copy;
+		}),
 		markdownLog: log as MarkdownLogEntry[],
 	};
 };
@@ -257,10 +183,9 @@ export const parseTimelineBackup = (raw: unknown): TimelineData => {
 export const describeTimelineImport = (result: MergeResult): string => {
 	const added: string[] = [];
 	if (result.journalAdded) added.push(`${result.journalAdded} notes`);
-	if (result.imagesAdded) added.push(`${result.imagesAdded} images`);
 	if (result.logAdded) added.push(`${result.logAdded} activity rows`);
 	const skipped =
-		result.journalSkipped + result.imagesSkipped + result.logSkipped;
+		result.journalSkipped + result.logSkipped;
 
 	if (added.length === 0) {
 		return skipped > 0

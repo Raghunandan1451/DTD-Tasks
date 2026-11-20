@@ -9,7 +9,7 @@ import {
 } from "@src/lib/utils/downloadHandler";
 import { buildTimelineBackup } from "@src/features/home/lib/timelineBackup";
 import { countTimelineData } from "@src/lib/db/timelineBackupRepo";
-import { countBoards } from "@src/lib/db/boardsRepo";
+import { countBoards } from "@src/lib/storage";
 import { buildBoardsBackup } from "@src/features/nodes/lib/boardBackup";
 import {
 	buildBoardExports,

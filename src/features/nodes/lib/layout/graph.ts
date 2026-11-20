@@ -1,5 +1,6 @@
 import {
 	DEFAULT_GAP_X,
+	DEFAULT_GAP_Y,
 	maxSize,
 	type LayoutEdge,
 	type LayoutNode,
@@ -29,10 +30,10 @@ export interface GraphLayoutOptions extends LayoutOptions {
  * RNG make it fully deterministic. Cost is O(n^2) per iteration, so large boards
  * get fewer iterations.
  */
-export const layoutGraph = (
+const forceLayout = (
 	nodes: readonly LayoutNode[],
 	edges: readonly LayoutEdge[],
-	options: GraphLayoutOptions = {},
+	options: GraphLayoutOptions,
 ): Positions => {
 	const n = nodes.length;
 	if (n === 0) return {};
@@ -119,6 +120,45 @@ export const layoutGraph = (
 		positions[node.id] = {
 			x: Math.round(x[i] - minX),
 			y: Math.round(y[i] - minY),
+		};
+	});
+	return positions;
+};
+
+/**
+ * Linked nodes get the force layout. Nodes with no link are parked in a tidy
+ * block below it instead of being pushed around by it, so adding a new unlinked
+ * node never moves the nodes that are already placed.
+ */
+export const layoutGraph = (
+	nodes: readonly LayoutNode[],
+	edges: readonly LayoutEdge[],
+	options: GraphLayoutOptions = {},
+): Positions => {
+	const linked = new Set<string>();
+	for (const edge of edges) {
+		if (edge.source !== edge.target) {
+			linked.add(edge.source);
+			linked.add(edge.target);
+		}
+	}
+	const connected = nodes.filter((node) => linked.has(node.id));
+	const isolated = nodes.filter((node) => !linked.has(node.id));
+	if (isolated.length === 0) return forceLayout(nodes, edges, options);
+
+	const positions = connected.length > 0 ? forceLayout(connected, edges, options) : {};
+	const { gapX = DEFAULT_GAP_X, gapY = DEFAULT_GAP_Y } = options;
+	const cell = maxSize(nodes);
+	let top = 0;
+	for (const node of connected) {
+		top = Math.max(top, positions[node.id].y + node.height);
+	}
+	if (connected.length > 0) top += gapY;
+	const columns = Math.max(1, Math.ceil(Math.sqrt(isolated.length)));
+	isolated.forEach((node, i) => {
+		positions[node.id] = {
+			x: (i % columns) * (cell.width + gapX),
+			y: top + Math.floor(i / columns) * (cell.height + gapY),
 		};
 	});
 	return positions;

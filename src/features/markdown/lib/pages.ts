@@ -56,59 +56,41 @@ export function formatPageDate(date: string | null): string {
 	return Number.isNaN(d.getTime()) ? date : format(d, "EEEE, d MMMM yyyy");
 }
 
-export interface PaginatedText {
-	chunks: string[];
-	/** Offset in the original text where each chunk begins. */
-	starts: number[];
+/** True when `text` ends a sentence or a line, so a following page starts something new. */
+const endsThought = (text: string): boolean =>
+	/\n$/.test(text) || /[.!?:]["')\]]*$/.test(text);
+
+/** The text between two pages that are being joined into one. */
+const joinBodies = (previous: string, next: string): string => {
+	if (previous === "") return next;
+	if (next === "") return previous;
+	// An old automatic split removed one space or newline at the break and nobody
+	// knows which: mid-sentence it was almost surely a space.
+	return previous + (endsThought(previous) ? "\n" : " ") + next;
+};
+
+export interface MergeResult {
+	pages: DiaryPage[];
+	/** How many pages disappeared into a neighbour. 0 means nothing to merge. */
+	merged: number;
 }
 
 /**
- * Splits `text` into chunks that each satisfy `fits` (a layout measurement
- * supplied by the caller). Breaks prefer the last space/newline in the second
- * half of what fits, and that whitespace character is consumed by the break.
+ * Joins pages that sit next to each other and carry the same date, in order.
+ * Older versions cut text into pages to fit the screen they were typed on and
+ * dated every cut with that day, so those pieces are the ones that match.
+ * Undated pages, pages from different days and pages that are not neighbours
+ * (day 1, day 2, day 1) are never touched.
  */
-export function paginateText(
-	text: string,
-	fits: (s: string) => boolean,
-	maxChunks = 200,
-): PaginatedText {
-	const chunks: string[] = [];
-	const starts: number[] = [];
-	let offset = 0;
-	let rest = text;
-
-	for (;;) {
-		if (fits(rest) || chunks.length >= maxChunks - 1) {
-			chunks.push(rest);
-			starts.push(offset);
-			break;
+export function mergeSameDayPages(pages: DiaryPage[]): MergeResult {
+	const out: DiaryPage[] = [];
+	for (const page of pages) {
+		const last = out[out.length - 1];
+		if (last && page.date !== null && last.date === page.date) {
+			out[out.length - 1] = { date: last.date, body: joinBodies(last.body, page.body) };
+		} else {
+			out.push({ ...page });
 		}
-
-		// Largest prefix length that still fits (fits is monotonic).
-		let lo = 0;
-		let hi = rest.length - 1;
-		while (lo < hi) {
-			const mid = Math.ceil((lo + hi) / 2);
-			if (fits(rest.slice(0, mid))) lo = mid;
-			else hi = mid - 1;
-		}
-
-		if (lo === 0) {
-			// Not even one character fits (e.g. the page is not laid out): leave as is.
-			chunks.push(rest);
-			starts.push(offset);
-			break;
-		}
-
-		const ws = Math.max(rest.lastIndexOf("\n", lo), rest.lastIndexOf(" ", lo));
-		const headLen = ws > lo / 2 ? ws : lo;
-		const skip = headLen === ws && ws > lo / 2 ? 1 : 0;
-
-		chunks.push(rest.slice(0, headLen));
-		starts.push(offset);
-		offset += headLen + skip;
-		rest = rest.slice(headLen + skip);
 	}
-
-	return { chunks, starts };
+	return { pages: out, merged: pages.length - out.length };
 }

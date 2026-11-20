@@ -3,6 +3,7 @@ import {
 	BOARD_SHAPES,
 	BOARD_TEXT_MAX,
 	type BoardColor,
+	type BoardPins,
 	type BoardEdge,
 	type BoardNode,
 	type BoardNodeData,
@@ -21,6 +22,7 @@ export type FlowNodeData = {
 	text?: string;
 	color: BoardColor;
 	shape?: BoardShape;
+	pins?: BoardPins;
 };
 
 export type FlowNode = Node<FlowNodeData, BoardNodeType>;
@@ -34,6 +36,23 @@ const isShape = (value: unknown): value is BoardShape =>
 const isPositive = (value: unknown): value is number =>
 	typeof value === "number" && Number.isFinite(value) && value > 0;
 
+const isPoint = (value: unknown): value is { x: number; y: number } =>
+	typeof value === "object" &&
+	value !== null &&
+	Number.isFinite((value as { x?: unknown }).x) &&
+	Number.isFinite((value as { y?: unknown }).y);
+
+/** Keeps only valid graph/tree pins; undefined when there are none. */
+export const toBoardPins = (pins: unknown): BoardPins | undefined => {
+	if (typeof pins !== "object" || pins === null) return undefined;
+	const out: BoardPins = {};
+	for (const mode of ["graph", "tree"] as const) {
+		const point = (pins as BoardPins)[mode];
+		if (isPoint(point)) out[mode] = { x: point.x, y: point.y };
+	}
+	return out.graph || out.tree ? out : undefined;
+};
+
 /**
  * Builds the stored data from known keys only, so nothing else that sits on a
  * node (selection, drag state, measurements) can ever be saved.
@@ -43,6 +62,8 @@ const toBoardNodeData = (data: Partial<FlowNodeData>): BoardNodeData => {
 	if (typeof data.title === "string") out.title = clampText(data.title);
 	if (typeof data.text === "string") out.text = clampText(data.text);
 	if (isShape(data.shape)) out.shape = data.shape;
+	const pins = toBoardPins(data.pins);
+	if (pins) out.pins = pins;
 	return out;
 };
 

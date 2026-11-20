@@ -42,7 +42,7 @@ const QRGenerator: React.FC = () => {
 				<TitleWithButton
 					heading="QR Code Generator"
 					onDownload={handleDownload}
-					buttonText="Download"
+					buttonText={window.desktop ? "Save" : "Download"}
 					containerClass="rounded-bl-xl"
 					showUpload={false}
 					showNotification={showNotification}
@@ -53,7 +53,7 @@ const QRGenerator: React.FC = () => {
 					aria-label="Download format"
 					className="mt-4 flex items-center justify-center gap-2 text-sm text-gray-800 dark:text-gray-100"
 				>
-					<span>Download as</span>
+					<span>{window.desktop ? "Save as" : "Download as"}</span>
 					{(["png", "jpg"] as const).map((format) => (
 						<Button
 							key={format}

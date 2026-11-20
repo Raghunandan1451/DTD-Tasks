@@ -22,3 +22,16 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+graphify-out
+CLAUDE.md
+Tasks.md
+docs/
+.claude/
+.github/*
+!.github/workflows/
+.windsurf/
+WORKSPACE_GRAPH.md
+dist-desktop
+dist-electron
+release

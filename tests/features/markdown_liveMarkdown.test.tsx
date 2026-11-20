@@ -3,7 +3,7 @@ import { render } from "@testing-library/react";
 import { highlightMarkdown } from "@src/features/markdown/lib/liveMarkdown";
 import {
 	parsePages,
-	paginateText,
+	mergeSameDayPages,
 	serializePages,
 	formatPageDate,
 } from "@src/features/markdown/lib/pages";
@@ -77,26 +77,63 @@ describe("pages", () => {
 	});
 });
 
-describe("paginateText", () => {
-	const fits = (n: number) => (s: string) => s.length <= n;
 
-	it("leaves text that fits alone", () => {
-		expect(paginateText("short", fits(10))).toEqual({
-			chunks: ["short"],
-			starts: [0],
-		});
+describe("mergeSameDayPages", () => {
+	const page = (date: string | null, body: string) => ({ date, body });
+
+	it("joins neighbouring pages of one day and counts what disappeared", () => {
+		const r = mergeSameDayPages([
+			page("2026-11-01", "a"),
+			page("2026-11-01", "b"),
+			page("2026-11-01", "c"),
+			page("2026-11-02", "d"),
+		]);
+		expect(r.merged).toBe(2);
+		expect(r.pages.map((p) => p.date)).toEqual(["2026-11-01", "2026-11-02"]);
+		expect(r.pages[0].body).toBe("a b c");
 	});
-	it("breaks on whitespace, consuming it, and tracks offsets", () => {
-		const r = paginateText("aaaa bbbb cccc", fits(9));
-		expect(r.chunks).toEqual(["aaaa bbbb", "cccc"]);
-		expect(r.starts).toEqual([0, 10]);
+
+	it("keeps pages from different days apart", () => {
+		const input = [page("2026-11-01", "a"), page("2026-11-02", "b")];
+		expect(mergeSameDayPages(input)).toEqual({ pages: input, merged: 0 });
 	});
-	it("hard-cuts a long word and can make many pages", () => {
-		const r = paginateText("x".repeat(25), fits(10));
-		expect(r.chunks.map((c) => c.length)).toEqual([10, 10, 5]);
-		expect(r.chunks.join("")).toBe("x".repeat(25));
+
+	it("never joins pages that are not neighbours", () => {
+		const input = [page("2026-11-01", "a"), page("2026-11-02", "b"), page("2026-11-01", "c")];
+		expect(mergeSameDayPages(input).merged).toBe(0);
 	});
-	it("gives up safely when nothing fits", () => {
-		expect(paginateText("abc", () => false).chunks).toEqual(["abc"]);
+
+	it("leaves undated pages alone", () => {
+		const input = [page(null, "old"), page("2026-11-01", "a"), page("2026-11-01", "b")];
+		const r = mergeSameDayPages(input);
+		expect(r.pages[0]).toEqual(page(null, "old"));
+		expect(r.merged).toBe(1);
+	});
+
+	it("joins with a space mid-sentence and with a newline after a sentence or line", () => {
+		const join = (a: string, b: string) =>
+			mergeSameDayPages([page("d", a), page("d", b)]).pages[0].body;
+		expect(join("I went to the", "shop")).toBe("I went to the shop");
+		expect(join("Done.", "Next")).toBe("Done.\nNext");
+		expect(join("Really?", "Yes")).toBe("Really?\nYes");
+		expect(join('He said "stop."', "Then")).toBe('He said "stop."\nThen');
+		expect(join("line\n", "more")).toBe("line\n\nmore");
+	});
+
+	it("does not add a separator next to an empty page", () => {
+		const join = (a: string, b: string) =>
+			mergeSameDayPages([page("d", a), page("d", b)]).pages[0].body;
+		expect(join("", "text")).toBe("text");
+		expect(join("text", "")).toBe("text");
+	});
+
+	it("does nothing the second time, does not change the input, and round-trips", () => {
+		const input = [page("d", "a"), page("d", "b"), page("e", "c")];
+		const snapshot = structuredClone(input);
+		const once = mergeSameDayPages(input);
+		expect(input).toEqual(snapshot);
+		expect(mergeSameDayPages(once.pages).merged).toBe(0);
+		const text = serializePages(once.pages);
+		expect(serializePages(parsePages(text))).toBe(text);
 	});
 });

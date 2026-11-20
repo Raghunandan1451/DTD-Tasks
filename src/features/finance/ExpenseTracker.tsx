@@ -16,6 +16,8 @@ import {
 	selectBudgetPlansByMonth,
 	selectCurrentBalance,
 	selectFinance,
+	selectFinanceLoaded,
+	selectManualOverride,
 	selectRecurring,
 	selectSalary,
 	selectSalaryHistory,
@@ -50,7 +52,14 @@ const ExpenseTracker = () => {
 	const calculatedBalance = useSelector(selectCalculatedBalance);
 	const totalAllExpenses = useSelector(selectTotalAllExpenses);
 
-	const [viewMode, setViewMode] = useState<ViewMode>("list");
+	const financeLoaded = useSelector(selectFinanceLoaded);
+	const manualOverride = useSelector(selectManualOverride);
+	const [chosenView, setViewMode] = useState<ViewMode>("list");
+	// Salary and balance come first: until they are set, only Overview opens.
+	const setupDone =
+		(salary?.amount ?? 0) > 0 && (manualOverride || currentBalance !== 0);
+	const locked = financeLoaded && !setupDone;
+	const viewMode: ViewMode = locked ? "salary" : chosenView;
 	const [showDownloadOptions, setShowDownloadOptions] = useState(false);
 	const [isExportingReports, setIsExportingReports] = useState(false);
 
@@ -81,10 +90,10 @@ const ExpenseTracker = () => {
 		<>
 			<TitleWithButton
 				heading="Expense Tracker"
-				buttonText="Download"
+				buttonText={window.desktop ? "Save" : "Download"}
 				onDownload={() => setShowDownloadOptions(true)}
 				onUploadFiles={handleUpload}
-				showUpload={true}
+				showUpload={!window.desktop}
 				showNotification={showNotification}
 			/>
 			<ExpenseSummary
@@ -92,6 +101,7 @@ const ExpenseTracker = () => {
 				expenses={totalAllExpenses}
 				viewMode={viewMode}
 				onChangeView={setViewMode}
+				locked={locked}
 			/>
 			<ExpenseSections
 				viewMode={viewMode}
