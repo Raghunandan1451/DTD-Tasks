@@ -21,6 +21,9 @@ import {
 	parseFinanceBackup,
 	type ParsedFinanceBackup,
 } from "@src/features/finance/lib/financeBackup";
+import { isFolderZip, readFolderZip } from "@src/lib/utils/download/folderLayout";
+import { buildFinanceBackup } from "@src/features/finance/lib/financeBackup";
+import { SCHEMA_VERSION } from "@src/lib/utils/schemaVersion";
 import {
 	mergeImportedNotes,
 	parseNotesBackup,
@@ -85,6 +88,34 @@ const readSources = async (file: File, problems: string[]): Promise<Source[]> =>
 		} catch {
 			problems.push(`${file.name}: not a valid ZIP file`);
 			return [];
+		}
+		// A ZIP laid out like a data folder (what the Home download makes, or a zipped folder).
+		if (isFolderZip(zip)) {
+			try {
+				const data = await readFolderZip(zip);
+				const found: Source[] = [];
+				if (data.notes) {
+					found.push({ kind: "notes", from: `${file.name} / Notes`, raw: { files: data.notes.files } });
+				}
+				if (data.boards) {
+					found.push({ kind: "boards", from: `${file.name} / Boards`, raw: { schemaVersion: SCHEMA_VERSION, boards: data.boards } });
+				}
+				if (data.finance || data.expenses) {
+					found.push({ kind: "finance", from: `${file.name} / Finance`, raw: buildFinanceBackup(data.finance, data.expenses) });
+				}
+				if (data.journal || data.activity) {
+					found.push({
+						kind: "timeline",
+						from: `${file.name} / Journal`,
+						raw: { schemaVersion: SCHEMA_VERSION, journal: data.journal ?? [], markdownLog: data.activity ?? [] },
+					});
+				}
+				if (found.length === 0) problems.push(`${file.name}: the folder has no data in it`);
+				return found;
+			} catch (error) {
+				problems.push(`${file.name}: ${error instanceof Error ? error.message : "could not be read"}`);
+				return [];
+			}
 		}
 		const sources: Source[] = [];
 		for (const entry of Object.values(zip.files)) {
