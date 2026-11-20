@@ -13,7 +13,7 @@ import {
 } from "lucide-react";
 import ThemeToggle from "@src/components/shared/theme_toggler/ThemeToggle";
 import ChangeFolderButton from "@src/features/desktop/ChangeFolderButton";
-import { DESKTOP_APP_DOWNLOAD_URL } from "@src/lib/desktop/links";
+import { DESKTOP_APP_DOWNLOAD_URL, resolveDesktopDownload } from "@src/lib/desktop/links";
 import { useNavCollapsed } from "@src/lib/hooks/useNavCollapsed";
 
 export interface NavItem {
@@ -305,6 +305,11 @@ const ListSelector: React.FC = () => {
 					<div className="mt-auto border-t border-white/20 px-1 pt-3 dark:border-white/10">
 						<a
 							href={DESKTOP_APP_DOWNLOAD_URL}
+							onClick={(event) => {
+								// Go straight to the installer for this computer; the href is the fallback.
+								event.preventDefault();
+								void resolveDesktopDownload().then((url) => window.location.assign(url));
+							}}
 							target="_blank"
 							rel="noopener noreferrer"
 							title="Download the desktop app (Windows, Mac, Linux)"
