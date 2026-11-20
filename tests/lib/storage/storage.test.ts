@@ -144,6 +144,21 @@ describe("debounce flush", () => {
 		vi.advanceTimersByTime(1);
 		expect(fn).toHaveBeenCalledWith("a");
 	});
+
+	it("with maxWait, saves during a steady stream of changes", () => {
+		vi.useFakeTimers();
+		const fn = vi.fn();
+		const debounced = debounce(fn as (...args: unknown[]) => void, 2000, 10000);
+
+		// A change every second for 12 s never lets the 2 s quiet period pass.
+		for (let second = 0; second < 12; second++) {
+			debounced(second);
+			vi.advanceTimersByTime(1000);
+		}
+		expect(fn).toHaveBeenCalledTimes(1);
+		expect(fn.mock.calls[0][0]).toBeGreaterThanOrEqual(9);
+		vi.useRealTimers();
+	});
 });
 
 describe("notes through the store", () => {
@@ -185,7 +200,7 @@ describe("notes through the store", () => {
 		store.dispatch(updateFileContent({ path: "idea.md", content: "hello" }));
 		expect(notes.ops).toEqual([]);
 
-		await new Promise((resolve) => setTimeout(resolve, 1200));
+		await new Promise((resolve) => setTimeout(resolve, 2200));
 
 		expect(notes.ops).toEqual([
 			{ type: "create", id: "n1", kind: "file", path: "idea.md", content: "hello" },

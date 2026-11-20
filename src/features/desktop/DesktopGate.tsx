@@ -16,10 +16,10 @@ import Button from "@src/components/ui/button/Button";
 const PROBLEM_TEXT: Record<FolderProblem, string> = {
 	missing: "This folder can't be found. It may have been moved, renamed or deleted, or its drive is not connected.",
 	"not-a-folder": "This location is a file, not a folder.",
-	"not-readable": "AIOLists isn't allowed to read this folder.",
-	"not-writable": "AIOLists isn't allowed to save into this folder.",
-	"newer-format": "This folder was made by a newer version of AIOLists. Update the app to open it.",
-	"damaged-marker": "The folder's AIOLists settings file is damaged or missing, so it can't be trusted.",
+	"not-readable": "DTDTasks isn't allowed to read this folder.",
+	"not-writable": "DTDTasks isn't allowed to save into this folder.",
+	"newer-format": "This folder was made by a newer version of DTDTasks. Update the app to open it.",
+	"damaged-marker": "The folder's DTDTasks settings file is damaged or missing, so it can't be trusted.",
 };
 
 const PRIMARY = "rounded-lg bg-blue-600 px-4 py-2 text-white hover:bg-blue-500";
@@ -90,13 +90,13 @@ const DesktopGate: FC<{ children: ReactNode }> = ({ children }) => {
 	if (!desktop) {
 		return (
 			<Screen title="Desktop app required">
-				<p className="text-gray-300">This build needs the AIOLists desktop app to run.</p>
+				<p className="text-gray-300">This build needs the DTDTasks desktop app to run.</p>
 			</Screen>
 		);
 	}
 	if (!state) {
 		return (
-			<Screen title="Opening AIOLists…">
+			<Screen title="Opening DTDTasks…">
 				<p className="text-gray-300">Checking your data folder.</p>
 			</Screen>
 		);
@@ -128,7 +128,7 @@ const DesktopGate: FC<{ children: ReactNode }> = ({ children }) => {
 
 	if (state.status === "none") {
 		return (
-			<Screen title="Choose your AIOLists folder">
+			<Screen title="Choose your DTDTasks folder">
 				<p className="text-gray-300">
 					Your notes, boards and other data are saved as ordinary files in a folder you pick. Choose an empty
 					folder to start fresh, or one you used before.
@@ -145,7 +145,7 @@ const DesktopGate: FC<{ children: ReactNode }> = ({ children }) => {
 			<Screen title="This folder isn't empty">
 				<p className="break-all text-sm text-gray-400">{state.path}</p>
 				<p className="text-gray-300">
-					It already has other files. AIOLists will only add its own files and a hidden <code>.dtdtasks</code>{" "}
+					It already has other files. DTDTasks will only add its own files and a hidden <code>.dtdtasks</code>{" "}
 					folder, and will not change or show anything else. Use it anyway?
 				</p>
 				<div className="flex flex-wrap gap-2">

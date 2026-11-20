@@ -221,7 +221,7 @@ const ListSelector: React.FC = () => {
 				className={`hidden md:flex glass-nav scrollbar-hide ${collapsed ? "collapsed" : ""}`}
 			>
 				<div
-					className={`flex items-center mb-4 px-2 ${
+					className={`flex items-center px-2 ${
 						collapsed ? "flex-col gap-2" : "justify-between"
 					}`}
 				>
@@ -258,21 +258,6 @@ const ListSelector: React.FC = () => {
 						</button>
 					</div>
 				</div>
-				{!window.desktop && (
-					<a
-						href={DESKTOP_APP_DOWNLOAD_URL}
-						target="_blank"
-						rel="noopener noreferrer"
-						title="Download the desktop app for Windows"
-						aria-label="Download the desktop app"
-						className={`mx-1 mb-3 flex items-center gap-2 rounded-lg border border-cyan-500/40 bg-cyan-500/10 px-2 py-1.5 text-sm font-medium text-cyan-700 hover:bg-cyan-500/20 dark:text-cyan-300 ${
-							collapsed ? "justify-center" : ""
-						}`}
-					>
-						<Download className="h-4 w-4 shrink-0" aria-hidden />
-						{!collapsed && <span className="whitespace-nowrap">Get desktop app</span>}
-					</a>
-				)}
 				<div className="flex flex-col gap-1">
 					{navigationData.map(
 						({ id, name, mobileReady, icon: Icon }) => (
@@ -314,6 +299,27 @@ const ListSelector: React.FC = () => {
 				{window.desktop && (
 					<div className="mt-auto border-t border-white/20 px-1 pt-3 dark:border-white/10">
 						<ChangeFolderButton collapsed={collapsed} />
+					</div>
+				)}
+				{!window.desktop && (
+					<div className="mt-auto border-t border-white/20 px-1 pt-3 dark:border-white/10">
+						<a
+							href={DESKTOP_APP_DOWNLOAD_URL}
+							target="_blank"
+							rel="noopener noreferrer"
+							title="Download the desktop app (Windows, Mac, Linux)"
+							aria-label="Download the desktop app"
+							className={`flex items-center gap-2 rounded-lg border border-cyan-500/40 bg-cyan-500/10 px-2 py-1.5 text-sm font-medium text-cyan-700 hover:bg-cyan-500/20 dark:text-cyan-300 ${
+								collapsed ? "justify-center" : ""
+							}`}
+						>
+							<Download className="h-4 w-4 shrink-0" aria-hidden />
+							{!collapsed && (
+								<span className="whitespace-nowrap">
+									Get desktop app
+								</span>
+							)}
+						</a>
 					</div>
 				)}
 			</nav>

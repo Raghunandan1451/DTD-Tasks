@@ -5,15 +5,28 @@ type DebouncedFunction<T extends (...args: unknown[]) => void> = ((
 	flush: () => void;
 };
 
+/**
+ * Calls `func` once `delay` ms after the last call. With `maxWait`, a steady
+ * stream of calls still runs at least that often (so typing without a pause is saved).
+ */
 export function debounce<T extends (...args: unknown[]) => void>(
 	func: T,
-	delay: number
+	delay: number,
+	maxWait?: number,
 ): DebouncedFunction<T> {
 	let timer: ReturnType<typeof setTimeout> | null = null;
+	let maxTimer: ReturnType<typeof setTimeout> | null = null;
 	let pending: Parameters<T> | null = null;
 
-	const run = () => {
+	const clear = () => {
+		if (timer) clearTimeout(timer);
+		if (maxTimer) clearTimeout(maxTimer);
 		timer = null;
+		maxTimer = null;
+	};
+
+	const run = () => {
+		clear();
 		if (!pending) return;
 		const args = pending;
 		pending = null;
@@ -24,12 +37,10 @@ export function debounce<T extends (...args: unknown[]) => void>(
 		pending = args;
 		if (timer) clearTimeout(timer);
 		timer = setTimeout(run, delay);
+		if (maxWait !== undefined && !maxTimer) maxTimer = setTimeout(run, maxWait);
 	};
 
-	debounced.flush = () => {
-		if (timer) clearTimeout(timer);
-		run();
-	};
+	debounced.flush = run;
 
 	return debounced;
 }

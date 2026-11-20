@@ -28,7 +28,7 @@ const ChangeFolderButton: FC<{ collapsed?: boolean }> = ({ collapsed = false }) 
 	const changeFolder = async () => {
 		const ok = await confirmation.confirm({
 			title: "Change data folder?",
-			message: `AIOLists will save your work, then ask you to pick another folder.${
+			message: `DTDTasks will save your work, then ask you to pick another folder.${
 				path ? ` Your current folder (${path}) is left exactly as it is.` : " Your current folder is left exactly as it is."
 			}`,
 			confirmText: "Choose another folder",

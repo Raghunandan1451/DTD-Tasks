@@ -28,7 +28,8 @@ CLAUDE.md
 Tasks.md
 docs/
 .claude/
-.github/
+.github/*
+!.github/workflows/
 .windsurf/
 WORKSPACE_GRAPH.md
 dist-desktop

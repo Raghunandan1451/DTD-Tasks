@@ -37,7 +37,8 @@ export async function inspectFolder(root: string): Promise<Inspection> {
 	} catch {
 		return { kind: "problem", problem: "missing" };
 	}
-	if (!stat.isDirectory()) return { kind: "problem", problem: "not-a-folder" };
+	if (!stat.isDirectory())
+		return { kind: "problem", problem: "not-a-folder" };
 
 	let names: string[];
 	try {
@@ -50,10 +51,16 @@ export async function inspectFolder(root: string): Promise<Inspection> {
 	if (!names.includes(MARKER_DIR) && names.includes(OLD_MARKER_DIR)) {
 		try {
 			const old = JSON.parse(
-				await fs.readFile(path.join(root, OLD_MARKER_DIR, "meta.json"), "utf8"),
+				await fs.readFile(
+					path.join(root, OLD_MARKER_DIR, "meta.json"),
+					"utf8",
+				),
 			);
 			if (old?.app === "AIOLists") {
-				await fs.rename(path.join(root, OLD_MARKER_DIR), path.join(root, MARKER_DIR));
+				await fs.rename(
+					path.join(root, OLD_MARKER_DIR),
+					path.join(root, MARKER_DIR),
+				);
 				names = await fs.readdir(root);
 			}
 		} catch {
@@ -63,8 +70,13 @@ export async function inspectFolder(root: string): Promise<Inspection> {
 
 	if (names.includes(MARKER_DIR)) {
 		try {
-			const meta = JSON.parse(await fs.readFile(markerPath(root), "utf8"));
-			if (meta?.app !== "AIOLists" || typeof meta.formatVersion !== "number") {
+			const meta = JSON.parse(
+				await fs.readFile(markerPath(root), "utf8"),
+			);
+			if (
+				(meta?.app !== "DTDTasks" && meta?.app !== "AIOLists") ||
+				typeof meta.formatVersion !== "number"
+			) {
 				return { kind: "problem", problem: "damaged-marker" };
 			}
 			if (meta.formatVersion > FORMAT_VERSION) {
@@ -78,14 +90,22 @@ export async function inspectFolder(root: string): Promise<Inspection> {
 			: { kind: "problem", problem: "not-writable" };
 	}
 
-	if (!(await canWrite(root))) return { kind: "problem", problem: "not-writable" };
+	if (!(await canWrite(root)))
+		return { kind: "problem", problem: "not-writable" };
 	return names.length === 0 ? { kind: "empty" } : { kind: "not-empty" };
 }
 
-export async function atomicWrite(target: string, content: string | Buffer): Promise<void> {
+export async function atomicWrite(
+	target: string,
+	content: string | Buffer,
+): Promise<void> {
 	await fs.mkdir(path.dirname(target), { recursive: true });
 	const tmp = `${target}.${process.pid}.tmp`;
-	await fs.writeFile(tmp, content, typeof content === "string" ? "utf8" : undefined);
+	await fs.writeFile(
+		tmp,
+		content,
+		typeof content === "string" ? "utf8" : undefined,
+	);
 	await fs.rename(tmp, target);
 }
 
@@ -96,7 +116,7 @@ export async function prepareFolder(root: string): Promise<void> {
 		markerPath(root),
 		JSON.stringify(
 			{
-				app: "AIOLists",
+				app: "DTDTasks",
 				formatVersion: FORMAT_VERSION,
 				createdAt: new Date().toISOString(),
 			},
@@ -118,7 +138,10 @@ const isInside = (root: string, target: string) => {
  * Rejects absolute paths, `..`, drive letters, UNC paths and NUL, and anything
  * that reaches outside through a symlink.
  */
-export async function resolveInside(root: string, rel: string): Promise<string> {
+export async function resolveInside(
+	root: string,
+	rel: string,
+): Promise<string> {
 	if (typeof rel !== "string" || rel.includes("\0")) {
 		throw new UnsafePathError("Bad path");
 	}
@@ -163,7 +186,10 @@ const isProtected = (root: string, target: string) => {
 	);
 };
 
-export async function readText(root: string, rel: string): Promise<string | null> {
+export async function readText(
+	root: string,
+	rel: string,
+): Promise<string | null> {
 	const target = await resolveInside(root, rel);
 	try {
 		return await fs.readFile(target, "utf8");
@@ -199,7 +225,10 @@ export async function writeBinary(
 }
 
 /** Reads a binary file as base64, or null when it does not exist. */
-export async function readBinary(root: string, rel: string): Promise<string | null> {
+export async function readBinary(
+	root: string,
+	rel: string,
+): Promise<string | null> {
 	const target = await resolveInside(root, rel);
 	try {
 		return (await fs.readFile(target)).toString("base64");

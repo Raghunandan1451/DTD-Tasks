@@ -30,6 +30,8 @@ const BookView: FC<BookViewProps> = ({ pages, spread }) => {
 	const columnsRef = useRef<HTMLDivElement>(null);
 	const [size, setSize] = useState({ width: 0, height: 0 });
 	const [pageCount, setPageCount] = useState(1);
+	// The date of the entry each page belongs to (an entry can run over several pages).
+	const [pageDates, setPageDates] = useState<string[]>([]);
 	// The first page on screen (0-based). Remembering a page rather than a spread
 	// keeps you on the same text when you switch between one and two pages.
 	const [firstPage, setFirstPage] = useState(0);
@@ -59,14 +61,34 @@ const BookView: FC<BookViewProps> = ({ pages, spread }) => {
 	// Count the pages the browser made out of the text.
 	useLayoutEffect(() => {
 		const el = columnsRef.current;
-		if (!el || columnWidth <= 0) return;
-		setPageCount(Math.max(1, Math.round((el.scrollWidth + GAP) / (columnWidth + GAP))));
+		if (!el) return;
+		const count = Math.max(1, Math.round((el.scrollWidth + GAP) / (columnWidth + GAP)));
+		setPageCount(count);
+
+		// Each entry starts on a fresh page; find which page that is.
+		const starts = Array.from(el.querySelectorAll<HTMLElement>("[data-testid='book-entry']")).map(
+			(article) => Math.max(0, Math.round(article.offsetLeft / (columnWidth + GAP))),
+		);
+		const dates: string[] = [];
+		for (let page = 0; page < count; page++) {
+			let owner = 0;
+			let ownerStart = -1;
+			starts.forEach((start, i) => {
+				if (start <= page && start > ownerStart) {
+					owner = i;
+					ownerStart = start;
+				}
+			});
+			dates.push(formatPageDate(pages[owner]?.date ?? "") || "Undated");
+		}
+		setPageDates((old) => (old.join("|") === dates.join("|") ? old : dates));
 	}, [pages, size, spread, columnWidth]);
 
 	const spreads = Math.max(1, Math.ceil(pageCount / spread));
 	const current = Math.min(Math.floor(firstPage / spread), spreads - 1);
 	const first = current * spread + 1;
 	const last = Math.min(first + spread - 1, pageCount);
+	const shownDates = Array.from(new Set(pageDates.slice(first - 1, last)));
 
 	const go = (next: number) =>
 		setFirstPage(Math.min(Math.max(0, next), spreads - 1) * spread);
@@ -95,8 +117,14 @@ const BookView: FC<BookViewProps> = ({ pages, spread }) => {
 					<ChevronLeft className="h-5 w-5" />
 				</Button>
 				<div
+					data-testid="page-date"
+					className="min-w-0 flex-1 truncate text-center text-sm font-medium text-gray-600 dark:text-gray-300"
+				>
+					{shownDates.join("  ·  ")}
+				</div>
+				<div
 					data-testid="page-counter"
-					className="min-w-0 flex-1 truncate text-center text-sm text-gray-500 dark:text-gray-400"
+					className="shrink-0 whitespace-nowrap px-1 text-xs text-gray-500 dark:text-gray-400"
 				>
 					{first === last ? `Page ${first}` : `Pages ${first}–${last}`} of {pageCount}
 				</div>
@@ -136,12 +164,6 @@ const BookView: FC<BookViewProps> = ({ pages, spread }) => {
 							// Every entry after the first starts a new page.
 							style={i > 0 ? { breakBefore: "column" } : undefined}
 						>
-							<h3
-								className="mb-2 text-sm font-semibold text-gray-500 dark:text-gray-400"
-								style={{ breakAfter: "avoid" }}
-							>
-								{formatPageDate(page.date) || <span className="italic font-normal">Undated</span>}
-							</h3>
 							{parseMarkdown(page.body)}
 						</article>
 					))}

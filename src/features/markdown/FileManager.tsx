@@ -14,6 +14,8 @@ import { hydrateMarkdown } from "@src/lib/store/thunks/markdownThunk";
 import { setFileState, deselectFile } from "@src/lib/store/slices/markdownSlice";
 import Button from "@src/components/ui/button/Button";
 import { findFileByPath } from "@src/lib/utils/treeUtils";
+import SaveStatusBadge from "@src/components/shared/save_status/SaveStatusBadge";
+import { useFlushOnLeave } from "@src/lib/hooks/useFlushOnLeave";
 import { pdfExists, saveNotePdf } from "@src/features/markdown/lib/saveNotePdf";
 import type { FileManagerData } from "@src/lib/types/downloadHandlerTypes";
 
@@ -23,6 +25,7 @@ const FileManager: React.FC = () => {
 		(state: RootState) => state.fileManager
 	);
 	const { notifications, showNotification } = useNotifications();
+	useFlushOnLeave(selectedFile);
 	// Only the desktop build has this; there the notes are files in the data folder.
 	const desktop = window.desktop;
 
@@ -78,8 +81,9 @@ const FileManager: React.FC = () => {
 					showUpload={true}
 					hideTransfer={Boolean(desktop)}
 					actions={
-						desktop && (
-							<>
+						<>
+							<SaveStatusBadge />
+							{desktop && (
 								<Button
 									type="button"
 									className="btn-primary text-xs md:text-base py-1.5 md:py-2 px-2.5 md:px-4"
@@ -87,8 +91,8 @@ const FileManager: React.FC = () => {
 									disabled={!selectedFile}
 									text="Save"
 								/>
-							</>
-						)
+							)}
+						</>
 					}
 					showNotification={showNotification}
 				/>

@@ -1,12 +1,14 @@
-appId: com.aiolists.desktop
-productName: AIOLists
+appId: com.dtdtasks.desktop
+productName: DTDTasks
 directories:
   output: release
+  buildResources: build
 files:
   - dist-desktop/**
   - dist-electron/**
   - package.json
 win:
+  icon: build/icon.ico
   target:
     - target: nsis
       arch: x64
@@ -15,4 +17,23 @@ nsis:
   oneClick: false
   perMachine: false
   allowToChangeInstallationDirectory: true
-  artifactName: AIOLists-Setup-${version}.${ext}
+  artifactName: DTDTasks-Setup-${version}.${ext}
+mac:
+  icon: build/icon.png
+  category: public.app-category.productivity
+  target:
+    - target: dmg
+      arch: [x64, arm64]
+  # Unsigned and not notarized: on first launch, right-click the app and choose Open.
+dmg:
+  artifactName: DTDTasks-${version}-${arch}.${ext}
+linux:
+  icon: build/icon.png
+  category: Office
+  maintainer: Raghunandan Sharma <raghunandansharma615@gmail.com>
+  target:
+    - target: AppImage
+      arch: x64
+    - target: deb
+      arch: x64
+  artifactName: DTDTasks-${version}-${arch}.${ext}

@@ -40,7 +40,7 @@ describe("DesktopGate", () => {
 			{ choose: { status: "ready", path: "D:\\Notes" } },
 		);
 		render(<DesktopGate><p>the app</p></DesktopGate>);
-		expect(await screen.findByText("Choose your AIOLists folder")).toBeInTheDocument();
+		expect(await screen.findByText("Choose your DTDTasks folder")).toBeInTheDocument();
 		expect(screen.queryByText("the app")).not.toBeInTheDocument();
 
 		await userEvent.click(screen.getByRole("button", { name: /choose folder/i }));

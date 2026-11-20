@@ -104,7 +104,7 @@ const readSources = async (file: File, problems: string[]): Promise<Source[]> =>
 		const raw: unknown = JSON.parse(await readText(file));
 		const kind = classify(raw);
 		if (!kind) {
-			problems.push(`${file.name}: this doesn't look like an AIOLists backup`);
+			problems.push(`${file.name}: this doesn't look like an DTDTasks backup`);
 			return [];
 		}
 		return [{ kind, from: file.name, raw }];

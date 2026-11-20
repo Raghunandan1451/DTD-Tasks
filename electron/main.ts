@@ -30,19 +30,19 @@ import {
 } from "@shell/folderService";
 
 const SCHEME = "app";
-const HOST = "aiolists";
+const HOST = "dtdtasks";
 const ORIGIN = `${SCHEME}://${HOST}`;
 // `yarn desktop:dev` points this at the Vite dev server.
-const DEV_URL = app.isPackaged ? undefined : process.env.AIOLISTS_DEV_URL;
+const DEV_URL = app.isPackaged ? undefined : process.env.DTDTASKS_DEV_URL;
 const DIST = path.join(__dirname, "..", "dist-desktop");
 const FLUSH_TIMEOUT_MS = 4000;
 
 // Test-only switches. A packaged app ignores them.
-if (!app.isPackaged && process.env.AIOLISTS_USER_DATA) {
-	app.setPath("userData", process.env.AIOLISTS_USER_DATA);
+if (!app.isPackaged && process.env.DTDTASKS_USER_DATA) {
+	app.setPath("userData", process.env.DTDTASKS_USER_DATA);
 }
-const testSaveDir = app.isPackaged ? undefined : process.env.AIOLISTS_TEST_SAVE_DIR;
-const testPick = app.isPackaged ? undefined : process.env.AIOLISTS_TEST_PICK_FOLDER;
+const testSaveDir = app.isPackaged ? undefined : process.env.DTDTASKS_TEST_SAVE_DIR;
+const testPick = app.isPackaged ? undefined : process.env.DTDTASKS_TEST_PICK_FOLDER;
 
 protocol.registerSchemesAsPrivileged([
 	{
@@ -135,7 +135,7 @@ function registerIpc() {
 		let picked: string | undefined = testPick;
 		if (!picked) {
 			const options: Electron.OpenDialogOptions = {
-				title: "Choose your AIOLists folder",
+				title: "Choose your DTDTasks folder",
 				properties: ["openDirectory", "createDirectory"],
 			};
 			const result = mainWindow
@@ -205,7 +205,7 @@ function registerIpc() {
 	);
 }
 
-/** Serve the built app from app://aiolists/, falling back to index.html for routes. */
+/** Serve the built app from app://dtdtasks/, falling back to index.html for routes. */
 function registerProtocol() {
 	protocol.handle(SCHEME, async (request) => {
 		const url = new URL(request.url);

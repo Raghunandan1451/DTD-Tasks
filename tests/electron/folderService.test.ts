@@ -22,7 +22,7 @@ import { readConfig, writeConfig } from "@shell/appConfig";
 let root: string;
 
 beforeEach(async () => {
-	root = await fs.mkdtemp(path.join(os.tmpdir(), "aiolists-"));
+	root = await fs.mkdtemp(path.join(os.tmpdir(), "dtdtasks-"));
 });
 afterEach(async () => {
 	await fs.rm(root, { recursive: true, force: true });
@@ -61,7 +61,7 @@ describe("inspectFolder", () => {
 		});
 		await fs.writeFile(
 			path.join(root, ".dtdtasks", "meta.json"),
-			JSON.stringify({ app: "AIOLists", formatVersion: 99 }),
+			JSON.stringify({ app: "DTDTasks", formatVersion: 99 }),
 		);
 		expect(await inspectFolder(root)).toEqual({
 			kind: "problem",
@@ -89,7 +89,7 @@ describe("resolveInside", () => {
 	});
 
 	it("rejects a link that points outside the folder", async () => {
-		const outside = await fs.mkdtemp(path.join(os.tmpdir(), "aiolists-out-"));
+		const outside = await fs.mkdtemp(path.join(os.tmpdir(), "dtdtasks-out-"));
 		try {
 			await fs.symlink(outside, path.join(root, "link"), "junction");
 		} catch {

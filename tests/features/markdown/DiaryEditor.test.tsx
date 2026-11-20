@@ -289,12 +289,13 @@ describe("DiaryEditor book view", () => {
 		expect(screen.getByTestId("page-counter")).toHaveTextContent("Page 1 of 2");
 	});
 
-	it("starts every entry on a new page and shows its date, without saving anything", () => {
+	it("starts every entry on a new page and shows its date in the header, without saving anything", () => {
 		const store = openBook();
 		const entries = screen.getAllByTestId("book-entry");
 		expect(entries[0].getAttribute("style") ?? "").not.toMatch(/break-before/);
 		expect(entries[1].getAttribute("style") ?? "").toMatch(/break-before:\s*column/);
-		expect(within(entries[0]).getByText("Sunday, 1 November 2026")).toBeInTheDocument();
+		expect(within(entries[0]).queryByText("Sunday, 1 November 2026")).toBeNull();
+		expect(screen.getByTestId("page-date")).toHaveTextContent("Sunday, 1 November 2026");
 		expect(store.getState().fileManager.content).toBe(CONTENT);
 	});
 });

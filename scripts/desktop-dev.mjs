@@ -31,7 +31,7 @@ await waitForServer();
 
 const electron = spawn(electronPath, ["."], {
 	stdio: "inherit",
-	env: { ...process.env, AIOLISTS_DEV_URL: URL_ },
+	env: { ...process.env, DTDTASKS_DEV_URL: URL_ },
 });
 electron.on("exit", () => {
 	vite.kill();

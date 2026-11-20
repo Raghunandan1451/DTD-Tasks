@@ -25,6 +25,8 @@ export interface SummaryItemProps {
 export interface ExpenseSummaryProps extends BalanceSectionProps {
 	viewMode: ViewMode;
 	onChangeView: (mode: ViewMode) => void;
+	/** Tabs other than Overview stay locked until salary and balance are set */
+	locked?: boolean;
 }
 
 export interface BudgetCategory {
@@ -105,6 +107,7 @@ export interface FinanceState {
 export interface ControlsProps {
 	viewMode: ViewMode;
 	onChangeView: (mode: ControlsProps["viewMode"]) => void;
+	locked?: boolean;
 }
 
 export interface ExpenseEntry {

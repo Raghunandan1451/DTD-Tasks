@@ -54,7 +54,7 @@ describe("persistMiddleware", () => {
 	it("saves to IndexedDB when fileManager state changes", async () => {
 		store.dispatch(testSlice.actions.setValue(42));
 
-		await new Promise((r) => setTimeout(r, 1100)); // Wait for debounce to flush
+		await new Promise((r) => setTimeout(r, 2100)); // Notes wait 2 s after the last edit
 
 		const db = await (openDB as unknown as () => Promise<{ put: unknown }>)();
 		expect(db.put).toHaveBeenCalledWith(

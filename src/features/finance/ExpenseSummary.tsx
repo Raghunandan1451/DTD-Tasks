@@ -8,6 +8,7 @@ const ExpenseSummary: FC<ExpenseSummaryProps> = ({
 	expenses,
 	viewMode,
 	onChangeView,
+	locked,
 }) => {
 	return (
 		<div className="glassmorphic-bg p-2 rounded-none">
@@ -18,6 +19,7 @@ const ExpenseSummary: FC<ExpenseSummaryProps> = ({
 			<Controls
 				viewMode={viewMode ?? "salary"}
 				onChangeView={onChangeView}
+				locked={locked}
 			/>
 		</div>
 	);
