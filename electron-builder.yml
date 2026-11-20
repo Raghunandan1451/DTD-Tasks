@@ -37,3 +37,8 @@ linux:
     - target: deb
       arch: x64
   artifactName: DTDTasks-${version}-${arch}.${ext}
+publish:
+  provider: github
+  owner: Raghunandan1451
+  repo: DTD-Tasks
+  releaseType: release
