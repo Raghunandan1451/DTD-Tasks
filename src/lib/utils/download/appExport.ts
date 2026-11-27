@@ -1,20 +1,24 @@
 
 import JSZip from "jszip";
 import { saveFile, savedTo } from "@src/lib/utils/saveFile";
-import { AppState, FileTree, ShowNotificationFn } from "@src/lib/types/downloadHandlerTypes";
+import { AppState, ShowNotificationFn } from "@src/lib/types/downloadHandlerTypes";
 
 
-import { buildFinanceBackup, FINANCE_BACKUP_FILE } from "@src/features/finance/lib/financeBackup";
 import { buildExpenseReport } from "@src/features/finance/lib/expenseReport";
 import { renderExpenseReportPdf } from "@src/features/finance/lib/expenseReportPdf";
 
-import { SCHEMA_VERSION } from "@src/lib/utils/schemaVersion";
-import { TIMELINE_BACKUP_FILE, type TimelineBackup } from "@src/features/home/lib/timelineBackup";
+import type { TimelineBackup } from "@src/features/home/lib/timelineBackup";
 
 import { BOARDS_BACKUP_FILE, type BoardsBackup } from "@src/features/nodes/lib/boardBackup";
 import type { BoardExports } from "@src/features/nodes/lib/boardExport";
 
-import { formatTimestamp, createMetadata, convertToFileTree } from "@src/lib/utils/download/shared";
+import { formatTimestamp } from "@src/lib/utils/download/shared";
+import { buildFolderFiles } from "@src/lib/utils/download/folderLayout";
+import { BOARDS_ROOT, FINANCE_ROOT } from "@src/lib/storage/folder/fileNames";
+import type { File as NoteFile, Folder as NoteFolder } from "@src/features/markdown/type";
+
+const countNotes = (items: (NoteFile | NoteFolder)[]): number =>
+	items.reduce((n, item) => n + (item.type === "folder" ? countNotes(item.children) : 1), 0);
 
 /** Timeline (journal notes, plus markdown activity) as one JSON file. */
 export const handleTimelineExport = async (
@@ -57,6 +61,12 @@ export const handleBoardsExport = async (
 	}
 };
 
+/**
+ * Everything the person picked as one ZIP laid out like a desktop data folder:
+ * Notes/, Boards/, Finance/, Journal/ and .dtdtasks/. Unzip it into the desktop
+ * data folder, or import it in either version. Boards also bring a picture each
+ * (Boards/Images/) and Finance a PDF report; both are only for reading.
+ */
 export const handleFullAppExport = async (
 	appState: AppState,
 	showNotification?: ShowNotificationFn,
@@ -67,145 +77,75 @@ export const handleFullAppExport = async (
 	try {
 		const zip = new JSZip();
 		let totalItems = 0;
-		let hasData = false;
 
-		// Finance & Expenses
-		if (appState.finance || appState.expenses?.expenses?.length) {
-			hasData = true;
-			const financeFolder = zip.folder("Finance");
-
-			financeFolder?.file(
-				FINANCE_BACKUP_FILE,
-				JSON.stringify(
-					buildFinanceBackup(appState.finance, appState.expenses),
-					null,
-					2,
-				),
-			);
-			if (appState.finance) totalItems++;
-
-			if (appState.expenses?.expenses?.length) {
-				const expensesPDF = renderExpenseReportPdf(
-					buildExpenseReport({
-						financeData: appState.finance,
-						allExpenses: appState.expenses.expenses,
-						title: "Expense Report - All Months",
-					}),
-				);
-				financeFolder?.file(
-					"expenses-report.pdf",
-					expensesPDF.output("blob"),
-				);
-
-				totalItems += appState.expenses.expenses.length;
-			}
-		}
-
-		// File Manager (Markdown)
-		if (appState.fileManager?.files?.length) {
-			hasData = true;
-			const fileManagerFolder = zip.folder("Markdown");
-			const fileTree = convertToFileTree(appState.fileManager.files);
-
-			const processFiles = (
-				items: FileTree[],
-				currentPath: string = "",
-			): void => {
-				items.forEach((item) => {
-					const fullPath = currentPath
-						? `${currentPath}/${item.path}`
-						: item.path;
-
-					if (item.type === "folder" && item.children) {
-						processFiles(item.children, fullPath);
-					} else if (
-						item.type === "file" &&
-						item.content !== undefined
-					) {
-						fileManagerFolder?.file(fullPath, item.content);
-						totalItems++;
-					}
-				});
-			};
-
-			processFiles(fileTree);
-			fileManagerFolder?.file(
-				"file-manager-data.json",
-				JSON.stringify(
-					{ schemaVersion: SCHEMA_VERSION, ...appState.fileManager },
-					null,
-					2,
-				),
-			);
-		}
-
-		// Timeline (journal + markdown activity; expenses export with Finance)
+		const hasExpenses = !!appState.expenses?.expenses?.length;
+		const hasNotes = !!appState.fileManager?.files?.length;
+		const hasBoards = !!boards && boards.boards.length > 0;
 		const timelineRows =
 			(timeline?.journal.length ?? 0) + (timeline?.markdownLog.length ?? 0);
-		if (timeline && timelineRows > 0) {
-			hasData = true;
-			zip.folder("Timeline")?.file(
-				TIMELINE_BACKUP_FILE,
-				JSON.stringify(timeline, null, 2),
-			);
-			totalItems += timelineRows;
-		}
 
-		// Boards (Nodes page)
-		if (boards && boards.boards.length > 0) {
-			hasData = true;
-			const boardsFolder = zip.folder("Boards");
-			boardsFolder?.file(
-				BOARDS_BACKUP_FILE,
-				JSON.stringify(boards, null, 2),
-			);
-			// Pictures sit beside the JSON; only the JSON is used to restore.
-			const imagesFolder = boardsFolder?.folder("Images");
-			boardPictures?.images.forEach((file) =>
-				imagesFolder?.file(file.fileName, file.blob),
-			);
-			totalItems += boards.boards.length;
-		}
-
-		// QR - Skip (user exports manually from QR page)
-
-		if (!hasData) {
+		if (!appState.finance && !hasExpenses && !hasNotes && !hasBoards && timelineRows === 0) {
 			showNotification?.("No data available to export", "error");
 			return;
 		}
 
-		// Global Metadata
-		zip.file(
-			"meta.json",
-			JSON.stringify(createMetadata("AllData", totalItems), null, 2),
-		);
+		const layout = await buildFolderFiles({
+			notes: hasNotes ? appState.fileManager : undefined,
+			boards: hasBoards ? boards.boards : undefined,
+			finance: appState.finance,
+			expenses: hasExpenses ? appState.expenses : undefined,
+			journal: timeline?.journal,
+			activity: timeline?.markdownLog,
+		});
+		for (const [path, text] of layout.files) zip.file(path, text);
+
+		if (appState.finance) totalItems++;
+		if (hasExpenses) {
+			totalItems += appState.expenses?.expenses.length ?? 0;
+			// A readable report next to the data; only the JSON files are used to restore.
+			const report = renderExpenseReportPdf(
+				buildExpenseReport({
+					financeData: appState.finance,
+					allExpenses: appState.expenses?.expenses ?? [],
+					title: "Expense Report - All Months",
+				}),
+			);
+			zip.file(`${FINANCE_ROOT}/expenses-report.pdf`, report.output("blob"));
+		}
+		if (hasNotes) totalItems += countNotes(appState.fileManager?.files ?? []);
+		totalItems += timelineRows;
+		if (hasBoards) {
+			totalItems += boards.boards.length;
+			const images = zip.folder(`${BOARDS_ROOT}/Images`);
+			boardPictures?.images.forEach((file) => images?.file(file.fileName, file.blob));
+		}
+
 		zip.file(
 			"README.txt",
-			`List Manager - Full Data Export
+			`DTDTasks - data export
 Generated: ${new Date().toLocaleString()}
-Total Items: ${totalItems}
+Items: ${totalItems}
 
-Folders:
-- Finance: Balance, expenses, and PDF report
-- Markdown: Files and folders
-- Timeline: Journal notes and markdown activity
-- Boards: Nodes & Notes boards
+This ZIP is laid out exactly like a DTDTasks desktop data folder:
+- Notes/      your notes as .md files
+- Boards/     one .board.json file per board (Images/ holds a picture of each, for reading only)
+- Finance/    settings.json and expenses/YYYY-MM.json (plus a PDF report, for reading only)
+- Journal/    one file per day
+- .dtdtasks/  the folder's own bookkeeping
 
-To restore data:
-1. Go to the specific page (Finance/Markdown)
-2. Click "Upload JSON" and select the file (Finance: finance-backup.json)
-3. Timeline: on Home, click "Import" and select ${TIMELINE_BACKUP_FILE}
-4. Boards: on the Nodes page, click "Upload JSON" and select ${BOARDS_BACKUP_FILE}
-5. QR codes must be regenerated manually
+To use it:
+- Desktop: unzip it into your data folder (or an empty folder, then choose that folder), or use Import on Home.
+- Browser: use Import on Home and choose this ZIP.
+QR codes are not included; save them from the QR page.
 `,
 		);
 
 		const blob = await zip.generateAsync({ type: "blob" });
-		const saved = await saveFile(blob, `list-manager-full-export_${formatTimestamp()}.zip`);
+		const saved = await saveFile(blob, `dtdtasks-data_${formatTimestamp()}.zip`);
 		if (saved.cancelled) return;
-		showNotification?.(`All data exported successfully${savedTo(saved.path)}`, "success");
+		showNotification?.(`Data exported successfully${savedTo(saved.path)}`, "success");
 	} catch (error) {
 		console.error("Full app export error:", error);
-		showNotification?.("Failed to export all data", "error");
+		showNotification?.("Failed to export data", "error");
 	}
 };

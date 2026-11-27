@@ -194,19 +194,16 @@ describe("handleTimelineExport", () => {
 describe("handleFullAppExport", () => {
 	const notify = vi.fn();
 
-	it("adds the timeline backup to the zip", async () => {
-		const backup = timeline();
+	it("lays the journal out like a desktop data folder", async () => {
+		await handleFullAppExport({}, notify, timeline());
 
-		await handleFullAppExport({}, notify, backup);
-
-		const folder = lastZip().folders["Timeline"];
-		expect(folder.file).toHaveBeenCalledWith(
-			"timeline-backup.json",
-			JSON.stringify(backup, null, 2),
-		);
+		const written = lastZip().file.mock.calls.map(([path]) => path as string);
+		expect(written).toContain(".dtdtasks/meta.json");
+		expect(written.some((path) => /^Journal\/\d{4}\/\d{4}-\d{2}-\d{2}\.json$/.test(path))).toBe(true);
+		expect(written).toContain("README.txt");
 		expect(saveAs).toHaveBeenCalledWith(
 			expect.any(Blob),
-			expect.stringMatching(/^list-manager-full-export_.*\.zip$/),
+			expect.stringMatching(/^dtdtasks-data_.*.zip$/),
 		);
 	});
 

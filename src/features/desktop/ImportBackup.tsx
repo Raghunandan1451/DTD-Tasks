@@ -3,11 +3,11 @@ import Button from "@src/components/ui/button/Button";
 import { importBrowserBackup, type ImportReport } from "@src/features/desktop/importBrowserBackup";
 
 /**
- * Desktop only. Brings in files downloaded from the browser version (notes,
- * boards, finance and timeline backups, or the ZIPs holding them) and says
- * exactly what was added, renamed or skipped.
+ * Brings in a data ZIP (laid out like a desktop data folder) or older backup files
+ * (notes, boards, finance and timeline), in either version, and says exactly what
+ * was added, renamed or skipped.
  */
-const ImportBackup: FC = () => {
+const ImportBackup: FC<{ onImported?: () => void }> = ({ onImported }) => {
 	const input = useRef<HTMLInputElement>(null);
 	const [busy, setBusy] = useState(false);
 	const [report, setReport] = useState<ImportReport | null>(null);
@@ -17,6 +17,7 @@ const ImportBackup: FC = () => {
 		setBusy(true);
 		try {
 			setReport(await importBrowserBackup([...files]));
+			onImported?.();
 		} catch {
 			setReport({ done: [], problems: ["The import failed. Nothing was changed."] });
 		} finally {
@@ -40,8 +41,8 @@ const ImportBackup: FC = () => {
 				type="button"
 				disabled={busy}
 				onClick={() => input.current?.click()}
-				title="Import files downloaded from the browser version"
-				aria-label="Import browser backup"
+				title="Import a data ZIP or backup files"
+				aria-label="Import backup"
 				className="btn-secondary text-xs md:text-base py-1.5 md:py-2 px-2.5 md:px-4"
 				text={busy ? "Importing…" : "Import"}
 			/>

@@ -1,12 +1,6 @@
 import { useState, useMemo, useEffect, useCallback } from "react";
 import { useSelector, useDispatch, useStore } from "react-redux";
-import {
-	handleFinanceExport,
-	handleMarkdownExport,
-	handleFullAppExport,
-	handleTimelineExport,
-	handleBoardsExport,
-} from "@src/lib/utils/downloadHandler";
+import { handleFullAppExport } from "@src/lib/utils/downloadHandler";
 import { buildTimelineBackup } from "@src/features/home/lib/timelineBackup";
 import { countTimelineData } from "@src/lib/db/timelineBackupRepo";
 import { countBoards } from "@src/lib/storage";
@@ -166,40 +160,19 @@ export const useHomeDownload = (
 				}
 			}
 
-			if (selected.size === SECTIONS.length) {
-				showNotification("Creating full export...", "info");
-				await handleFullAppExport(
-					appState,
-					showNotification,
-					timeline,
-					boards,
-					boardPictures,
-				);
-			} else {
-				showNotification("Creating export...", "info");
-
-				if (selected.has("finance")) {
-					await handleFinanceExport(
-						appState.finance,
-						appState.expenses,
-						undefined,
-						undefined,
-						showNotification,
-					);
-				}
-				if (selected.has("files")) {
-					await handleMarkdownExport(
-						appState.fileManager?.files || [],
-						showNotification,
-					);
-				}
-				if (timeline) {
-					await handleTimelineExport(timeline, showNotification);
-				}
-				if (boards) {
-					await handleBoardsExport(boards, boardPictures, showNotification);
-				}
-			}
+			showNotification("Creating export...", "info");
+			// One ZIP laid out like a desktop data folder, with only what was picked.
+			await handleFullAppExport(
+				{
+					finance: selected.has("finance") ? appState.finance : undefined,
+					expenses: selected.has("finance") ? appState.expenses : undefined,
+					fileManager: selected.has("files") ? appState.fileManager : undefined,
+				},
+				showNotification,
+				timeline,
+				boards,
+				boardPictures,
+			);
 
 			setDownloadProgress(100);
 			setTimeout(() => {
